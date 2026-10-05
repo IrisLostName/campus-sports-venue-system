@@ -1,0 +1,33 @@
+# 只匹配仓库根目录（前导 /），不误伤 frontend/tests/ 等子目录。
+# 旧代码（不入库，不读取）
+/sys.old/
+
+# docs/ 与 计划书/ 永不推送到 GitHub：各自用本地独立仓库（docs/.git、计划书/.git）记录改动。
+# tests/ 是文档阶段的一次性验收脚本；.pnpm-store/ 是 pnpm 包缓存。
+/docs/
+/计划书/
+/tests/
+/.pnpm-store/
+
+# 前端
+node_modules/
+dist/
+.vite/
+*.local
+.env
+.env.*
+!.env.example
+
+# 后端
+target/
+*.class
+*.log
+!.mvn/wrapper/
+
+# IDE 与系统
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+~$*
