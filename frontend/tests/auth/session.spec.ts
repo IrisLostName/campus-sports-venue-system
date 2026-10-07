@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import { ApiError } from '../../src/api/errors'
 import { callApi, handleAuthFailure, logoutToLogin, type SessionDeps } from '../../src/composables/session'
+import { resolvePostLoginTarget } from '../../src/router/access'
 import { createAuthHarness, DEMO_PASSWORD, type AuthHarness } from './harness'
 
 const EIGHT_HOURS_AND_ONE_MINUTE = 8 * 60 + 1
@@ -36,7 +37,12 @@ describe('TOKEN_EXPIRED：登录已过期', () => {
     h.clock.advanceMinutes(EIGHT_HOURS_AND_ONE_MINUTE)
     await callApi(() => h.api.adminListReservations(), deps)
 
-    expect(h.router.currentRoute.value.query.redirect).toBe('/venue-admin/reservations?page=2')
+    const redirect = h.router.currentRoute.value.query.redirect
+    expect(redirect).toBe('/venue-admin/reservations?page=2')
+
+    const relogin = await h.auth.login({ username: 'admin_tennis', password: DEMO_PASSWORD })
+    expect(relogin.ok).toBe(true)
+    expect(resolvePostLoginTarget('VENUE_ADMIN', redirect)).toBe('/venue-admin/reservations?page=2')
   })
 })
 
