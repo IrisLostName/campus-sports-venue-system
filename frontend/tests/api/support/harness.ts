@@ -76,3 +76,9 @@ export async function expectApiError(
 export function setTime(h: Harness, date: string, time: string): void {
   h.clock.set(`${date}T${time}:00`)
 }
+
+// 把时钟拨到指定时间戳后重新登录（登录令牌 8 小时过期，跨度大的时间跳转必须重新登录）。
+export async function travel(h: Harness, timestamp: string, username: string): Promise<void> {
+  h.clock.set(timestamp)
+  await h.loginAs(username)
+}
