@@ -145,6 +145,16 @@ describe('启动恢复', () => {
     expect(reloaded.getMeCalls()).toBe(0)
   })
 
+  it('N-2 本地判定已过期：登录页提示“登录已过期，请重新登录”', async () => {
+    const h = createAuthHarness()
+    await h.auth.login({ username: 'zhangsan', password: DEMO_PASSWORD })
+    h.clock.set(FUTURE)
+    const reloaded = h.reload()
+    await reloaded.auth.restore()
+
+    expect(reloaded.auth.notice).toBe('登录已过期，请重新登录')
+  })
+
   it('过期前一秒仍然有效', async () => {
     const h = createAuthHarness()
     await h.auth.login({ username: 'zhangsan', password: DEMO_PASSWORD })
@@ -182,6 +192,41 @@ describe('启动恢复：getMe 校验失败', () => {
     expect(reloaded.auth.notice).toBe('账号已停用')
   })
 
+})
+
+describe('N-2 启动恢复：失败时的登录页提示', () => {
+  it('服务端判定过期（本地时钟认为未过期）：getMe 返回 TOKEN_EXPIRED → 提示“登录已过期，请重新登录”并清除', async () => {
+    const h = createAuthHarness()
+    await h.auth.login({ username: 'zhangsan', password: DEMO_PASSWORD })
+    h.clock.set(FUTURE)
+    const reloaded = h.reload({ now: () => START })
+    await reloaded.auth.restore()
+
+    expect(reloaded.getMeCalls()).toBe(1)
+    expect(reloaded.auth.isAuthenticated).toBe(false)
+    expect(reloaded.storage.items.size).toBe(0)
+    expect(reloaded.auth.notice).toBe('登录已过期，请重新登录')
+  })
+
+  it('无效令牌：getMe 返回 AUTH_REQUIRED → 静默清除，没有提示', async () => {
+    const h = createAuthHarness()
+    h.storage.setItem(STORAGE_KEY, JSON.stringify({ token: 'forged-token', expiresAt: FUTURE }))
+    const reloaded = h.reload()
+    await reloaded.auth.restore()
+
+    expect(reloaded.getMeCalls()).toBe(1)
+    expect(reloaded.auth.isAuthenticated).toBe(false)
+    expect(reloaded.auth.notice).toBeNull()
+  })
+
+  it('storage 里没有任何内容或内容损坏：静默，没有提示', async () => {
+    const h = createAuthHarness()
+    h.storage.setItem(STORAGE_KEY, 'not-json')
+    const reloaded = h.reload()
+    await reloaded.auth.restore()
+
+    expect(reloaded.auth.notice).toBeNull()
+  })
 })
 
 describe('启动恢复：storage 内容异常', () => {
