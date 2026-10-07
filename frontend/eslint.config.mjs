@@ -11,7 +11,7 @@ const restrictedImports = [
   'error',
   {
     patterns: [
-      { regex: '(^|/)api/(mock|http)(/|$)', message: API_LAYER_MESSAGE },
+      { regex: '(^|/)api/(mock|http)([/.]|$)', message: API_LAYER_MESSAGE },
       { regex: '^axios(/|$)', message: AXIOS_MESSAGE },
     ],
   },

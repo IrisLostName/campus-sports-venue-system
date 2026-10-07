@@ -23,9 +23,23 @@ const FORBIDDEN_TARGETS = [
   'src/api/mock/seed/venues',
   'src/api/http',
   'src/api/http/client',
+  'src/api/http.js',
+  'src/api/http.ts',
+  'src/api/mock.js',
+  'src/api/mock.ts',
+  'src/api/http/client.js',
+  'src/api/mock/index.ts',
 ];
 
-const ALLOWED_TARGETS = ['src/api/index', 'src/api/types'];
+const ALLOWED_TARGETS = [
+  'src/api/index',
+  'src/api/index.js',
+  'src/api/index.ts',
+  'src/api/types',
+  'src/api/types.ts',
+  'src/api/httpClient',
+  'src/api/mockData',
+];
 
 const FORBIDDEN_PACKAGES = ['axios', 'axios/lib/axios'];
 
@@ -39,14 +53,12 @@ describe('src/ 下 api/ 以外的文件禁止导入 api/mock 与 api/http', () =
     expect(await ruleIdsAt(file, source)).toEqual(['no-restricted-imports']);
   });
 
-  it.each(RESTRICTED_FILES)('%s 的 import type 也被禁止', async (file) => {
-    const specifier = relativeSpecifier(file, 'src/api/mock/index');
+  it.each(cases)('$file 从 $specifier 的 import type 也被禁止', async ({ file, specifier }) => {
     const source = asFileSource(file, `import type { Seed } from '${specifier}';\nexport type Alias = Seed;`);
     expect(await ruleIdsAt(file, source)).toEqual(['no-restricted-imports']);
   });
 
-  it.each(RESTRICTED_FILES)('%s 的 export from 也被禁止', async (file) => {
-    const specifier = relativeSpecifier(file, 'src/api/http/client');
+  it.each(cases)('$file 从 $specifier 的 export from 也被禁止', async ({ file, specifier }) => {
     const source = asFileSource(file, `export * from '${specifier}';`);
     expect(await ruleIdsAt(file, source)).toEqual(['no-restricted-imports']);
   });
