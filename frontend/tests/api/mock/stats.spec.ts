@@ -1,7 +1,7 @@
 // 统计总览与大屏聚合（docs/12 第 5.10 节；口径 docs/03 第 4.5、8 节；规划裁决 A14）。
 import { describe, expect, it } from 'vitest'
 
-import { createHarness, expectApiError, travel, TODAY, TOMORROW, type Harness } from '../support/harness'
+import { book, createHarness, expectApiError, travel, TODAY, TOMORROW, type Harness } from '../support/harness'
 
 // 每天的开放时段：网球馆 4 场地 × 8 = 32，羽毛球馆 6 × 8 = 48，游泳馆 6 × 8 = 48。
 const PER_DAY = { tennis: 32, badminton: 48, pool: 48 }
@@ -95,14 +95,15 @@ describe('大屏聚合（GET /display/summary，公开）', () => {
   it('无需 Token；场馆、场地、7 天趋势、系统提示', async () => {
     const h = createHarness()
     const summary = await h.api.getDisplaySummary()
-    expect(summary).toMatchObject({ generatedAt: `${TODAY}T07:00:00`, todayReservationCount: 0, currentInUse: 0 })
+    expect(summary).toMatchObject({ generatedAt: `${TODAY}T07:00:00`, todayReservationCount: 2, currentInUse: 0 })
     expect(summary.todayUtilizationRate).toBe(0)
     expect(summary.venues.map((v) => [v.venueName, v.resourceTotal, v.resourceOpen, v.resourcesReservedNow, v.userBookingEnabled]))
       .toEqual([['网球馆', 4, 4, 0, true], ['羽毛球馆', 6, 6, 0, false], ['游泳馆', 6, 6, 0, false]])
     expect(summary.resources).toHaveLength(16)
     expect(summary.resources.every((r) => r.state === 'FREE')).toBe(true)
     expect(summary.weekTrend).toHaveLength(7)
-    expect(summary.weekTrend[6]).toEqual({ date: TODAY, reservationCount: 0 })
+    expect(summary.weekTrend[6]).toEqual({ date: TODAY, reservationCount: 2 })
+    expect(summary.weekTrend.slice(0, 6).every((day) => day.reservationCount === 0)).toBe(true)
     expect(summary.notices).toEqual([{ id: 1, title: '欢迎使用校园场馆预约系统' }])
   })
 
@@ -123,6 +124,46 @@ describe('大屏聚合（GET /display/summary，公开）', () => {
     await h.api.adminCreateAnnouncement({ scope: 'VENUE', venueId: 1, title: '场馆公告', content: 'c' })
     const notices = (await h.api.getDisplaySummary()).notices.map((n) => n.title)
     expect(notices).toEqual(['公告6', '公告5', '公告4', '公告3', '公告2'])
+  })
+})
+
+describe('大屏与管理端口径一致（03 第 8 节末句）', () => {
+  it('种子下今天的预约量：大屏 todayReservationCount 等于管理端同一区间的 reservationCount', async () => {
+    const h = await as('sysadmin')
+    const overview = await h.api.adminGetStatsOverview({ dateFrom: TODAY, dateTo: TODAY })
+    const summary = await h.api.getDisplaySummary()
+    expect(summary.todayReservationCount).toBe(overview.reservationCount)
+    expect(summary.todayReservationCount).toBe(2)
+  })
+
+  it('预约量按创建日期、含已取消：取消与跨天创建后，大屏 todayReservationCount 与 weekTrend 仍等于管理端', async () => {
+    const h = await as('zhangsan')
+    await h.api.cancelReservation(1)
+    await travel(h, `${TOMORROW}T09:00:00`, 'lisi')
+    await book(h.api, 3, TOMORROW, '14:00')
+    await book(h.api, 4, TOMORROW, '15:30')
+    await h.loginAs('sysadmin')
+    const from = '2026-10-07'
+    const overview = await h.api.adminGetStatsOverview({ dateFrom: from, dateTo: TOMORROW })
+    const summary = await h.api.getDisplaySummary()
+    expect(summary.weekTrend.map((day) => day.date)).toEqual(overview.daily.map((day) => day.date))
+    expect(summary.weekTrend.map((day) => day.reservationCount)).toEqual(overview.daily.map((day) => day.reservationCount))
+    expect(summary.weekTrend.at(-1)).toEqual({ date: TOMORROW, reservationCount: 2 })
+    expect(summary.weekTrend.at(-2)).toEqual({ date: TODAY, reservationCount: 2 })
+    const today = await h.api.adminGetStatsOverview({ dateFrom: TOMORROW, dateTo: TOMORROW })
+    expect(summary.todayReservationCount).toBe(today.reservationCount)
+  })
+
+  it('利用率与当前使用：大屏与管理端同一区间取值相同', async () => {
+    const h = await as('zhangsan')
+    await travel(h, `${TOMORROW}T08:00:00`, 'zhangsan')
+    await h.api.checkIn(1)
+    await h.loginAs('sysadmin')
+    const overview = await h.api.adminGetStatsOverview({ dateFrom: TOMORROW, dateTo: TOMORROW })
+    const summary = await h.api.getDisplaySummary()
+    expect(summary.todayUtilizationRate).toBe(overview.utilizationRate)
+    expect(summary.currentInUse).toBe(overview.currentInUse)
+    expect(summary.currentInUse).toBe(1)
   })
 })
 

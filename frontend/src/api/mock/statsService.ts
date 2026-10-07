@@ -50,6 +50,26 @@ function inUseNow(ctx: MockContext, record: ReservationRecord): boolean {
     && startSeconds(record) <= now && now < endSeconds(record)
 }
 
+// 以下三个函数是管理端总览与大屏共用的口径（03 第 8 节末句：同一份统计服务，口径不分叉）。
+// 预约量：按创建日期归入区间，含已取消。
+function createdIn(ctx: MockContext, venues: VenueRecord[], dates: string[]): ReservationRecord[] {
+  const ids = venues.map((venue) => venue.id)
+  return ctx.state.reservations.filter((record) =>
+    dates.includes(dateOf(record.createdAt)) && ids.includes(venueIdOfReservation(ctx, record)))
+}
+
+// 利用率：有效占用时段数 ÷ 开放时段数，按使用日期。
+function utilizationOn(ctx: MockContext, venues: VenueRecord[], date: string): number | null {
+  return rate(occupiedOn(ctx, venues, date), openSlotCount(ctx, venues, date))
+}
+
+// 当前使用：当前时刻落在预约区间内且已签到未签退。
+function inUseCount(ctx: MockContext, venues: VenueRecord[]): number {
+  const ids = venues.map((venue) => venue.id)
+  return ctx.state.reservations.filter((record) =>
+    inUseNow(ctx, record) && ids.includes(venueIdOfReservation(ctx, record))).length
+}
+
 function scopedVenues(ctx: MockContext, query: StatsOverviewQuery, user: UserRecord): VenueRecord[] {
   if (query.venueId !== undefined) {
     requireScope(ctx, user, query.venueId)
@@ -83,7 +103,7 @@ function getStatsOverview(ctx: MockContext, query: StatsOverviewQuery): StatsOve
   const venueIds = venues.map((venue) => venue.id)
   const dates = datesBetween(dateFrom, dateTo)
   const inScope = ctx.state.reservations.filter((record) => venueIds.includes(venueIdOfReservation(ctx, record)))
-  const created = inScope.filter((record) => dates.includes(dateOf(record.createdAt)))
+  const created = createdIn(ctx, venues, dates)
   const used = inScope.filter((record) => dates.includes(record.serviceDate))
   const openSlots = dates.reduce((sum, date) => sum + openSlotCount(ctx, venues, date), 0)
   const activeOccupiedSlots = used.filter((record) => isActiveStatus(record.status)).length
@@ -94,25 +114,25 @@ function getStatsOverview(ctx: MockContext, query: StatsOverviewQuery): StatsOve
     reservationCount: created.length,
     activeOccupiedSlots, openSlots,
     utilizationRate: rate(activeOccupiedSlots, openSlots),
-    currentInUse: inScope.filter((record) => inUseNow(ctx, record)).length,
+    currentInUse: inUseCount(ctx, venues),
     userCancelCount: created.filter((record) => record.status === 'CANCELLED').length,
     adminCancelCount: created.filter((record) => record.status === 'ADMIN_CANCELLED').length,
     noShowRate: rate(noShow, noShow + completed),
-    byVenue: venues.map((venue) => venueBreakdown(ctx, venue, dates, created)),
+    byVenue: venues.map((venue) => venueBreakdown(ctx, venue, dates)),
     daily: dates.map((date) => ({
       date,
-      reservationCount: created.filter((record) => dateOf(record.createdAt) === date).length,
-      utilizationRate: rate(occupiedOn(ctx, venues, date), openSlotCount(ctx, venues, date)),
+      reservationCount: createdIn(ctx, venues, [date]).length,
+      utilizationRate: utilizationOn(ctx, venues, date),
     })),
   }
 }
 
-function venueBreakdown(ctx: MockContext, venue: VenueRecord, dates: string[], created: ReservationRecord[]) {
+function venueBreakdown(ctx: MockContext, venue: VenueRecord, dates: string[]) {
   const open = dates.reduce((sum, date) => sum + openSlotCount(ctx, [venue], date), 0)
   const occupied = dates.reduce((sum, date) => sum + occupiedOn(ctx, [venue], date), 0)
   return {
     venueId: venue.id, venueName: venue.name,
-    reservationCount: created.filter((record) => venueIdOfReservation(ctx, record) === venue.id).length,
+    reservationCount: createdIn(ctx, [venue], dates).length,
     utilizationRate: rate(occupied, open),
   }
 }
@@ -148,9 +168,9 @@ function getDisplaySummary(ctx: MockContext): DisplaySummary {
   }))
   return {
     generatedAt: ctx.clock.now(),
-    todayReservationCount: occupiedOn(ctx, venues, today),
-    currentInUse: ctx.state.reservations.filter((record) => inUseNow(ctx, record)).length,
-    todayUtilizationRate: rate(occupiedOn(ctx, venues, today), openSlotCount(ctx, venues, today)),
+    todayReservationCount: createdIn(ctx, venues, [today]).length,
+    currentInUse: inUseCount(ctx, venues),
+    todayUtilizationRate: utilizationOn(ctx, venues, today),
     venues: venues.map((venue) => {
       const own = states.filter((entry) => entry.resource.venueId === venue.id)
       return {
@@ -165,7 +185,7 @@ function getDisplaySummary(ctx: MockContext): DisplaySummary {
       venueId: resource.venueId, resourceId: resource.id, resourceName: resource.name, state,
     })),
     weekTrend: datesBetween(addDays(today, 1 - TREND_DAYS), today).map((date) => ({
-      date, reservationCount: occupiedOn(ctx, venues, date),
+      date, reservationCount: createdIn(ctx, venues, [date]).length,
     })),
     notices: ctx.state.announcements
       .filter((record) => record.scope === 'SYSTEM' && isLive(ctx, record))
