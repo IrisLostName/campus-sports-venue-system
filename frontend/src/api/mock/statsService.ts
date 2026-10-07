@@ -79,12 +79,16 @@ function scopedVenues(ctx: MockContext, query: StatsOverviewQuery, user: UserRec
   return ctx.state.venues.filter((venue) => ids.includes(venue.id))
 }
 
-function validateStatsQuery(query: StatsOverviewQuery, from: string, to: string): void {
+// 先校验 venueId/dateFrom/dateTo 的格式，之后才能据此计算缺省区间。
+function validateStatsFormat(query: StatsOverviewQuery): void {
   collect([
     ['venueId', optional(query.venueId, (value) => intProblem(value))],
     ['dateFrom', optional(query.dateFrom, dateProblem)],
     ['dateTo', optional(query.dateTo, dateProblem)],
   ])
+}
+
+function validateStatsRange(from: string, to: string): void {
   const days = dayNumber(to) - dayNumber(from) + 1
   if (days < 1 || days > MAX_RANGE_DAYS) {
     fail('VALIDATION_ERROR', { fields: { dateFrom: `日期范围应为 1–${MAX_RANGE_DAYS} 天` } })
@@ -94,10 +98,11 @@ function validateStatsQuery(query: StatsOverviewQuery, from: string, to: string)
 // 预约量、取消量按创建日期归入区间；占用、开放时段、利用率、未到场率按使用日期归入区间。
 function getStatsOverview(ctx: MockContext, query: StatsOverviewQuery): StatsOverview {
   const user = authenticate(ctx)
+  validateStatsFormat(query)
   const today = dateOf(ctx.clock.now())
   const dateTo = query.dateTo ?? today
   const dateFrom = query.dateFrom ?? addDays(dateTo, -6)
-  validateStatsQuery(query, dateFrom, dateTo)
+  validateStatsRange(dateFrom, dateTo)
   requireRole(user, 'VENUE_ADMIN', 'SYS_ADMIN')
   const venues = scopedVenues(ctx, query, user)
   const venueIds = venues.map((venue) => venue.id)

@@ -91,6 +91,25 @@ describe('统计总览：范围与校验', () => {
   })
 })
 
+describe('统计总览：只给一端日期时先校验格式再算缺省区间', () => {
+  it('只给非法 dateTo → VALIDATION_ERROR（不是原生异常），fields 指出 dateTo', async () => {
+    const h = await as('sysadmin')
+    const error = await expectApiError(h.api.adminGetStatsOverview({ dateTo: 'abc' }), 'VALIDATION_ERROR')
+    expect(Object.keys((error.details?.fields ?? {}) as object)).toEqual(['dateTo'])
+  })
+
+  it('只给非法 dateFrom → VALIDATION_ERROR，fields 指出 dateFrom', async () => {
+    const h = await as('sysadmin')
+    const error = await expectApiError(h.api.adminGetStatsOverview({ dateFrom: '2026-13-01' }), 'VALIDATION_ERROR')
+    expect(Object.keys((error.details?.fields ?? {}) as object)).toEqual(['dateFrom'])
+  })
+
+  it('只给合法 dateTo：dateFrom 缺省为 dateTo − 6 天', async () => {
+    const h = await as('sysadmin')
+    expect(await h.api.adminGetStatsOverview({ dateTo: TOMORROW })).toMatchObject({ dateFrom: '2026-10-07', dateTo: TOMORROW })
+  })
+})
+
 describe('大屏聚合（GET /display/summary，公开）', () => {
   it('无需 Token；场馆、场地、7 天趋势、系统提示', async () => {
     const h = createHarness()
