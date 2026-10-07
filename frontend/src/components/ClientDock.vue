@@ -2,11 +2,12 @@
 import { useRoute } from 'vue-router'
 
 import { DOCK_ITEMS } from '../router/dock'
+import { PATHS } from '../router/paths'
 
 const route = useRoute()
 
 function isActive(path: string): boolean {
-  return path === '/' ? route.path === '/' : route.path === path || route.path.startsWith(`${path}/`)
+  return path === PATHS.home ? route.path === PATHS.home : route.path === path || route.path.startsWith(`${path}/`)
 }
 </script>
 

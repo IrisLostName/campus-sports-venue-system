@@ -107,11 +107,19 @@ function adoptSession(deps: AuthDeps, refs: SessionRefs, session: LoginResponse)
   deps.storage.setItem(STORAGE_KEY, JSON.stringify({ token: session.token, expiresAt: session.expiresAt }))
 }
 
-// 恢复规则：没有或已过期 → 清除；否则带着令牌调用 getMe 校验并刷新用户，失败则清除。
+// 恢复失败时登录页要给出的提示（FE-2 审计 N-2）：过期与账号停用有文案；AUTH_REQUIRED（无效令牌）与网络失败静默清除。
+const RESTORE_NOTICE_CODES: readonly string[] = ['TOKEN_EXPIRED', 'ACCOUNT_DISABLED']
+
+// 恢复规则：没有 → 静默清除；本地判定已过期 → 清除并提示过期（不发请求）；否则带着令牌调用 getMe 校验并刷新用户，失败则清除并按错误码提示。
 async function restoreFromStorage(deps: AuthDeps, refs: SessionRefs): Promise<void> {
   const stored = readStored(deps.storage)
-  if (stored === null || stored.expiresAt <= deps.now()) {
+  if (stored === null) {
     clearSession(deps, refs)
+    return
+  }
+  if (stored.expiresAt <= deps.now()) {
+    clearSession(deps, refs)
+    refs.notice.value = messageFor('TOKEN_EXPIRED')
     return
   }
   refs.token.value = stored.token
@@ -126,7 +134,7 @@ async function restoreFromStorage(deps: AuthDeps, refs: SessionRefs): Promise<vo
     if (refs.token.value === stored.token) {
       const { code } = describeError(error)
       clearSession(deps, refs)
-      refs.notice.value = code === 'ACCOUNT_DISABLED' ? messageFor(code) : null
+      refs.notice.value = RESTORE_NOTICE_CODES.includes(code) ? messageFor(code) : null
     }
   }
 }

@@ -3,6 +3,7 @@ import { createPinia } from 'pinia'
 import { createMemoryHistory, type Router } from 'vue-router'
 
 import type { ApiClient } from '../../src/api/client'
+import type { UserProfile } from '../../src/api/types'
 import { createMockClient } from '../../src/api/mock/index'
 import { createSeedState, DEMO_PASSWORD } from '../../src/api/mock/seed'
 import type { MockState } from '../../src/api/mock/state'
@@ -37,6 +38,12 @@ export const STUB_VIEWS: RouteViews = {
   venueAdmin: STUB, sysAdmin: STUB, display: STUB,
 }
 
+// reload 时可覆盖的部分：store 看到的“现在”（与 mock 服务端时钟分开，用来制造“本地未过期、服务端已过期”），以及 getMe 的实现。
+export interface ReloadOptions {
+  now?: () => string
+  getMe?: () => Promise<UserProfile>
+}
+
 // 一次“页面加载”之间可以保留的东西：时钟、mock 数据（含令牌表）、storage。
 interface Persisted {
   clock: FakeClock
@@ -54,32 +61,40 @@ export interface AuthHarness {
   getMeCalls(): number
   // API 层此刻能读到的令牌（即 setTokenProvider 收到的函数的返回值）。
   tokenSeenByApi(): string | null
+  // 以指定账号登录的独立 mock 客户端（共享同一份 mock 数据与时钟，不经过被测 store）。
+  clientFor(username: string): Promise<ApiClient>
   // 以系统管理员身份停用账号（使用独立的 mock 客户端，不经过被测 store）。
   disableAccount(username: string): Promise<void>
   // 模拟刷新页面：新的 Pinia、store 与路由，沿用 storage、mock 数据与时钟。
-  reload(): AuthHarness
+  reload(options?: ReloadOptions): AuthHarness
 }
 
-function build(persisted: Persisted): AuthHarness {
+function build(persisted: Persisted, options: ReloadOptions = {}): AuthHarness {
   const { clock, state, storage } = persisted
   let provider: () => string | null = () => null
   const mock = createMockClient({ getToken: () => provider(), clock, state })
   let getMeCalls = 0
-  const api: ApiClient = { ...mock, getMe: () => { getMeCalls += 1; return mock.getMe() } }
+  const api: ApiClient = { ...mock, getMe: () => { getMeCalls += 1; return options.getMe === undefined ? mock.getMe() : options.getMe() } }
   const useAuth = defineAuthStore({
-    api, storage, now: () => clock.now(), setTokenProvider: (next) => { provider = next },
+    api, storage, now: options.now ?? (() => clock.now()), setTokenProvider: (next) => { provider = next },
   })
   const auth = useAuth(createPinia())
   const router = createAppRouter({ history: createMemoryHistory(), views: STUB_VIEWS, getAuth: () => auth })
+
+  async function clientFor(username: string): Promise<ApiClient> {
+    let token: string | null = null
+    const client = createMockClient({ getToken: () => token, clock, state })
+    token = (await client.login({ username, password: DEMO_PASSWORD })).token
+    return client
+  }
 
   return {
     clock, storage, auth, router, api,
     getMeCalls: () => getMeCalls,
     tokenSeenByApi: () => provider(),
+    clientFor,
     async disableAccount(username) {
-      let adminToken: string | null = null
-      const admin = createMockClient({ getToken: () => adminToken, clock, state })
-      adminToken = (await admin.login({ username: 'sysadmin', password: DEMO_PASSWORD })).token
+      const admin = await clientFor('sysadmin')
       const users = await admin.adminListUsers({ pageSize: 100 })
       const target = users.items.find((item) => item.username === username)
       if (target === undefined) {
@@ -87,7 +102,7 @@ function build(persisted: Persisted): AuthHarness {
       }
       await admin.adminUpdateUser(target.id, { status: 'DISABLED' })
     },
-    reload: () => build(persisted),
+    reload: (next) => build(persisted, next),
   }
 }
 
