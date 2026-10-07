@@ -22,6 +22,9 @@ export type ApiResult<T> =
   | { ok: true; value: T }
   | { ok: false; code: string; message: string; sessionEnded: boolean }
 
+// 把 callApi 绑定好 deps 的形式，供 store 与控制器接收（它们不直接持有 router）。凡需登录的调用都必须经它（FE-2 审计 N-1）。
+export type ApiCaller = <T>(request: () => Promise<T>) => Promise<ApiResult<T>>
+
 // 是登录状态失效类错误则处理并返回 true；其他错误原样返回 false，由调用方展示。
 // TOKEN_EXPIRED / AUTH_REQUIRED：回登录页并带返回地址；ACCOUNT_DISABLED：回登录页，不带返回地址（该账号无法再登录）。
 export async function handleAuthFailure(error: unknown, deps: SessionDeps): Promise<boolean> {
@@ -56,6 +59,7 @@ export function useSession() {
   return {
     handleAuthFailure: (error: unknown) => handleAuthFailure(error, deps),
     callApi: <T>(request: () => Promise<T>) => callApi(request, deps),
+    caller: (): ApiCaller => (request) => callApi(request, deps),
     logout: () => logoutToLogin(deps),
   }
 }
