@@ -2,6 +2,7 @@
 import { createPinia } from 'pinia'
 import { describe, expect, it } from 'vitest'
 
+import { mapNetworkError } from '../../src/api/http/transport'
 import { selectApi } from '../../src/api/index'
 import { defineAuthStore } from '../../src/stores/auth'
 import { createFakeClock, expectApiError } from '../api/support/harness'
@@ -226,6 +227,42 @@ describe('N-2 启动恢复：失败时的登录页提示', () => {
     await reloaded.auth.restore()
 
     expect(reloaded.auth.notice).toBeNull()
+  })
+})
+
+describe('N-8 启动恢复：网络失败与过期来源可区分', () => {
+  it('getMe 网络失败（ApiError status 0）：清除登录态与 storage，静默无提示', async () => {
+    const h = createAuthHarness()
+    await h.auth.login({ username: 'zhangsan', password: DEMO_PASSWORD })
+    const reloaded = h.reload({ getMe: () => Promise.reject(mapNetworkError(new Error('Failed to fetch'))) })
+    await reloaded.auth.restore()
+
+    expect(reloaded.getMeCalls()).toBe(1)
+    expect(reloaded.auth.isAuthenticated).toBe(false)
+    expect(reloaded.auth.token).toBeNull()
+    expect(reloaded.tokenSeenByApi()).toBeNull()
+    expect(reloaded.storage.items.size).toBe(0)
+    expect(reloaded.auth.notice).toBeNull()
+  })
+
+  it('本地过期不发请求，服务端过期发出一次请求；两者提示相同但调用次数不同', async () => {
+    const local = createAuthHarness()
+    await local.auth.login({ username: 'zhangsan', password: DEMO_PASSWORD })
+    local.clock.set(FUTURE)
+    const byLocal = local.reload()
+    await byLocal.auth.restore()
+
+    const remote = createAuthHarness()
+    await remote.auth.login({ username: 'zhangsan', password: DEMO_PASSWORD })
+    remote.clock.set(FUTURE)
+    const byServer = remote.reload({ now: () => START })
+    await byServer.auth.restore()
+
+    expect(byLocal.getMeCalls()).toBe(0)
+    expect(byServer.getMeCalls()).toBe(1)
+    expect(byLocal.auth.notice).toBe(byServer.auth.notice)
+    expect(byLocal.storage.items.size).toBe(0)
+    expect(byServer.storage.items.size).toBe(0)
   })
 })
 
