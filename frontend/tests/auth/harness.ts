@@ -61,6 +61,8 @@ export interface AuthHarness {
   getMeCalls(): number
   // API 层此刻能读到的令牌（即 setTokenProvider 收到的函数的返回值）。
   tokenSeenByApi(): string | null
+  // 以指定账号登录的独立 mock 客户端（共享同一份 mock 数据与时钟，不经过被测 store）。
+  clientFor(username: string): Promise<ApiClient>
   // 以系统管理员身份停用账号（使用独立的 mock 客户端，不经过被测 store）。
   disableAccount(username: string): Promise<void>
   // 模拟刷新页面：新的 Pinia、store 与路由，沿用 storage、mock 数据与时钟。
@@ -79,14 +81,20 @@ function build(persisted: Persisted, options: ReloadOptions = {}): AuthHarness {
   const auth = useAuth(createPinia())
   const router = createAppRouter({ history: createMemoryHistory(), views: STUB_VIEWS, getAuth: () => auth })
 
+  async function clientFor(username: string): Promise<ApiClient> {
+    let token: string | null = null
+    const client = createMockClient({ getToken: () => token, clock, state })
+    token = (await client.login({ username, password: DEMO_PASSWORD })).token
+    return client
+  }
+
   return {
     clock, storage, auth, router, api,
     getMeCalls: () => getMeCalls,
     tokenSeenByApi: () => provider(),
+    clientFor,
     async disableAccount(username) {
-      let adminToken: string | null = null
-      const admin = createMockClient({ getToken: () => adminToken, clock, state })
-      adminToken = (await admin.login({ username: 'sysadmin', password: DEMO_PASSWORD })).token
+      const admin = await clientFor('sysadmin')
       const users = await admin.adminListUsers({ pageSize: 100 })
       const target = users.items.find((item) => item.username === username)
       if (target === undefined) {
