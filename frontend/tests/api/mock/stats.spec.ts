@@ -167,23 +167,32 @@ describe('大屏与管理端口径一致（03 第 8 节末句）', () => {
   })
 })
 
-describe('场地实时状态（03 第 4.5 节）', () => {
-  const stateOf = async (h: Harness, resourceId: number) =>
-    (await h.api.getDisplaySummary()).resources.find((r) => r.resourceId === resourceId)?.state
+const stateOf = async (h: Harness, resourceId: number) =>
+  (await h.api.getDisplaySummary()).resources.find((r) => r.resourceId === resourceId)?.state
 
-  it('紧接着的下一时段有预约 → RESERVED；其他时段的预约不算', async () => {
+describe('场地实时状态（03 第 4.5 节）', () => {
+  it('开馆前（07:50）：不在任何派生时段内，08:00 的预约不触发 RESERVED → FREE', async () => {
     const h = createHarness()
     h.clock.set(`${TOMORROW}T07:50:00`)
-    expect(await stateOf(h, 1)).toBe('RESERVED')
+    expect(await stateOf(h, 1)).toBe('FREE')
     expect(await stateOf(h, 2)).toBe('FREE')
+    expect((await h.api.getDisplaySummary()).venues[0]?.resourcesReservedNow).toBe(0)
   })
 
-  it('当前时段有未签到预约 → RESERVED；其下一时段的预约同样 RESERVED', async () => {
+  it('当前时段有未签到预约 → RESERVED；紧邻的下一时段（开始 = 当前时段结束）的预约同样 RESERVED', async () => {
     const h = createHarness()
     h.clock.set(`${TOMORROW}T08:10:00`)
     expect(await stateOf(h, 1)).toBe('RESERVED')
     expect(await stateOf(h, 2)).toBe('RESERVED')
     expect((await h.api.getDisplaySummary()).venues[0]?.resourcesReservedNow).toBe(2)
+  })
+
+  it('当前时段之外且不紧邻的预约不算：08:10 时 11:00 的预约 → FREE', async () => {
+    const h = createHarness()
+    h.clock.set(`${TOMORROW}T08:10:00`)
+    await h.loginAs('lisi')
+    await book(h.api, 3, TOMORROW, '11:00')
+    expect(await stateOf(h, 3)).toBe('FREE')
   })
 
   it('已签到未签退 → IN_USE，计入 currentInUse 与 resourcesReservedNow', async () => {
@@ -206,5 +215,40 @@ describe('场地实时状态（03 第 4.5 节）', () => {
     expect(await stateOf(h, 5)).toBe('MAINTENANCE')
     await h.api.adminUpdateResource(5, { operationalStatus: 'DISABLED' })
     expect(await stateOf(h, 5)).toBe('DISABLED')
+  })
+})
+
+describe('开放窗口之间有空档（周二 08:00–09:30 与 11:00–12:30）', () => {
+  const gapHarness = async (): Promise<Harness> => {
+    const h = createHarness()
+    await h.loginAs('lisi')
+    await book(h.api, 3, TOMORROW, '11:00')
+    await h.loginAs('sysadmin')
+    await h.api.adminReplaceWeeklyRules(1, {
+      windows: [
+        { weekday: 2, openTime: '08:00', closeTime: '09:30' }, { weekday: 2, openTime: '11:00', closeTime: '12:30' },
+      ],
+      onExistingReservations: 'KEEP',
+    })
+    return h
+  }
+
+  it('在空档内（10:00）没有当前时段，也就没有下一时段：11:00 的预约 → FREE', async () => {
+    const h = await gapHarness()
+    h.clock.set(`${TOMORROW}T10:00:00`)
+    expect(await stateOf(h, 3)).toBe('FREE')
+  })
+
+  it('当前时段（08:00–09:30）结束时刻处没有时段：之后空档里的预约 → FREE；当前时段内的预约仍 RESERVED', async () => {
+    const h = await gapHarness()
+    h.clock.set(`${TOMORROW}T08:10:00`)
+    expect(await stateOf(h, 3)).toBe('FREE')
+    expect(await stateOf(h, 1)).toBe('RESERVED')
+  })
+
+  it('进入 11:00 时段后，该时段内的预约 → RESERVED', async () => {
+    const h = await gapHarness()
+    h.clock.set(`${TOMORROW}T11:10:00`)
+    expect(await stateOf(h, 3)).toBe('RESERVED')
   })
 })

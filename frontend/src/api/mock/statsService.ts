@@ -153,10 +153,13 @@ function liveState(ctx: MockContext, venue: VenueRecord, resource: ResourceRecor
   if (mine.some((record) => inUseNow(ctx, record))) {
     return 'IN_USE'
   }
-  // “当前时段或紧接着的下一时段”：下一时段 = 今天第一个开始时间晚于现在的派生时段。
-  const upcoming = deriveSlots(ctx.state, venue.id, today).find((slot) => slotSeconds(today, slot.startTime) > now)
+  // “当前时段或紧接着的下一时段”（规划裁决 F2）：当前时段 = 现在所在的派生时段 [start, end)；
+  // 下一时段 = 当日开始时间等于当前时段结束时刻的派生时段。不在任何派生时段内（开馆前、窗口间空档、闭馆后）
+  // 时没有当前时段，也就没有下一时段，之后的预约不触发 RESERVED。
+  const current = deriveSlots(ctx.state, venue.id, today)
+    .find((slot) => slotSeconds(today, slot.startTime) <= now && now < slotSeconds(today, slot.endTime))
   const reserved = mine.some((record) => record.checkInAt === null
-    && ((startSeconds(record) <= now && now < endSeconds(record)) || record.startTime === upcoming?.startTime))
+    && ((startSeconds(record) <= now && now < endSeconds(record)) || (current !== undefined && record.startTime === current.endTime)))
   return reserved ? 'RESERVED' : 'FREE'
 }
 
