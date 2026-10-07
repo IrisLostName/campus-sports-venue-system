@@ -83,6 +83,48 @@ describe('增大：先按编号从小到大重新启用，不足再追加', () =
   })
 })
 
+describe('编号 = 名称末尾的数字，不看 sortOrder（规划裁决 N-12）', () => {
+  const stateOf = async (h: Harness) =>
+    (await h.api.adminListResources(1)).map((r) => [r.name, r.operationalStatus] as const)
+
+  it('缩小：sortOrder 与名称编号不一致时，停用名称编号最大的场地', async () => {
+    const h = await asSysAdmin()
+    await h.api.adminUpdateResource(1, { sortOrder: 9 })   // 网球场1 的 sortOrder 最大，但名称编号最小
+    await h.api.adminSetResourceCount(1, { count: 3 })
+    expect(await stateOf(h)).toEqual([
+      ['网球场2', 'OPEN'], ['网球场3', 'OPEN'], ['网球场4', 'DISABLED'], ['网球场1', 'OPEN'],
+    ])
+  })
+
+  it('增大：按名称编号从小到大重新启用，不按 sortOrder', async () => {
+    const h = await asSysAdmin()
+    await h.api.adminSetResourceCount(1, { count: 0, onExistingReservations: 'KEEP' })
+    await h.api.adminUpdateResource(4, { sortOrder: 1 })   // 网球场4 排在最前，但名称编号最大
+    await h.api.adminUpdateResource(1, { sortOrder: 4 })
+    await h.api.adminSetResourceCount(1, { count: 2 })
+    expect((await stateOf(h)).filter(([, status]) => status === 'OPEN').map(([name]) => name).sort()).toEqual(['网球场1', '网球场2'])
+  })
+
+  it('名称不匹配“前缀 + 数字”的场地排在最后并按 id 排序：缩小时先被停用，增大时最后被启用', async () => {
+    const h = await asSysAdmin()
+    await h.api.adminUpdateResource(2, { name: '备用场' })   // id 2
+    await h.api.adminUpdateResource(3, { name: '看台场' })   // id 3
+    // 次序：网球场1、网球场4、备用场（id 2）、看台场（id 3）
+    await h.api.adminSetResourceCount(1, { count: 3, onExistingReservations: 'KEEP' })
+    expect(await stateOf(h)).toEqual([
+      ['网球场1', 'OPEN'], ['备用场', 'OPEN'], ['看台场', 'DISABLED'], ['网球场4', 'OPEN'],
+    ])
+    await h.api.adminSetResourceCount(1, { count: 2, onExistingReservations: 'KEEP' })
+    expect(await stateOf(h)).toEqual([
+      ['网球场1', 'OPEN'], ['备用场', 'DISABLED'], ['看台场', 'DISABLED'], ['网球场4', 'OPEN'],
+    ])
+    await h.api.adminSetResourceCount(1, { count: 3 })
+    expect(await stateOf(h)).toEqual([
+      ['网球场1', 'OPEN'], ['备用场', 'OPEN'], ['看台场', 'DISABLED'], ['网球场4', 'OPEN'],
+    ])
+  })
+})
+
 describe('校验、预检与留痕', () => {
   it.each([[-1], [51], [1.5]])('count = %s → VALIDATION_ERROR；0 与 50 合法', async (count) => {
     const h = await asSysAdmin()

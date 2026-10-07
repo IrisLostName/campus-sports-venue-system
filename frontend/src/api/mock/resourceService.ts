@@ -96,17 +96,36 @@ function planCreation(
   }))
 }
 
+// 12 第 5.5 节的“编号”= 名称“前缀N”中末尾的数字 N（规划裁决 N-12），不看 sortOrder。
+function nameNumber(resource: ResourceRecord): number | null {
+  const digits = /\d+$/.exec(resource.name)
+  return digits === null ? null : Number(digits[0])
+}
+
+// 编号从小到大；名称不是“前缀 + 数字”的场地排在最后，彼此按 id 排序；编号相同按 id。
+function byNameNumber(a: ResourceRecord, b: ResourceRecord): number {
+  const left = nameNumber(a)
+  const right = nameNumber(b)
+  if (left !== null && right !== null) {
+    return left - right || a.id - b.id
+  }
+  if (left !== null || right !== null) {
+    return left === null ? 1 : -1
+  }
+  return a.id - b.id
+}
+
 // 12 第 5.5 节：count 指状态非 DISABLED 的场地数。增大：先按编号从小到大重新启用被停用的场地，不足再追加；
 // 缩小：把编号最大的多余场地置 DISABLED。
 function planCount(existing: ResourceRecord[], request: SetResourceCountRequest): CountChange {
   const active = existing.filter((resource) => resource.operationalStatus !== 'DISABLED')
   const change: CountChange = { toEnable: [], toDisable: [], toCreate: [] }
   if (request.count < active.length) {
-    change.toDisable = [...active].sort((a, b) => b.sortOrder - a.sortOrder || b.id - a.id).slice(0, active.length - request.count)
+    change.toDisable = [...active].sort((a, b) => byNameNumber(b, a)).slice(0, active.length - request.count)
     return change
   }
   const needed = request.count - active.length
-  change.toEnable = existing.filter((resource) => resource.operationalStatus === 'DISABLED').slice(0, needed)
+  change.toEnable = existing.filter((resource) => resource.operationalStatus === 'DISABLED').sort(byNameNumber).slice(0, needed)
   const remaining = needed - change.toEnable.length
   change.toCreate = remaining > 0 ? planCreation(existing, request, remaining) : []
   return change
