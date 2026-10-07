@@ -4,6 +4,7 @@ import type { RouteLocationRaw } from 'vue-router'
 
 import type { Role } from '../api/types'
 import { DOCK_ITEMS } from './dock'
+import { PATHS } from './paths'
 
 // public：无需登录；guest：登录页（已登录则回到本角色入口）；fallback：未知路径；其余为所需角色。
 export type RouteAccess = Role | 'public' | 'guest' | 'fallback'
@@ -15,9 +16,9 @@ declare module 'vue-router' {
 }
 
 const ENTRY_PATHS: Record<Role, string> = {
-  USER: '/',
-  VENUE_ADMIN: '/venue-admin',
-  SYS_ADMIN: '/sys-admin',
+  USER: PATHS.home,
+  VENUE_ADMIN: PATHS.venueAdmin,
+  SYS_ADMIN: PATHS.sysAdmin,
 }
 
 const USER_PATHS = DOCK_ITEMS.map((item) => item.path)
@@ -27,7 +28,7 @@ export function entryPathOf(role: Role): string {
 }
 
 export function loginLocation(redirect?: string): RouteLocationRaw {
-  return redirect === undefined ? { path: '/login' } : { path: '/login', query: { redirect } }
+  return redirect === undefined ? { path: PATHS.login } : { path: PATHS.login, query: { redirect } }
 }
 
 function pathOf(url: string): string {
@@ -40,7 +41,7 @@ function isUnder(path: string, base: string): boolean {
 
 export function roleOwnsPath(role: Role, path: string): boolean {
   if (role === 'USER') {
-    return USER_PATHS.some((base) => (base === '/' ? path === '/' : isUnder(path, base)))
+    return USER_PATHS.some((base) => (base === PATHS.home ? path === PATHS.home : isUnder(path, base)))
   }
   return isUnder(path, ENTRY_PATHS[role])
 }
