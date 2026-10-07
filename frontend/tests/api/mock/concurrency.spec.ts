@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { createMockClient } from '../../../src/api/mock/index'
-import { insertReservation } from '../../../src/api/mock/reservationRules'
+import { checkCreatable, insertReservation, stepSlotFree } from '../../../src/api/mock/reservationRules'
 import { isActiveStatus } from '../../../src/api/mock/slotDerivation'
 import { ApiError } from '../../../src/api/errors'
 import type { ReservationStatus } from '../../../src/api/types'
@@ -86,6 +86,52 @@ describe('插入层的唯一性检查（绕过第 8 步直接插入）', () => {
     record.status = status
     expect(insertReservation(h.context, { ...draft, userId: 2 }).userId).toBe(2)
     expect(activeAtSlot(h, SLOT.resourceId, SLOT.serviceDate, SLOT.startTime)).toBe(1)
+  })
+})
+
+// 第 8 步（docs/10 第 1 节）是插入前的前置检查，与插入层的检查在 API 层面等价，必须单独证明它存在：
+// 这里不经过 insertReservation，直接调用第 8 步。
+describe('第 8 步前置检查（不经过插入层）', () => {
+  const SEED_SLOT = { resourceId: 1, serviceDate: TOMORROW, startTime: '08:00' }   // 种子：zhangsan 的预约
+
+  const wangwu = (h: Harness) => {
+    const user = h.context.state.users.find((candidate) => candidate.username === 'wangwu')
+    if (user === undefined) {
+      throw new Error('种子缺少 wangwu')
+    }
+    return user
+  }
+
+  it('stepSlotFree：时段已有有效预约 → SLOT_TAKEN', () => {
+    const h = createHarness()
+    expect(() => stepSlotFree(h.context, SEED_SLOT.resourceId, SEED_SLOT.serviceDate, SEED_SLOT.startTime)).toThrow(
+      expect.objectContaining({ code: 'SLOT_TAKEN', status: 409 }),
+    )
+  })
+
+  it('stepSlotFree：时段空闲，或原预约已取消 → 不抛错', () => {
+    const h = createHarness()
+    expect(() => stepSlotFree(h.context, 1, TOMORROW, '11:00')).not.toThrow()
+    const seeded = h.context.state.reservations.find((r) => r.resourceId === 1 && r.startTime === '08:00')
+    if (seeded === undefined) {
+      throw new Error('种子缺少明天 08:00 的预约')
+    }
+    seeded.status = 'CANCELLED'
+    expect(() => stepSlotFree(h.context, SEED_SLOT.resourceId, SEED_SLOT.serviceDate, SEED_SLOT.startTime)).not.toThrow()
+  })
+
+  it('checkCreatable：第 2–7 步均通过、时段已被占用 → SLOT_TAKEN（未调用 insertReservation）', () => {
+    const h = createHarness()
+    const before = h.context.state.reservations.length
+    expect(() => checkCreatable(h.context, wangwu(h), SEED_SLOT)).toThrow(
+      expect.objectContaining({ code: 'SLOT_TAKEN', status: 409 }),
+    )
+    expect(h.context.state.reservations).toHaveLength(before)
+  })
+
+  it('checkCreatable：时段空闲时通过（对照：上一条的 SLOT_TAKEN 来自占用而非其他步骤）', () => {
+    const h = createHarness()
+    expect(() => checkCreatable(h.context, wangwu(h), { ...SEED_SLOT, startTime: '11:00' })).not.toThrow()
   })
 })
 
