@@ -15,5 +15,13 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["tests/**/*.ts", "src/api/**/*.ts", "src/utils/**/*.ts"]
+  "include": [
+    "tests/**/*.ts",
+    "src/api/**/*.ts",
+    "src/utils/**/*.ts",
+    "src/stores/**/*.ts",
+    "src/composables/**/*.ts",
+    "src/router/**/*.ts"
+  ],
+  "exclude": ["src/router/index.ts"]
 }
