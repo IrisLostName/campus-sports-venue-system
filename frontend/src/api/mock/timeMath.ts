@@ -11,7 +11,8 @@ export function isValidDate(value: unknown): value is string {
   if (typeof value !== 'string' || !DATE_PATTERN.test(value)) {
     return false
   }
-  return new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) === value
+  const parsed = new Date(`${value}T00:00:00Z`)
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value
 }
 
 export function isValidTime(value: unknown): value is string {
