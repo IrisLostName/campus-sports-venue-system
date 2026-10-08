@@ -22,7 +22,10 @@ withDefaults(defineProps<{
     class="ui-list-row"
     :type="tag === 'button' ? 'button' : undefined"
   >
-    <span class="main">
+    <component
+      :is="tag === 'button' ? 'span' : 'div'"
+      class="main"
+    >
       <slot>
         <span class="title">{{ title }}</span>
         <span
@@ -30,7 +33,7 @@ withDefaults(defineProps<{
           class="subtitle"
         >{{ subtitle }}</span>
       </slot>
-    </span>
+    </component>
     <slot name="value">
       <span
         v-if="value !== undefined"
@@ -66,6 +69,10 @@ withDefaults(defineProps<{
   color: var(--color-text);
   font: var(--font-body);
   text-align: left;
+}
+
+.ui-list-row + .ui-list-row {
+  border-top: 1px solid var(--color-separator);
 }
 
 button.ui-list-row {

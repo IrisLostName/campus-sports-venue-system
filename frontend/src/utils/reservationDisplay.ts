@@ -147,6 +147,7 @@ export interface ReservationSummary {
   place: string
   userDisplayName: string
   statusLabel: string
+  displayStatus: DisplayStatus   // 只供页面按 17 第 6 节选色调，不参与任何判断
 }
 
 export function buildSummary(reservation: Reservation): ReservationSummary {
@@ -157,5 +158,6 @@ export function buildSummary(reservation: Reservation): ReservationSummary {
     place: placeOf(reservation),
     userDisplayName: reservation.userDisplayName,
     statusLabel: displayStatusLabel(reservation.displayStatus),
+    displayStatus: reservation.displayStatus,
   }
 }

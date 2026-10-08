@@ -10,7 +10,7 @@ const SUMMARY = {
   kind: 'summary',
   summary: {
     id: 1, dateText: '2026-10-13 周二', timeText: '08:00–09:30', place: '网球馆 · 网球场1',
-    userDisplayName: '张三', statusLabel: '待使用',
+    userDisplayName: '张三', statusLabel: '待使用', displayStatus: 'UPCOMING',
   },
   moreCount: 0,
 }
