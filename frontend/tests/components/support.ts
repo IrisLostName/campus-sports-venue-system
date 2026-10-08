@@ -1,5 +1,6 @@
 // 组件测试脚手架：沿用 FE-2 认证脚手架的 Pinia + 内存路由 + mock ApiClient（注入时钟），再把它们装进被挂载的组件。
-// 页面里的 useAuthStore() 与脚手架的 store 同为 id 'auth'，Pinia 会返回同一个实例，所以页面用的就是脚手架里已登录（或已恢复失败）的 store。
+// 页面必须挂载到脚手架 store 所属的同一个 Pinia 实例，页面里的 useAuthStore() 才会返回脚手架的 store（已登录或已恢复失败）；
+// store 按 Pinia 实例保存，仅靠相同的 id 'auth' 并不会命中同一个 store，这正是下面要用 auth._p 的原因。
 import { mount, type VueWrapper } from '@vue/test-utils'
 import type { Component } from 'vue'
 import type { Router } from 'vue-router'
