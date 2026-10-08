@@ -95,6 +95,7 @@ const INVARIANT: ReadonlyArray<readonly [token: string, value: string]> = [
   ['--z-sheet', '30'],
   ['--press-scale', '0.97'],
   ['--slide-distance', '24px'],
+  ['--phone-width', '393px'],
 ]
 
 // 第 4、5 节的令牌：这里只核对在 :root 定义（取值由字号、圆角、间距、动效各节的表给出）。

@@ -25,7 +25,7 @@ import ClientDock from '../../components/ClientDock.vue'
 .phone {
   position: relative;
   width: 100%;
-  max-width: 393px;
+  max-width: var(--phone-width);
   height: 100vh;
   height: 100dvh;
   overflow: hidden;

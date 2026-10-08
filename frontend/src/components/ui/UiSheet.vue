@@ -78,7 +78,7 @@ const titleId = useId()
 }
 
 .sheet--bottom {
-  max-width: 393px;
+  max-width: var(--phone-width);
   padding: var(--space-5) var(--space-4) calc(var(--space-4) + env(safe-area-inset-bottom));
   border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
 }
