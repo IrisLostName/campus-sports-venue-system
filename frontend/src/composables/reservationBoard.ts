@@ -112,7 +112,7 @@ function createBoardActions(deps: BoardDeps, data: BoardData) {
 
   async function confirmCancel(): Promise<void> {
     const id = cancelTargetId.value
-    if (id === null || isBusy.value) {
+    if (id === null) {
       return
     }
     const reason = cancelReason.value.trim()
@@ -120,9 +120,9 @@ function createBoardActions(deps: BoardDeps, data: BoardData) {
     await perform(id, () => deps.api.cancelReservation(id, reason === '' ? {} : { reason }))
   }
 
-  // 页面上的按钮统一从这里进入：只有当前卡片确实提供该动作时才执行。
+  // 页面上的按钮统一从这里进入：只有当前卡片确实提供该动作时才执行。防重复点击只在 perform 里守卫一次（FE-3 N2）。
   async function trigger(action: ReservationAction, id: number): Promise<void> {
-    if (!isOffered(id, action) || isBusy.value) {
+    if (!isOffered(id, action)) {
       return
     }
     if (action === 'CANCEL') {

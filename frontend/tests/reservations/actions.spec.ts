@@ -2,6 +2,8 @@
 import { describe, expect, it } from 'vitest'
 
 import type { ApiClient } from '../../src/api/client'
+import type { Reservation } from '../../src/api/types'
+import { deferred } from '../display/support'
 import { at, loginAs, type UserContext } from './harness'
 
 // 加载“预约”页；timestamp 之后才进入页面（07:45 起可签到）。
@@ -160,6 +162,45 @@ describe('B3 操作进行中不可重复点击', () => {
     await Promise.all([first, second])
 
     expect(calls).toBe(1)
+    expect(board.isBusy.value).toBe(false)
+  })
+
+  it('FE-3 N2 连点“确认取消”：只发出一次取消请求（守卫只在 perform）', async () => {
+    const ctx = await openAt()
+    let calls = 0
+    const counting: ApiClient = { ...ctx.h.api, cancelReservation: (id, request) => { calls += 1; return ctx.h.api.cancelReservation(id, request) } }
+    const board = ctx.reservationBoard(counting)
+    await board.load()
+    await board.trigger('CANCEL', 1)
+
+    const first = board.confirmCancel()
+    const second = board.confirmCancel()
+    await Promise.all([first, second])
+
+    expect(calls).toBe(1)
+    expect(board.isBusy.value).toBe(false)
+    expect(board.cards.value[0]).toMatchObject({ id: 1, statusLabel: '已取消' })
+  })
+
+  it('FE-3 N2 取消进行中再确认另一条的取消：不会发出第二个请求', async () => {
+    const ctx = await openAt()
+    await ctx.h.api.createReservation({ resourceId: 2, serviceDate: '2026-10-13', startTime: '11:00' })
+    const pending = deferred<Reservation>()
+    const requested: number[] = []
+    const slow: ApiClient = { ...ctx.h.api, cancelReservation: (id) => { requested.push(id); return pending.promise } }
+    const board = ctx.reservationBoard(slow)
+    await board.load()
+
+    await board.trigger('CANCEL', 1)
+    const first = board.confirmCancel()
+    await board.trigger('CANCEL', 3)
+    await board.confirmCancel()
+    expect(requested).toEqual([1])
+    expect(board.busyId.value).toBe(1)
+
+    pending.resolve(await ctx.h.api.cancelReservation(1, {}))
+    await first
+    expect(requested).toEqual([1])
     expect(board.isBusy.value).toBe(false)
   })
 })
