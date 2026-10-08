@@ -7,6 +7,7 @@ import { api } from '../api/index'
 import type { BookingRules, Reservation } from '../api/types'
 import { useReferenceStore, type ReferenceStore } from '../stores/reference'
 import { buildCard, type ReservationAction } from '../utils/reservationDisplay'
+import { createReservationList } from './reservationList'
 import { useSession, type ApiCaller } from './session'
 
 export interface BoardDeps {
@@ -15,31 +16,15 @@ export interface BoardDeps {
   reference: ReferenceStore
 }
 
-export type BoardPhase = 'idle' | 'loading' | 'ready' | 'failed'
-
-// 列表数据：本人 CURRENT 预约与 BookingRules。
+// 列表数据：本人 CURRENT 预约（共用列表组合函数）与 BookingRules。
 function createBoardData(deps: BoardDeps) {
-  const items = ref<Reservation[]>([])
-  const phase = ref<BoardPhase>('idle')
-  const loadError = ref<string | null>(null)
+  const list = createReservationList(deps, 'CURRENT')
   const rulesError = ref<string | null>(null)
 
   const rules = computed<BookingRules | null>(() => deps.reference.bookingRules)
-  const cards = computed(() => items.value.map((item) => buildCard(item, rules.value)))
+  const cards = computed(() => list.items.value.map((item) => buildCard(item, rules.value)))
   // 没有 CURRENT 预约是空状态（订场入口在页面里）。
-  const isEmpty = computed(() => phase.value === 'ready' && items.value.length === 0)
-
-  async function fetchList(): Promise<void> {
-    const result = await deps.call(() => deps.api.listMyReservations({ scope: 'CURRENT' }))
-    if (result.ok) {
-      items.value = result.value.items
-      loadError.value = null
-      phase.value = 'ready'
-    } else if (!result.sessionEnded) {
-      loadError.value = result.message
-      phase.value = items.value.length > 0 ? 'ready' : 'failed'
-    }
-  }
+  const isEmpty = computed(() => list.phase.value === 'ready' && list.items.value.length === 0)
 
   async function fetchRules(): Promise<void> {
     const result = await deps.reference.loadBookingRules(deps.call)
@@ -47,15 +32,13 @@ function createBoardData(deps: BoardDeps) {
   }
 
   async function load(): Promise<void> {
-    phase.value = 'loading'
-    await Promise.all([fetchList(), fetchRules()])
+    await Promise.all([list.load(), fetchRules()])
   }
 
-  function replace(updated: Reservation): void {
-    items.value = items.value.map((item) => (item.id === updated.id ? updated : item))
+  return {
+    items: list.items, phase: list.phase, loadError: list.error, rulesError, rules, cards, isEmpty,
+    fetchList: list.refresh, load, replace: list.replace,
   }
-
-  return { items, phase, loadError, rulesError, rules, cards, isEmpty, fetchList, load, replace }
 }
 
 type BoardData = ReturnType<typeof createBoardData>

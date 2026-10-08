@@ -76,6 +76,11 @@ export function formatTimestamp(timestamp: string): string {
   return timestamp.slice(0, 'YYYY-MM-DDTHH:mm'.length).replace('T', ' ')
 }
 
+// 场馆 · 场地：卡片、首页摘要与订场成功结果共用同一个写法。
+export function placeOf(reservation: Pick<Reservation, 'venueName' | 'resourceName'>): string {
+  return `${reservation.venueName} · ${reservation.resourceName}`
+}
+
 export interface ReservationCard {
   id: number
   place: string                  // 场馆 · 场地
@@ -99,7 +104,7 @@ function nonEmpty(text: string | null): string | null {
 export function buildCard(reservation: Reservation, rules: BookingRules | null): ReservationCard {
   return {
     id: reservation.id,
-    place: `${reservation.venueName} · ${reservation.resourceName}`,
+    place: placeOf(reservation),
     dateText: formatServiceDate(reservation.serviceDate),
     timeText: formatTimeRange(reservation),
     userDisplayName: reservation.userDisplayName,
@@ -144,7 +149,7 @@ export function buildSummary(reservation: Reservation): ReservationSummary {
     id: reservation.id,
     dateText: formatServiceDate(reservation.serviceDate),
     timeText: formatTimeRange(reservation),
-    place: `${reservation.venueName} · ${reservation.resourceName}`,
+    place: placeOf(reservation),
     userDisplayName: reservation.userDisplayName,
     statusLabel: displayStatusLabel(reservation.displayStatus),
   }

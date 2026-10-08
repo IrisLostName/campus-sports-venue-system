@@ -4,16 +4,15 @@ import { computed, ref } from 'vue'
 
 import type { ApiClient } from '../api/client'
 import { api } from '../api/index'
-import type { Announcement, Reservation } from '../api/types'
+import type { Announcement } from '../api/types'
 import { buildAnnouncement, buildSummary, type AnnouncementItem, type ReservationSummary } from '../utils/reservationDisplay'
+import { createReservationList } from './reservationList'
 import { useSession, type ApiCaller } from './session'
 
 export interface HomeDeps {
   api: ApiClient
   call: ApiCaller
 }
-
-export type HomePhase = 'idle' | 'loading' | 'ready' | 'failed'
 
 export type HomeSection =
   | { kind: 'summary'; summary: ReservationSummary; moreCount: number }
@@ -22,10 +21,7 @@ export type HomeSection =
   | { kind: 'announcements' }
 
 export function createHomeBoard(deps: HomeDeps) {
-  const reservations = ref<Reservation[]>([])
-  const total = ref(0)
-  const phase = ref<HomePhase>('idle')
-  const reservationError = ref<string | null>(null)
+  const list = createReservationList(deps, 'CURRENT')
   const announcements = ref<Announcement[]>([])
   const announcementsLoaded = ref(false)
   const announcementError = ref<string | null>(null)
@@ -33,31 +29,19 @@ export function createHomeBoard(deps: HomeDeps) {
   const announcementItems = computed<AnnouncementItem[]>(() => announcements.value.map(buildAnnouncement))
 
   // CURRENT 按开始时间升序（docs/12 第 5.3 节），第一条就是最近一条；其余的数量以 total 为准。
+  const phase = list.phase
   const sections = computed<HomeSection[]>(() => {
     if (phase.value === 'idle' || phase.value === 'loading') {
       return []
     }
-    const first = reservations.value[0]
+    const first = list.items.value[0]
     const head: HomeSection = phase.value === 'failed'
-      ? { kind: 'reservationError', message: reservationError.value ?? '' }
+      ? { kind: 'reservationError', message: list.error.value ?? '' }
       : first === undefined
         ? { kind: 'empty' }
-        : { kind: 'summary', summary: buildSummary(first), moreCount: Math.max(total.value - 1, 0) }
+        : { kind: 'summary', summary: buildSummary(first), moreCount: Math.max(list.total.value - 1, 0) }
     return [head, { kind: 'announcements' }]
   })
-
-  async function loadReservations(): Promise<void> {
-    const result = await deps.call(() => deps.api.listMyReservations({ scope: 'CURRENT' }))
-    if (result.ok) {
-      reservations.value = result.value.items
-      total.value = result.value.total
-      reservationError.value = null
-      phase.value = 'ready'
-    } else if (!result.sessionEnded) {
-      reservationError.value = result.message
-      phase.value = 'failed'
-    }
-  }
 
   async function loadAnnouncements(): Promise<void> {
     const result = await deps.call(() => deps.api.listAnnouncements({ scope: 'SYSTEM' }))
@@ -71,8 +55,7 @@ export function createHomeBoard(deps: HomeDeps) {
   }
 
   async function load(): Promise<void> {
-    phase.value = 'loading'
-    await Promise.all([loadReservations(), loadAnnouncements()])
+    await Promise.all([list.load(), loadAnnouncements()])
   }
 
   return { phase, sections, announcementItems, announcementsLoaded, announcementError, load }
