@@ -64,7 +64,7 @@ for (const file of mdFiles) {
 
 // ---- 2. 退役文件与私人邮箱 ----
 const retired = /CODEX_HANDOFF|RESTRUCTURE_(PLAN|BLUEPRINT|LOG)|(^|[^\w/])TODO\.md/;
-const privateMail = /[\w.+-]+@(?!users\.noreply\.github\.com|github\.com)[\w-]+\.[\w.-]+/; // 只允许 GitHub noreply 邮箱与 git@github.com 形式的 SSH 地址
+const privateMail = /[\w.+-]+@(?!users\.noreply\.github\.com|github\.com)(?:[\w-]+\.)+[A-Za-z]{2,}\b/; // 只允许 GitHub noreply 邮箱与 git@github.com 形式的 SSH 地址
 for (const file of mdFiles) {
   readFileSync(file, 'utf8').split('\n').forEach((text, i) => {
     if (retired.test(text) && !file.endsWith(`${sep}16-quality-gates-and-audit.md`)) fail(file, i + 1, '引用了已退役文件');
