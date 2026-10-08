@@ -1,6 +1,6 @@
 // 管理端各 board 共用的“调用 + 忙碌 + 错误文案”小工具：所有调用都经 ApiCaller（FE-5 X1）。
 // 登录状态失效（sessionEnded）时已回到登录页，不再展示错误。
-import { ref } from 'vue'
+import { ref, type Ref } from 'vue'
 
 import type { ApiClient } from '../api/client'
 import type { ApiCaller, ApiResult } from './session'
@@ -11,9 +11,9 @@ export interface AdminDeps {
   call: ApiCaller
 }
 
-export function createAdminRunner(call: ApiCaller) {
+// error 可由页面传入，让同一页面的几个 board 共用一条错误提示。
+export function createAdminRunner(call: ApiCaller, error: Ref<string | null> = ref<string | null>(null)) {
   const busy = ref(false)
-  const error = ref<string | null>(null)
 
   async function run<T>(request: () => Promise<T>): Promise<ApiResult<T>> {
     busy.value = true

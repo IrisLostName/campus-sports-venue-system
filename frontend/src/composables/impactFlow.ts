@@ -1,7 +1,7 @@
 // 影响检查流程（docs/12 第 5.5 节，docs/03 第 6 节；FE-5 P4）：所有受影响的变更共用这一个组合函数 + ImpactDialog。
 // 先 dryRun 预检；无受影响预约时普通确认后直接提交（不带 onExistingReservations）；
 // 有受影响预约时必须明确选择 KEEP 或 CANCEL（无默认），CANCEL 须填原因；提交时若再收到 IMPACT_CONFIRMATION_REQUIRED，用 details.impact 重新打开。
-import { ref } from 'vue'
+import { ref, type Ref } from 'vue'
 
 import { ApiError } from '../api/errors'
 import type { ImpactChangeResponse, ImpactReport, OnExisting } from '../api/types'
@@ -86,11 +86,17 @@ function makePending<T>(change: ImpactChange<T>, deps: { call: ApiCaller }): Pen
   }
 }
 
-export function createImpactFlow(deps: { call: ApiCaller }) {
+export interface ImpactFlowDeps {
+  call: ApiCaller
+  error?: Ref<string | null>      // 页面可传入共用的错误 / 提示，使同一页面的几个 board 共用一条提示
+  notice?: Ref<string | null>
+}
+
+export function createImpactFlow(deps: ImpactFlowDeps) {
   const dialog = ref<ImpactDialogState | null>(null)
   const checking = ref(false)
-  const error = ref<string | null>(null)
-  const notice = ref<string | null>(null)
+  const error = deps.error ?? ref<string | null>(null)
+  const notice = deps.notice ?? ref<string | null>(null)
   let pending: Pending | null = null
 
   function dismiss(): void {

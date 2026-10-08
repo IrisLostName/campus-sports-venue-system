@@ -73,3 +73,16 @@ export function buttonIn(wrapper: Pick<DOMWrapper<Element>, 'findAll'>, text: st
   }
   return found
 }
+
+// 按标签文字找到 UiTextField 里的控件（input / select / textarea）。
+export function fieldByLabel(wrapper: Pick<DOMWrapper<Element>, 'findAll'>, label: string): DOMWrapper<Element> {
+  const holder = wrapper.findAll('label.label').find((node) => node.text().startsWith(label))
+  if (holder === undefined) {
+    throw new Error(`找不到标签“${label}”`)
+  }
+  const control = holder.find('input, select, textarea')
+  if (!control.exists()) {
+    throw new Error(`标签“${label}”里没有控件`)
+  }
+  return control
+}

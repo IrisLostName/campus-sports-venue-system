@@ -1,6 +1,7 @@
 // 场地与开放规则的展示口径（FE-5 P3、P5）。
 // 状态中文名与色调见 docs/17 第 6 节“ResourceStatus（管理端）”；状态按钮依据 docs/03 第 6 节状态图。
-import type { ResourceStatus, ResourceType } from '../api/types'
+import type { Resource, ResourceStatus, ResourceType } from '../api/types'
+import { toneForResourceStatus, type Tone } from './statusTone'
 
 export const RESOURCE_STATUS_LABELS: Record<ResourceStatus, string> = {
   OPEN: '开放',
@@ -66,3 +67,38 @@ export const WHOLE_VENUE_TEXT = '整馆'
 export const RESOURCE_NAME_MAX_LENGTH = 50
 export const NAME_PREFIX_MAX_LENGTH = 40
 export const RESOURCE_COUNT_MAX = 50
+
+export interface ResourceRowView {
+  id: number
+  name: string
+  typeLabel: string
+  statusLabel: string
+  tone: Tone
+  actions: StatusAction[]
+}
+
+// 场地列表（含 DISABLED）按接口顺序（sortOrder）显示；状态按钮只依据 operationalStatus。
+export function buildResourceRows(resources: readonly Resource[]): ResourceRowView[] {
+  return resources.map((resource) => ({
+    id: resource.id,
+    name: resource.name,
+    typeLabel: RESOURCE_TYPE_LABELS[resource.resourceType],
+    statusLabel: RESOURCE_STATUS_LABELS[resource.operationalStatus],
+    tone: toneForResourceStatus(resource.operationalStatus),
+    actions: statusActionsFor(resource.operationalStatus),
+  }))
+}
+
+export const NAME_REQUIRED_TEXT = '请填写场地名称'
+export const COUNT_INVALID_TEXT = `场地数量须为 0 到 ${RESOURCE_COUNT_MAX} 的整数`
+export const EMPTY_VENUE_COUNT_TEXT = '该场馆还没有场地，请填写名称前缀和场地类型'
+
+// 场地数量：0–50 的整数。
+export function parseCount(text: string): number | null {
+  const trimmed = text.trim()
+  if (!/^\d+$/.test(trimmed)) {
+    return null
+  }
+  const value = Number(trimmed)
+  return value <= RESOURCE_COUNT_MAX ? value : null
+}
