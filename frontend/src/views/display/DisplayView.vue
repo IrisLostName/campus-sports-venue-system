@@ -6,6 +6,7 @@ import DisplayMetrics from '../../components/display/DisplayMetrics.vue'
 import DisplayNotices from '../../components/display/DisplayNotices.vue'
 import DisplayTrend from '../../components/display/DisplayTrend.vue'
 import DisplayVenueGroup from '../../components/display/DisplayVenueGroup.vue'
+import UiBanner from '../../components/ui/UiBanner.vue'
 import { useDisplayBoard } from '../../composables/displayPolling'
 import { presentBoard } from '../../utils/displayModel'
 
@@ -14,7 +15,11 @@ const board = computed(() => presentBoard(state.value))
 </script>
 
 <template>
-  <main class="display">
+  <!-- data-theme="dark"：运营大屏固定深色，不随系统设置变化（docs/17 第 7 节）。 -->
+  <main
+    class="display"
+    data-theme="dark"
+  >
     <header class="top">
       <h1 class="title">
         运营大屏
@@ -32,22 +37,24 @@ const board = computed(() => presentBoard(state.value))
     >
       正在加载数据…
     </p>
-    <p
+    <UiBanner
       v-else-if="board.kind === 'error'"
       class="state error"
+      tone="danger"
       role="alert"
     >
       {{ board.message }}
-    </p>
+    </UiBanner>
 
     <template v-else>
-      <p
+      <UiBanner
         v-if="board.staleNotice !== null"
         class="stale"
+        tone="warning"
         role="alert"
       >
         {{ board.staleNotice }}
-      </p>
+      </UiBanner>
       <DisplayMetrics :metrics="board.view.metrics" />
       <div class="body">
         <div class="venues">
@@ -67,20 +74,18 @@ const board = computed(() => presentBoard(state.value))
 </template>
 
 <style scoped>
+/* 字号随屏幕宽度缩放（em），底线 12px = --font-caption；各处的 em 倍数都不低于 1，所以最小字号不会低于 12px。 */
 .display {
-  --display-panel: #172033;
-  --display-tile: #1f2b42;
-  --display-border: #2c3a55;
-  --display-muted: #9fb0c8;
-
   display: flex;
   flex-direction: column;
   gap: 1em;
   min-height: 100vh;
   padding: 1.2em 1.8em;
+  background: var(--canvas-glow), var(--color-canvas);
+  color: var(--color-text);
+  font-family: var(--font-family);
   font-size: clamp(12px, 0.85vw, 18px);
-  color: #eaf0fa;
-  background: #0d1424;
+  font-variant-numeric: tabular-nums;
 }
 
 .top {
@@ -91,33 +96,23 @@ const board = computed(() => presentBoard(state.value))
 }
 
 .title {
-  margin: 0;
   font-size: 2.2em;
+  font-weight: 700;
 }
 
 .updated {
+  color: var(--color-text-secondary);
   font-size: 1.1em;
-  color: var(--display-muted);
 }
 
 .state {
-  margin: 0;
+  color: var(--color-text-secondary);
   font-size: 1.6em;
-  color: var(--display-muted);
 }
 
-.state.error {
-  color: #ff8d8d;
-}
-
-.stale {
-  margin: 0;
-  padding: 0.6em 1em;
+.state.error,
+.stale.stale {
   font-size: 1.15em;
-  color: #ffd9a0;
-  background: #3a2a10;
-  border: 1px solid #7a5a22;
-  border-radius: 0.4em;
 }
 
 .body {

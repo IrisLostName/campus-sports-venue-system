@@ -3,7 +3,10 @@ defineProps<{ title: string; note: string }>()
 </script>
 
 <template>
-  <section class="placeholder">
+  <section
+    class="placeholder"
+    data-surface="admin"
+  >
     <h1>{{ title }}</h1>
     <p>{{ note }}</p>
     <slot />
@@ -12,16 +15,18 @@ defineProps<{ title: string; note: string }>()
 
 <style scoped>
 .placeholder {
-  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-6) var(--space-4);
 }
 
 h1 {
-  margin: 0 0 8px;
-  font-size: 22px;
+  font: var(--font-title);
 }
 
 p {
-  margin: 0 0 16px;
-  color: #5f6b7a;
+  color: var(--color-text-secondary);
 }
 </style>
