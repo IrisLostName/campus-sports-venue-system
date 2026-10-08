@@ -6,6 +6,12 @@ export const PATHS = {
   booking: '/booking',
   me: '/me',
   venueAdmin: '/venue-admin',
+  venueAdminReservations: '/venue-admin/reservations',
+  venueAdminResources: '/venue-admin/resources',
+  venueAdminOccupancy: '/venue-admin/occupancy',
+  venueAdminAnnouncements: '/venue-admin/announcements',
+  venueAdminRepairs: '/venue-admin/repairs',
+  venueAdminLogs: '/venue-admin/logs',
   sysAdmin: '/sys-admin',
   display: '/display',
 } as const

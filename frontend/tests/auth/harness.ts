@@ -35,7 +35,9 @@ export class MemoryStorage implements TokenStorage {
 const STUB = { render: () => null }
 export const STUB_VIEWS: RouteViews = {
   login: STUB, clientShell: STUB, home: STUB, reservation: STUB, booking: STUB, me: STUB,
-  venueAdmin: STUB, sysAdmin: STUB, display: STUB,
+  venueAdmin: STUB, venueAdminOverview: STUB, venueAdminReservations: STUB, venueAdminResources: STUB,
+  venueAdminOccupancy: STUB, venueAdminAnnouncements: STUB, venueAdminRepairs: STUB, venueAdminLogs: STUB,
+  sysAdmin: STUB, display: STUB,
 }
 
 // reload 时可覆盖的部分：store 看到的“现在”（与 mock 服务端时钟分开，用来制造“本地未过期、服务端已过期”），以及 getMe 的实现。
