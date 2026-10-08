@@ -1,19 +1,23 @@
 <script setup lang="ts">
 import type { MetricView } from '../../utils/displayModel'
+import UiGlassCard from '../ui/UiGlassCard.vue'
 
 defineProps<{ metrics: MetricView[] }>()
 </script>
 
 <template>
   <ul class="metrics">
-    <li
+    <UiGlassCard
       v-for="metric in metrics"
       :key="metric.key"
+      tag="li"
       class="metric"
+      material="thick"
+      :padding="4"
     >
       <span class="label">{{ metric.label }}</span>
       <strong class="value">{{ metric.value }}</strong>
-    </li>
+    </UiGlassCard>
   </ul>
 </template>
 
@@ -27,23 +31,28 @@ defineProps<{ metrics: MetricView[] }>()
   list-style: none;
 }
 
+@media (max-width: 800px) {
+  .metrics {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .metric {
   display: flex;
   flex-direction: column;
   gap: 0.3em;
   padding: 1em 1.4em;
-  background: var(--display-panel);
-  border: 1px solid var(--display-border);
-  border-radius: 0.6em;
 }
 
 .label {
+  color: var(--color-text-secondary);
   font-size: 1.2em;
-  color: var(--display-muted);
 }
 
 .value {
   font-size: 3.4em;
+  font-weight: 700;
+  letter-spacing: -0.02em;
   line-height: 1.1;
   font-variant-numeric: tabular-nums;
 }

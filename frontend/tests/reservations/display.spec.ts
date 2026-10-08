@@ -101,7 +101,7 @@ describe('P3 详情卡片字段', () => {
   it('首页摘要：日期、时间、地点、人物、状态中文名', () => {
     expect(buildSummary({ ...RESERVATION, displayStatus: 'CHECKIN_OPEN' })).toEqual({
       id: 7, dateText: '2026-10-13 周二', timeText: '09:30–11:00', place: '网球馆 · 网球场2',
-      userDisplayName: '张三', statusLabel: '可签到',
+      userDisplayName: '张三', statusLabel: '可签到', displayStatus: 'CHECKIN_OPEN',
     })
   })
 })

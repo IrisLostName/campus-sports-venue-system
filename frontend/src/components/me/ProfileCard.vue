@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import type { ProfileView } from '../../utils/meDisplay'
+import UiGlassCard from '../ui/UiGlassCard.vue'
 
 defineProps<{ profile: ProfileView }>()
 </script>
 
 <template>
-  <section
+  <UiGlassCard
+    tag="section"
     class="profile"
     aria-label="用户资料"
   >
@@ -25,42 +27,41 @@ defineProps<{ profile: ProfileView }>()
       </div>
     </dl>
     <slot />
-  </section>
+  </UiGlassCard>
 </template>
 
 <style scoped>
 .profile {
-  margin-bottom: 20px;
-  padding: 14px 16px;
-  border: 1px solid #dde3ea;
-  border-radius: 12px;
-  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
 }
 
 h2 {
-  margin: 0 0 8px;
-  font-size: 19px;
+  font: var(--font-title);
 }
 
 .rows {
-  margin: 0 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  width: 100%;
 }
 
 .rows div {
   display: flex;
-  gap: 12px;
-  padding: 4px 0;
-  font-size: 15px;
+  gap: var(--space-3);
+  font: var(--font-callout);
 }
 
 dt {
   flex: none;
   width: 4em;
-  color: #5f6b7a;
+  color: var(--color-text-secondary);
 }
 
 dd {
-  margin: 0;
   min-width: 0;
   overflow-wrap: anywhere;
 }

@@ -1,11 +1,16 @@
 <script setup lang="ts">
 import type { TrendBarView } from '../../utils/displayModel'
+import UiGlassCard from '../ui/UiGlassCard.vue'
 
 defineProps<{ bars: TrendBarView[] }>()
 </script>
 
 <template>
-  <section class="trend">
+  <UiGlassCard
+    tag="section"
+    class="trend"
+    material="thick"
+  >
     <h3 class="title">
       本周预约趋势
     </h3>
@@ -25,20 +30,18 @@ defineProps<{ bars: TrendBarView[] }>()
         <span class="date">{{ bar.label }}</span>
       </li>
     </ul>
-  </section>
+  </UiGlassCard>
 </template>
 
 <style scoped>
 .trend {
   padding: 0.8em 1.2em 1em;
-  background: var(--display-panel);
-  border: 1px solid var(--display-border);
-  border-radius: 0.6em;
 }
 
 .title {
   margin: 0 0 0.6em;
   font-size: 1.5em;
+  font-weight: 600;
 }
 
 .bars {
@@ -65,23 +68,24 @@ defineProps<{ bars: TrendBarView[] }>()
   align-items: flex-end;
   width: 100%;
   min-height: 0;
-  border-bottom: 1px solid var(--display-border);
+  border-bottom: 1px solid var(--color-separator);
 }
 
 .fill {
   display: block;
   width: 100%;
-  background: #5aa9ff;
-  border-radius: 0.25em 0.25em 0 0;
+  background: linear-gradient(var(--color-accent), color-mix(in srgb, var(--color-accent) 45%, transparent));
+  border-radius: 0.4em 0.4em 0.15em 0.15em;
 }
 
 .count {
   font-size: 1.1em;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 
 .date {
-  font-size: 0.95em;
-  color: var(--display-muted);
+  color: var(--color-text-secondary);
+  font-size: 1em;
 }
 </style>

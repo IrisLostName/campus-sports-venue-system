@@ -118,6 +118,27 @@ describe('失败文案（B8）', () => {
     expect(page.find('[aria-label="确认预约"]').exists()).toBe(false)
   })
 
+  it('提交失败回到时段列表后，重复点击已选中的日期：清掉错误横幅并重新拉取时段（与 main 一致）', async () => {
+    let slotRequests = 0
+    const { page, ctx } = await openPage({
+      wrap: (api) => ({ ...api, getVenueSlots: (venueId, date) => { slotRequests += 1; return api.getVenueSlots(venueId, date) } }),
+    })
+    await pickFreeSlot(page)
+    const lisi = await ctx.h.clientFor('lisi')
+    await lisi.createReservation({ resourceId: 4, serviceDate: TOMORROW, startTime: FREE_SLOT })
+    await buttonByText(page, '确认预约').trigger('click')
+    await flushPromises()
+    expect(page.find('[role="alert"]').text()).toBe('该时段刚刚被别人预约了，请重新选择')
+    const requestsBefore = slotRequests
+
+    await page.find(`[data-date="${TOMORROW}"]`).trigger('click')
+    await flushPromises()
+
+    expect(page.find('[role="alert"]').exists()).toBe(false)
+    expect(page.find('[aria-label="确认预约"]').exists()).toBe(false)
+    expect(slotRequests).toBe(requestsBefore + 1)
+  })
+
   it('BOOKING_LIMIT_REACHED：已持有 3 个 → 页面提示该文案，仍可返回', async () => {
     const { page, ctx } = await openPage()
     await ctx.h.api.createReservation({ resourceId: 3, serviceDate: TOMORROW, startTime: '14:00' })

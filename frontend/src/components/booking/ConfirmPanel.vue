@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import { PURPOSE_MAX_LENGTH } from '../../utils/bookingDisplay'
+import UiBanner from '../ui/UiBanner.vue'
+import UiButton from '../ui/UiButton.vue'
+import UiGlassCard from '../ui/UiGlassCard.vue'
+import UiTextField from '../ui/UiTextField.vue'
 
 export interface BookingConfirmation {
   venueName: string
@@ -16,10 +20,19 @@ defineEmits<{ submit: []; back: [] }>()
 </script>
 
 <template>
-  <section
+  <!-- 确认是页面步骤（docs/17 第 7 节），做成厚玻璃底部面板样式的卡片，不是浮层。 -->
+  <UiGlassCard
+    tag="section"
     class="confirm"
     aria-label="确认预约"
+    material="thick"
+    radius="2xl"
+    :padding="5"
   >
+    <span
+      class="grabber"
+      aria-hidden="true"
+    />
     <h2>确认预约</h2>
     <dl class="rows">
       <div>
@@ -40,132 +53,91 @@ defineEmits<{ submit: []; back: [] }>()
       </div>
     </dl>
 
-    <label class="purpose">
-      用途（可选）
-      <input
-        v-model="purpose"
-        type="text"
-        :maxlength="PURPOSE_MAX_LENGTH"
-        placeholder="例如：朋友约练"
-      >
-    </label>
+    <UiTextField
+      v-model="purpose"
+      label="用途（可选）"
+      type="text"
+      :maxlength="PURPOSE_MAX_LENGTH"
+      placeholder="例如：朋友约练"
+    />
 
-    <p
+    <UiBanner
       v-if="error !== null"
       class="error"
+      tone="danger"
       role="alert"
     >
       {{ error }}
-    </p>
+    </UiBanner>
 
     <div class="buttons">
-      <button
-        type="button"
-        class="secondary"
+      <UiButton
+        variant="secondary"
+        class="button"
         :disabled="submitting"
         @click="$emit('back')"
       >
         返回
-      </button>
-      <button
-        type="button"
-        class="primary"
-        :disabled="submitting"
+      </UiButton>
+      <UiButton
+        class="button"
+        :loading="submitting"
         @click="$emit('submit')"
       >
         {{ submitting ? '提交中…' : '确认预约' }}
-      </button>
+      </UiButton>
     </div>
-  </section>
+  </UiGlassCard>
 </template>
 
 <style scoped>
 .confirm {
-  padding: 16px;
-  border: 1px solid #dde3ea;
-  border-radius: 12px;
-  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.grabber {
+  align-self: center;
+  width: 36px;
+  height: 5px;
+  border-radius: var(--radius-capsule);
+  background: var(--color-text-tertiary);
 }
 
 h2 {
-  margin: 0 0 8px;
-  font-size: 18px;
+  font: var(--font-headline);
 }
 
 .rows {
-  margin: 0 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
 }
 
 .rows div {
   display: flex;
-  gap: 12px;
-  padding: 4px 0;
-  font-size: 15px;
+  gap: var(--space-3);
+  font: var(--font-callout);
 }
 
 dt {
   flex: none;
   width: 3.5em;
-  color: #5f6b7a;
+  color: var(--color-text-secondary);
 }
 
 dd {
-  margin: 0;
   min-width: 0;
   overflow-wrap: anywhere;
 }
 
-.purpose {
-  display: block;
-  font-size: 14px;
-}
-
-input {
-  display: block;
-  box-sizing: border-box;
-  width: 100%;
-  min-height: 44px;
-  margin-top: 6px;
-  padding: 8px;
-  border: 1px solid #c8d0da;
-  border-radius: 8px;
-  font: inherit;
-}
-
-.error {
-  margin: 12px 0 0;
-  color: #b3261e;
-  font-size: 14px;
-}
-
 .buttons {
   display: flex;
-  gap: 8px;
-  margin-top: 16px;
+  gap: var(--space-2);
 }
 
-button {
+.button {
   flex: 1;
-  min-height: 44px;
-  border-radius: 8px;
-  font-size: 16px;
-  cursor: pointer;
-}
-
-.secondary {
-  border: 1px solid #c8d0da;
-  background: #ffffff;
-  color: #1f2933;
-}
-
-.primary {
-  border: 1px solid #0b6b4f;
-  background: #0b6b4f;
-  color: #ffffff;
-}
-
-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 </style>

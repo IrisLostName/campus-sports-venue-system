@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { AnnouncementItem } from '../../utils/reservationDisplay'
+import UiBanner from '../ui/UiBanner.vue'
 
 defineProps<{ items: AnnouncementItem[]; error: string | null }>()
 </script>
@@ -11,16 +12,19 @@ defineProps<{ items: AnnouncementItem[]; error: string | null }>()
     aria-label="场馆公告"
   >
     <h2>场馆公告</h2>
-    <p
+    <UiBanner
       v-if="error !== null"
       class="error"
+      tone="danger"
       role="alert"
     >
       公告加载失败：{{ error }}
-    </p>
-    <article
+    </UiBanner>
+    <UiBanner
       v-for="item in items"
       :key="item.id"
+      tag="article"
+      tone="warning"
     >
       <h3>{{ item.title }}</h3>
       <p
@@ -32,50 +36,36 @@ defineProps<{ items: AnnouncementItem[]; error: string | null }>()
       <p class="time">
         {{ item.publishedText }}
       </p>
-    </article>
+    </UiBanner>
   </section>
 </template>
 
 <style scoped>
 .notices {
-  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
 }
 
 h2 {
-  margin: 0 0 8px;
-  font-size: 16px;
-}
-
-article {
-  margin-bottom: 8px;
-  padding: 10px 14px;
-  border-left: 4px solid #d98200;
-  border-radius: 6px;
-  background: #fff4e0;
+  padding-inline: var(--space-1);
+  color: var(--color-text-secondary);
+  font: var(--font-footnote);
+  font-weight: 600;
 }
 
 h3 {
-  margin: 0;
-  font-size: 15px;
-  line-height: 1.5;
-}
-
-p {
-  margin: 4px 0 0;
+  font: var(--font-callout);
+  font-weight: 600;
 }
 
 .content {
-  font-size: 14px;
+  font: var(--font-callout);
   overflow-wrap: anywhere;
 }
 
 .time {
-  color: #8a4b00;
-  font-size: 12px;
-}
-
-.error {
-  color: #b3261e;
-  font-size: 14px;
+  color: var(--color-text-secondary);
+  font: var(--font-footnote);
 }
 </style>

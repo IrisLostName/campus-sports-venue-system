@@ -3,8 +3,17 @@ import { useRoute } from 'vue-router'
 
 import { DOCK_ITEMS } from '../router/dock'
 import { PATHS } from '../router/paths'
+import UiDock from './ui/UiDock.vue'
 
 const route = useRoute()
+
+// 四个内联 SVG 图标（描边 24×24），按路径对应；只借鉴风格，不使用任何第三方图标。
+const ICONS: Record<string, string> = {
+  [PATHS.home]: 'M4 11l8-7 8 7v9H4z',
+  [PATHS.reservation]: 'M8 3v4M16 3v4M4 10h16M7 5h10a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3z',
+  [PATHS.booking]: 'M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16zM12 8v4l3 2',
+  [PATHS.me]: 'M12 5a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM4 20c1.5-4 4.5-6 8-6s6.5 2 8 6',
+}
 
 function isActive(path: string): boolean {
   return path === PATHS.home ? route.path === PATHS.home : route.path === path || route.path.startsWith(`${path}/`)
@@ -12,10 +21,7 @@ function isActive(path: string): boolean {
 </script>
 
 <template>
-  <nav
-    class="dock"
-    aria-label="主导航"
-  >
+  <UiDock label="主导航">
     <RouterLink
       v-for="item in DOCK_ITEMS"
       :key="item.path"
@@ -23,32 +29,31 @@ function isActive(path: string): boolean {
       class="dock-item"
       :class="{ active: isActive(item.path) }"
     >
-      {{ item.label }}
+      <svg
+        class="icon"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path :d="ICONS[item.path]" />
+      </svg>
+      <span>{{ item.label }}</span>
     </RouterLink>
-  </nav>
+  </UiDock>
 </template>
 
 <style scoped>
-.dock {
-  display: flex;
-  flex: none;
-  border-top: 1px solid #dde3ea;
-  background: #ffffff;
-  padding-bottom: env(safe-area-inset-bottom);
+.icon {
+  width: 22px;
+  height: 22px;
 }
 
-.dock-item {
-  flex: 1;
-  padding: 14px 0;
-  color: #5f6b7a;
-  font-size: 15px;
-  text-align: center;
-  text-decoration: none;
-}
-
-.dock-item.active {
-  color: #0b6b4f;
-  font-weight: 600;
-  box-shadow: inset 0 3px 0 #0b6b4f;
+/* 当前项：文字用主文字色（对比度），图标用强调色。 */
+.dock-item.active .icon {
+  color: var(--color-accent);
 }
 </style>

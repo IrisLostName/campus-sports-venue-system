@@ -1,0 +1,193 @@
+/* 设计令牌（docs/17 第 2–5 节）。颜色、材质、字号、圆角、间距、动效只在这里写字面量，组件与页面只引用令牌。 */
+
+/* 浅色（默认）。 */
+:root {
+  color-scheme: light;
+
+  --font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+
+  /* 颜色（第 2 节） */
+  --color-canvas: #f2f2f7;
+  --color-surface: #ffffff;
+  --color-text: rgba(0, 0, 0, 0.88);
+  --color-text-secondary: rgba(60, 60, 67, 0.84);
+  --color-text-tertiary: rgba(60, 60, 67, 0.4);
+  --color-separator: rgba(60, 60, 67, 0.18);
+  --color-accent: #0052ad;
+  --color-accent-fill: #0052ad;
+  --on-accent: #ffffff;
+  --color-success: #34c759;
+  --color-warning: #ff9500;
+  --color-danger: #ff3b30;
+  --color-danger-text: #b3001b;
+  --color-neutral: #8e8e93;
+
+  /* 画布柔光：蓝、青、粉三团，透明度 0.25–0.35 */
+  --canvas-glow:
+    radial-gradient(60% 45% at 15% 10%, rgba(90, 160, 255, 0.32), transparent 70%),
+    radial-gradient(55% 40% at 90% 35%, rgba(80, 220, 210, 0.28), transparent 70%),
+    radial-gradient(60% 45% at 30% 95%, rgba(255, 140, 190, 0.26), transparent 70%);
+
+  /* 玻璃材质（第 3 节） */
+  --glass-thin: rgba(255, 255, 255, 0.35);
+  --glass-regular: rgba(255, 255, 255, 0.55);
+  --glass-thick: rgba(255, 255, 255, 0.72);
+  --glass-blur: blur(20px) saturate(180%);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.6);
+  --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+
+  /* 补充令牌（第 3 节末段）：随主题变化的部分 */
+  --tint-strength: 14%;
+  --color-scrim: rgba(0, 0, 0, 0.18);
+  --glass-blur-admin: blur(12px) saturate(160%);
+
+  /* 补充令牌：与主题无关的部分 */
+  --dock-height: 64px;
+  --dock-offset: 16px;
+  --z-dock: 10;
+  --z-sheet: 30;
+  --press-scale: 0.97;
+  --slide-distance: 24px;
+  --phone-width: 393px;
+
+  /* 字号（第 4 节）：字重 / 字号 / 行高 / 字体 */
+  --font-large-title: 700 34px/1.2 var(--font-family);
+  --font-title: 600 22px/1.3 var(--font-family);
+  --font-headline: 600 17px/1.4 var(--font-family);
+  --font-body: 400 17px/1.5 var(--font-family);
+  --font-callout: 400 15px/1.5 var(--font-family);
+  --font-footnote: 400 13px/1.4 var(--font-family);
+  --font-caption: 400 12px/1.4 var(--font-family);
+
+  /* 圆角、间距 */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+  --radius-2xl: 28px;
+  --radius-capsule: 999px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* 动效（第 5 节） */
+  --motion-fast: 160ms;
+  --motion-normal: 240ms;
+  --motion-slow: 360ms;
+  --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* 深色：跟随系统。 */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+
+    --color-canvas: #000000;
+    --color-surface: #1c1c1e;
+    --color-text: rgba(255, 255, 255, 0.92);
+    --color-text-secondary: rgba(235, 235, 245, 0.62);
+    --color-text-tertiary: rgba(235, 235, 245, 0.32);
+    --color-separator: rgba(84, 84, 88, 0.5);
+    --color-accent: #409cff;
+    --color-accent-fill: #0071e3;
+    --on-accent: #ffffff;
+    --color-success: #30d158;
+    --color-warning: #ff9f0a;
+    --color-danger: #ff453a;
+    --color-danger-text: #ff7a72;
+    --color-neutral: #98989d;
+
+    --canvas-glow:
+      radial-gradient(60% 45% at 15% 10%, rgba(90, 160, 255, 0.22), transparent 70%),
+      radial-gradient(55% 40% at 90% 35%, rgba(80, 220, 210, 0.18), transparent 70%),
+      radial-gradient(60% 45% at 30% 95%, rgba(255, 140, 190, 0.18), transparent 70%);
+
+    --glass-thin: rgba(44, 44, 46, 0.35);
+    --glass-regular: rgba(44, 44, 46, 0.55);
+    --glass-thick: rgba(44, 44, 46, 0.72);
+    --glass-border: 1px solid rgba(255, 255, 255, 0.12);
+    --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+
+    --tint-strength: 16%;
+    --color-scrim: rgba(0, 0, 0, 0.5);
+  }
+}
+
+/* 固定深色的子树（运营大屏，第 7 节）：与上面的深色块取值相同，不受系统设置影响。 */
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-canvas: #000000;
+  --color-surface: #1c1c1e;
+  --color-text: rgba(255, 255, 255, 0.92);
+  --color-text-secondary: rgba(235, 235, 245, 0.62);
+  --color-text-tertiary: rgba(235, 235, 245, 0.32);
+  --color-separator: rgba(84, 84, 88, 0.5);
+  --color-accent: #409cff;
+  --color-accent-fill: #0071e3;
+  --on-accent: #ffffff;
+  --color-success: #30d158;
+  --color-warning: #ff9f0a;
+  --color-danger: #ff453a;
+  --color-danger-text: #ff7a72;
+  --color-neutral: #98989d;
+
+  --canvas-glow:
+    radial-gradient(60% 45% at 15% 10%, rgba(90, 160, 255, 0.22), transparent 70%),
+    radial-gradient(55% 40% at 90% 35%, rgba(80, 220, 210, 0.18), transparent 70%),
+    radial-gradient(60% 45% at 30% 95%, rgba(255, 140, 190, 0.18), transparent 70%);
+
+  --glass-thin: rgba(44, 44, 46, 0.35);
+  --glass-regular: rgba(44, 44, 46, 0.55);
+  --glass-thick: rgba(44, 44, 46, 0.72);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.12);
+  --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+
+  --tint-strength: 16%;
+  --color-scrim: rgba(0, 0, 0, 0.5);
+}
+
+/* 管理端（第 7 节）：玻璃只用于侧栏、顶栏、弹层，模糊降为 12px。 */
+[data-surface="admin"] {
+  --glass-blur: var(--glass-blur-admin);
+}
+
+/* 回退一：不支持 backdrop-filter 时，玻璃改为 --color-surface 的 92% 不透明版本。 */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root,
+  [data-theme="dark"] {
+    --glass-thin: color-mix(in srgb, var(--color-surface) 92%, transparent);
+    --glass-regular: color-mix(in srgb, var(--color-surface) 92%, transparent);
+    --glass-thick: color-mix(in srgb, var(--color-surface) 92%, transparent);
+  }
+}
+
+/* 回退二：减少透明度时，所有玻璃改为实色并去掉模糊。写在最后，使其压过固定深色子树的玻璃取值。 */
+@media (prefers-reduced-transparency: reduce) {
+  :root,
+  [data-theme="dark"] {
+    --glass-thin: var(--color-surface);
+    --glass-regular: var(--color-surface);
+    --glass-thick: var(--color-surface);
+    --glass-blur: none;
+    --glass-blur-admin: none;
+  }
+}
+
+/* 减少动态效果：只保留淡入淡出，时长不超过 --motion-fast；缩放与位移归零。 */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-normal: var(--motion-fast);
+    --motion-slow: var(--motion-fast);
+    --press-scale: 1;
+    --slide-distance: 0px;
+  }
+}

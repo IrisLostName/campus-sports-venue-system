@@ -3,6 +3,10 @@ import { onMounted } from 'vue'
 
 import CancelDialog from '../../components/reservation/CancelDialog.vue'
 import ReservationCardView from '../../components/reservation/ReservationCard.vue'
+import UiBanner from '../../components/ui/UiBanner.vue'
+import UiButton from '../../components/ui/UiButton.vue'
+import UiEmptyState from '../../components/ui/UiEmptyState.vue'
+import UiGlassCard from '../../components/ui/UiGlassCard.vue'
 import { useReservationBoard } from '../../composables/reservationBoard'
 import { PATHS } from '../../router/paths'
 
@@ -18,7 +22,9 @@ onMounted(() => {
 
 <template>
   <section class="page">
-    <h1>预约</h1>
+    <h1 class="page-title">
+      预约
+    </h1>
 
     <p
       v-if="phase === 'loading'"
@@ -27,27 +33,29 @@ onMounted(() => {
       加载中…
     </p>
 
-    <div
+    <UiBanner
       v-if="loadError !== null"
       class="error"
+      tone="danger"
       role="alert"
     >
       <p>{{ loadError }}</p>
-      <button
-        type="button"
+      <UiButton
+        variant="plain"
         @click="load()"
       >
         重试
-      </button>
-    </div>
+      </UiButton>
+    </UiBanner>
 
-    <p
+    <UiBanner
       v-if="pageFeedback !== null"
       class="error"
+      tone="danger"
       role="alert"
     >
       {{ pageFeedback }}
-    </p>
+    </UiBanner>
     <p
       v-if="rulesError !== null"
       class="hint"
@@ -55,15 +63,18 @@ onMounted(() => {
       签到与取消说明暂时无法显示：{{ rulesError }}
     </p>
 
-    <div
+    <UiGlassCard
       v-if="isEmpty"
       class="empty"
     >
-      <p>暂无当前预约</p>
-      <RouterLink :to="PATHS.booking">
-        去订场
-      </RouterLink>
-    </div>
+      <UiEmptyState title="暂无当前预约">
+        <template #action>
+          <UiButton :to="PATHS.booking">
+            去订场
+          </UiButton>
+        </template>
+      </UiEmptyState>
+    </UiGlassCard>
 
     <ReservationCardView
       v-for="card in cards"
@@ -85,46 +96,3 @@ onMounted(() => {
     />
   </section>
 </template>
-
-<style scoped>
-.page {
-  padding: 16px;
-}
-
-h1 {
-  margin: 0 0 12px;
-  font-size: 22px;
-}
-
-.hint {
-  margin: 0 0 12px;
-  color: #5f6b7a;
-  font-size: 14px;
-}
-
-.error {
-  margin: 0 0 12px;
-  color: #b3261e;
-  font-size: 14px;
-}
-
-.error p {
-  margin: 0 0 8px;
-}
-
-.empty {
-  padding: 32px 0;
-  color: #5f6b7a;
-  text-align: center;
-}
-
-.empty a {
-  display: inline-block;
-  min-height: 44px;
-  padding: 10px 24px;
-  border-radius: 8px;
-  background: #0b6b4f;
-  color: #ffffff;
-  text-decoration: none;
-}
-</style>

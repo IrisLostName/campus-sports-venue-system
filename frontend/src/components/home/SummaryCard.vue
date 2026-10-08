@@ -1,12 +1,17 @@
 <script setup lang="ts">
 import { PATHS } from '../../router/paths'
 import type { ReservationSummary } from '../../utils/reservationDisplay'
+import { toneForDisplayStatus } from '../../utils/statusTone'
+import UiButton from '../ui/UiButton.vue'
+import UiGlassCard from '../ui/UiGlassCard.vue'
+import UiStatusPill from '../ui/UiStatusPill.vue'
 
 defineProps<{ summary: ReservationSummary; moreCount: number }>()
 </script>
 
 <template>
-  <section
+  <UiGlassCard
+    tag="section"
     class="summary"
     aria-label="最近的预约"
   >
@@ -19,7 +24,12 @@ defineProps<{ summary: ReservationSummary; moreCount: number }>()
     </p>
     <p class="who">
       <span>{{ summary.userDisplayName }}</span>
-      <span class="badge">{{ summary.statusLabel }}</span>
+      <UiStatusPill
+        class="badge"
+        :tone="toneForDisplayStatus(summary.displayStatus)"
+      >
+        {{ summary.statusLabel }}
+      </UiStatusPill>
     </p>
     <p
       v-if="moreCount > 0"
@@ -29,72 +39,61 @@ defineProps<{ summary: ReservationSummary; moreCount: number }>()
         还有 {{ moreCount }} 个预约
       </RouterLink>
     </p>
-    <RouterLink
+    <UiButton
       class="detail"
+      variant="secondary"
       :to="PATHS.reservation"
     >
       查看预约详情
-    </RouterLink>
-  </section>
+    </UiButton>
+  </UiGlassCard>
 </template>
 
 <style scoped>
 .summary {
-  padding: 16px;
-  border-radius: 12px;
-  background: #0b6b4f;
-  color: #ffffff;
-}
-
-p {
-  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
 }
 
 .when {
-  font-size: 15px;
+  color: var(--color-text-secondary);
+  font: var(--font-callout);
 }
 
 .when strong {
   display: block;
-  margin-top: 2px;
+  color: var(--color-text);
+  font: var(--font-title);
   font-size: 28px;
-  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .where {
-  margin-top: 8px;
-  font-size: 17px;
+  font: var(--font-headline);
 }
 
 .who {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-top: 4px;
-  font-size: 15px;
-}
-
-.badge {
-  padding: 0 10px;
-  border-radius: 999px;
-  background: rgb(255 255 255 / 20%);
-  font-size: 13px;
-  line-height: 1.6;
+  gap: var(--space-2);
+  font: var(--font-callout);
 }
 
 .more {
-  margin-top: 10px;
-  font-size: 14px;
+  font: var(--font-callout);
 }
 
-a {
-  color: #ffffff;
+/* 触控目标不小于 44px（docs/17 第 4 节）。 */
+.more a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
 }
 
 .detail {
-  display: inline-block;
-  margin-top: 12px;
-  padding: 10px 0;
-  font-size: 15px;
+  margin-top: var(--space-1);
 }
 </style>

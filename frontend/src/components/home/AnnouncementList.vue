@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { AnnouncementItem } from '../../utils/reservationDisplay'
+import UiBanner from '../ui/UiBanner.vue'
+import UiGlassCard from '../ui/UiGlassCard.vue'
+import UiListRow from '../ui/UiListRow.vue'
 
 defineProps<{ items: AnnouncementItem[]; loaded: boolean; error: string | null }>()
 </script>
@@ -10,86 +13,74 @@ defineProps<{ items: AnnouncementItem[]; loaded: boolean; error: string | null }
     aria-label="系统公告"
   >
     <h2>系统公告</h2>
-    <p
+    <UiBanner
       v-if="error !== null"
       class="error"
+      tone="danger"
       role="alert"
     >
       公告加载失败：{{ error }}
-    </p>
+    </UiBanner>
     <p
       v-else-if="loaded && items.length === 0"
       class="none"
     >
       暂无公告
     </p>
-    <article
-      v-for="item in items"
-      :key="item.id"
+    <UiGlassCard
+      v-if="items.length > 0"
+      :padding="0"
     >
-      <h3>{{ item.title }}</h3>
-      <p
-        v-if="item.content !== null"
-        class="content"
+      <UiListRow
+        v-for="item in items"
+        :key="item.id"
+        tag="article"
       >
-        {{ item.content }}
-      </p>
-      <p class="time">
-        {{ item.publishedText }}
-      </p>
-    </article>
+        <h3>{{ item.title }}</h3>
+        <p
+          v-if="item.content !== null"
+          class="content"
+        >
+          {{ item.content }}
+        </p>
+        <p class="time">
+          {{ item.publishedText }}
+        </p>
+      </UiListRow>
+    </UiGlassCard>
   </section>
 </template>
 
 <style scoped>
 .announcements {
-  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
 }
 
 h2 {
-  margin: 0 0 8px;
-  font-size: 17px;
-}
-
-article {
-  margin-bottom: 8px;
-  padding: 12px 14px;
-  border: 1px solid #dde3ea;
-  border-radius: 10px;
-  background: #ffffff;
+  padding-inline: var(--space-1);
+  color: var(--color-text-secondary);
+  font: var(--font-footnote);
+  font-weight: 600;
 }
 
 h3 {
-  margin: 0;
-  font-size: 15px;
-  line-height: 1.5;
-}
-
-p {
-  margin: 4px 0 0;
+  font: var(--font-headline);
 }
 
 .content {
-  color: #1f2933;
-  font-size: 14px;
+  font: var(--font-callout);
   overflow-wrap: anywhere;
 }
 
 .time {
-  color: #5f6b7a;
-  font-size: 12px;
-}
-
-.none,
-.error {
-  font-size: 14px;
+  color: var(--color-text-secondary);
+  font: var(--font-footnote);
 }
 
 .none {
-  color: #5f6b7a;
-}
-
-.error {
-  color: #b3261e;
+  color: var(--color-text-secondary);
+  font: var(--font-callout);
 }
 </style>

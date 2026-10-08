@@ -4,6 +4,8 @@ import { onMounted } from 'vue'
 import AnnouncementList from '../../components/home/AnnouncementList.vue'
 import EmptyReservation from '../../components/home/EmptyReservation.vue'
 import SummaryCard from '../../components/home/SummaryCard.vue'
+import UiBanner from '../../components/ui/UiBanner.vue'
+import UiButton from '../../components/ui/UiButton.vue'
 import { useHomeBoard } from '../../composables/homeBoard'
 
 const { phase, sections, announcementItems, announcementsLoaded, announcementError, load } = useHomeBoard()
@@ -15,7 +17,9 @@ onMounted(() => {
 
 <template>
   <section class="page">
-    <h1>首页</h1>
+    <h1 class="page-title">
+      首页
+    </h1>
 
     <p
       v-if="phase === 'loading'"
@@ -34,19 +38,20 @@ onMounted(() => {
         :more-count="section.moreCount"
       />
       <EmptyReservation v-else-if="section.kind === 'empty'" />
-      <div
+      <UiBanner
         v-else-if="section.kind === 'reservationError'"
         class="error"
+        tone="danger"
         role="alert"
       >
         <p>{{ section.message }}</p>
-        <button
-          type="button"
+        <UiButton
+          variant="plain"
           @click="load()"
         >
           重试
-        </button>
-      </div>
+        </UiButton>
+      </UiBanner>
       <AnnouncementList
         v-else-if="section.kind === 'announcements'"
         :items="announcementItems"
@@ -56,29 +61,3 @@ onMounted(() => {
     </template>
   </section>
 </template>
-
-<style scoped>
-.page {
-  padding: 16px;
-}
-
-h1 {
-  margin: 0 0 12px;
-  font-size: 22px;
-}
-
-.hint {
-  margin: 0;
-  color: #5f6b7a;
-  font-size: 14px;
-}
-
-.error {
-  color: #b3261e;
-  font-size: 14px;
-}
-
-.error p {
-  margin: 0 0 8px;
-}
-</style>

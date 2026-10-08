@@ -1,11 +1,16 @@
 <script setup lang="ts">
 import type { NoticeView } from '../../utils/displayModel'
+import UiGlassCard from '../ui/UiGlassCard.vue'
 
 defineProps<{ notices: NoticeView[] }>()
 </script>
 
 <template>
-  <section class="notices">
+  <UiGlassCard
+    tag="section"
+    class="notices"
+    material="thick"
+  >
     <h3 class="title">
       系统提示
     </h3>
@@ -27,20 +32,18 @@ defineProps<{ notices: NoticeView[] }>()
     >
       暂无系统提示
     </p>
-  </section>
+  </UiGlassCard>
 </template>
 
 <style scoped>
 .notices {
   padding: 0.8em 1.2em 1em;
-  background: var(--display-panel);
-  border: 1px solid var(--display-border);
-  border-radius: 0.6em;
 }
 
 .title {
   margin: 0 0 0.6em;
   font-size: 1.5em;
+  font-weight: 600;
 }
 
 .list {
@@ -54,15 +57,14 @@ defineProps<{ notices: NoticeView[] }>()
 
 .item {
   padding: 0.5em 0.8em;
+  border-radius: var(--radius-sm);
+  background: var(--glass-thin);
   font-size: 1.1em;
   line-height: 1.4;
-  background: var(--display-tile);
-  border-radius: 0.3em;
   overflow-wrap: anywhere;
 }
 
 .empty {
-  margin: 0;
-  color: var(--display-muted);
+  color: var(--color-text-secondary);
 }
 </style>
