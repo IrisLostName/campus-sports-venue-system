@@ -78,16 +78,18 @@ describe('页面上的按钮表（ACC-M2-06）', () => {
     expect(buttonLabels(page)).toEqual(['签退'])
   })
 
-  it('点“签退”后：卡片变为已签退或已完成，不再有按钮', async () => {
+  it('点“签退”后：预约结束前签退，卡片变为已签退，不再有按钮', async () => {
     const { page, ctx } = await openPage({ at: at('07:50') })
     await buttonByText(page, '签到').trigger('click')
     await flushPromises()
+    // 钟固定在 08:05：预约 08:00–09:30 尚未结束，所以签退后展示状态是 CHECKED_OUT（已签退），不会是 COMPLETED。
+    ctx.h.clock.set(at('08:05'))
     await buttonByText(page, '签退').trigger('click')
     await flushPromises()
 
     expect((await ctx.h.api.getReservation(1)).checkOutAt).not.toBeNull()
     expect(buttonLabels(page)).toEqual([])
-    expect(badge(page)).toMatch(/已签退|已完成/)
+    expect(badge(page)).toBe('已签退')
   })
 
   it('没有 CURRENT 预约：显示“暂无当前预约”，入口指向 /booking', async () => {
