@@ -1,7 +1,6 @@
 // 组件测试脚手架：沿用 FE-2 认证脚手架的 Pinia + 内存路由 + mock ApiClient（注入时钟），再把它们装进被挂载的组件。
 // 页面里的 useAuthStore() 与脚手架的 store 同为 id 'auth'，Pinia 会返回同一个实例，所以页面用的就是脚手架里已登录（或已恢复失败）的 store。
 import { mount, type VueWrapper } from '@vue/test-utils'
-import { getActivePinia } from 'pinia'
 import type { Component } from 'vue'
 import type { Router } from 'vue-router'
 
@@ -12,14 +11,9 @@ export interface MountContext {
   router: Router
 }
 
-// 脚手架在创建（或 reload）时会让它的 Pinia 成为当前 Pinia，所以要在创建/reload 之后、创建下一个脚手架之前挂载；
-// 这里核对当前 Pinia 里的 auth store 确实是脚手架的那一个，否则直接报错而不是悄悄用错状态。
+// 挂载到脚手架 store 所属的那一个 Pinia 上（_p），页面里的 useAuthStore() 因此取到脚手架的 store。
 export function mountWithApp(component: Component, context: MountContext): VueWrapper {
-  const pinia = getActivePinia()
-  if (pinia === undefined || pinia._s.get(context.auth.$id) !== context.auth) {
-    throw new Error('当前 Pinia 不属于这个脚手架：请在创建或 reload 之后立即挂载')
-  }
-  return mount(component, { global: { plugins: [pinia, context.router] } })
+  return mount(component, { global: { plugins: [context.auth._p, context.router] } })
 }
 
 export function texts(wrapper: VueWrapper, selector: string): string[] {
