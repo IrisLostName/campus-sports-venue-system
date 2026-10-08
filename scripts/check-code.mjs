@@ -47,6 +47,7 @@ const fe = join(root, 'frontend');
 const beMain = walk(join(be, 'src/main'), ['.java', '.yml', '.yaml', '.properties', '.sql']);
 const beTest = walk(join(be, 'src/test'), ['.java', '.yml', '.yaml', '.properties']);
 const feSrc = walk(join(fe, 'src'), ['.ts', '.vue', '.tsx']);
+const feTests = walk(join(fe, 'tests'), ['.ts']); // QA-1 起扫描前端测试目录
 
 scan([...beMain, ...beTest], [
   ...banned,
@@ -71,6 +72,16 @@ scan(feSrc, [
   [/:\s*any\b|\bas any\b|<any>/, '不得使用 any（用 unknown 或精确类型）'],
   [/console\.(log|debug)/, '遗留调试输出'],
   [/\b(TODO|FIXME|HACK|XXX)\b/, '遗留标记'],
+]);
+// QA-1：前端测试同样不得跳过、压制、使用 any 或留调试输出。测试本来就要用 mock、storage，所以不加那几条规则。
+scan(feTests, [
+  ...banned,
+  [/\.(skip|only|todo|skipIf|runIf)(?![\w$])/, '不得跳过、遗留 .only、占位测试或按条件运行（含 .skip.each、.only.each、.skipIf()、.runIf() 等链式写法）'],
+  [/\b(xit|xdescribe|fit|fdescribe)\(/, '不得跳过、遗留聚焦的测试'],
+  [/@ts-ignore|@ts-nocheck|@ts-expect-error|eslint-disable/, '不得压制类型或 lint 检查'],
+  [/:\s*any\b|\bas any\b|<any>/, '不得使用 any（用 unknown 或精确类型）'],
+  [/\b(TODO|FIXME|HACK|XXX)\b/, '遗留标记'],
+  [/console\.(log|debug)/, '遗留调试输出'],
 ]);
 // 页面/组件/store 不得直接碰 mock、fetch、axios（只能经 api/index.ts）
 scan(feSrc.filter((f) => !relative(root, f).replaceAll('\\', '/').startsWith('frontend/src/api/')), [
@@ -119,5 +130,5 @@ if (problems.length) {
   console.error(`发现 ${problems.length} 个问题：\n` + problems.join('\n'));
   process.exit(1);
 }
-const scanned = beMain.length + beTest.length + feSrc.length;
+const scanned = beMain.length + beTest.length + feSrc.length + feTests.length;
 console.log(`代码门禁通过（扫描 ${scanned} 个文件${scanned === 0 ? '；frontend/ backend/ 尚未创建' : ''}）`);
