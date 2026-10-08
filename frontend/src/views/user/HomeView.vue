@@ -48,7 +48,7 @@ onMounted(() => {
         </button>
       </div>
       <AnnouncementList
-        v-else
+        v-else-if="section.kind === 'announcements'"
         :items="announcementItems"
         :loaded="announcementsLoaded"
         :error="announcementError"
