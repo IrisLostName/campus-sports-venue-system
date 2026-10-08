@@ -5,6 +5,8 @@ import { createPinia } from 'pinia'
 import type { ApiClient } from '../../src/api/client'
 import { createHomeBoard, type HomeBoard } from '../../src/composables/homeBoard'
 import { createReservationBoard, type ReservationBoard } from '../../src/composables/reservationBoard'
+import type { ReservationScope } from '../../src/api/requests'
+import { createReservationList, type ReservationList } from '../../src/composables/reservationList'
 import { callApi, type ApiCaller } from '../../src/composables/session'
 import { defineReferenceStore, type ReferenceStore } from '../../src/stores/reference'
 import { createAuthHarness, DEMO_PASSWORD, type AuthHarness } from '../auth/harness'
@@ -27,6 +29,7 @@ export interface UserContext {
   // 默认使用 h.api；测试可传入包装过的 api（例如统计调用次数）。
   reservationBoard(api?: ApiClient): ReservationBoard
   homeBoard(api?: ApiClient): HomeBoard
+  reservationList(scope: ReservationScope, api?: ApiClient): ReservationList
   // 把时钟拨到某一时刻并重新登录（令牌 8 小时过期，跨度大的跳转必须重新登录）。
   travelTo(timestamp: string): Promise<void>
 }
@@ -44,6 +47,7 @@ export async function loginAs(username: string, startPath: string): Promise<User
     h, call, reference,
     reservationBoard: (api = h.api) => createReservationBoard({ api, call, reference }),
     homeBoard: (api = h.api) => createHomeBoard({ api, call }),
+    reservationList: (scope, api = h.api) => createReservationList({ api, call }, scope),
     async travelTo(timestamp) {
       h.clock.set(timestamp)
       await h.auth.login({ username, password: DEMO_PASSWORD })

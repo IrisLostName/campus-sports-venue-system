@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import type { Announcement, BookingRules, DisplayStatus, Reservation } from '../../src/api/types'
 import {
   actionsFor, buildAnnouncement, buildCard, buildSummary, cancelNote, checkInNote, displayStatusLabel,
-  formatServiceDate, formatTimestamp, type ReservationAction,
+  formatServiceDate, formatTimestamp, placeOf, type ReservationAction,
 } from '../../src/utils/reservationDisplay'
 
 const RESERVATION: Reservation = {
@@ -103,6 +103,14 @@ describe('P3 详情卡片字段', () => {
       id: 7, dateText: '2026-10-13 周二', timeText: '09:30–11:00', place: '网球馆 · 网球场2',
       userDisplayName: '张三', statusLabel: '可签到',
     })
+  })
+})
+
+describe('FE-3 N3 placeOf', () => {
+  it('场馆 · 场地；卡片与首页摘要用的是同一个写法', () => {
+    expect(placeOf(RESERVATION)).toBe('网球馆 · 网球场2')
+    expect(buildCard(RESERVATION, null).place).toBe(placeOf(RESERVATION))
+    expect(buildSummary(RESERVATION).place).toBe(placeOf(RESERVATION))
   })
 })
 

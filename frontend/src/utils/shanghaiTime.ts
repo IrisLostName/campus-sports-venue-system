@@ -9,6 +9,11 @@ export function nowShanghai(): string {
   return new Date(Date.now() + SHANGHAI_OFFSET_MS).toISOString().slice(0, TIMESTAMP_LENGTH)
 }
 
+// 场馆本地“今天”：YYYY-MM-DD，订场的日期选项从它开始（FE-4 B4）。
+export function todayShanghai(): string {
+  return nowShanghai().slice(0, 'YYYY-MM-DD'.length)
+}
+
 export function isTimestamp(value: unknown): value is string {
   return typeof value === 'string' && TIMESTAMP_PATTERN.test(value)
 }

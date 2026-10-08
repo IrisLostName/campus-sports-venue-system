@@ -57,14 +57,19 @@ export function checkInNote(rules: BookingRules): string {
 
 const WEEKDAY_NAMES = ['日', '一', '二', '三', '四', '五', '六'] as const
 
-// 2026-10-13 → 2026-10-13 周二。星期只用于展示，与 UTC 无关（先按 UTC 构造再按 UTC 读取）。
-export function formatServiceDate(date: string): string {
+// 星期只用于展示，与 UTC 无关（先按 UTC 构造再按 UTC 读取）。日期格式不对时返回 null。
+export function weekdayName(date: string): string | null {
   const [year, month, day] = date.split('-').map(Number)
   if (year === undefined || month === undefined || day === undefined) {
-    return date
+    return null
   }
-  const weekday = WEEKDAY_NAMES[new Date(Date.UTC(year, month - 1, day)).getUTCDay()]
-  return weekday === undefined ? date : `${date} 周${weekday}`
+  return WEEKDAY_NAMES[new Date(Date.UTC(year, month - 1, day)).getUTCDay()] ?? null
+}
+
+// 2026-10-13 → 2026-10-13 周二
+export function formatServiceDate(date: string): string {
+  const weekday = weekdayName(date)
+  return weekday === null ? date : `${date} 周${weekday}`
 }
 
 export function formatTimeRange(reservation: Pick<Reservation, 'startTime' | 'endTime'>): string {
@@ -74,6 +79,11 @@ export function formatTimeRange(reservation: Pick<Reservation, 'startTime' | 'en
 // 2026-10-12T09:00:00 → 2026-10-12 09:00
 export function formatTimestamp(timestamp: string): string {
   return timestamp.slice(0, 'YYYY-MM-DDTHH:mm'.length).replace('T', ' ')
+}
+
+// 场馆 · 场地：卡片、首页摘要与订场成功结果共用同一个写法。
+export function placeOf(reservation: Pick<Reservation, 'venueName' | 'resourceName'>): string {
+  return `${reservation.venueName} · ${reservation.resourceName}`
 }
 
 export interface ReservationCard {
@@ -99,7 +109,7 @@ function nonEmpty(text: string | null): string | null {
 export function buildCard(reservation: Reservation, rules: BookingRules | null): ReservationCard {
   return {
     id: reservation.id,
-    place: `${reservation.venueName} · ${reservation.resourceName}`,
+    place: placeOf(reservation),
     dateText: formatServiceDate(reservation.serviceDate),
     timeText: formatTimeRange(reservation),
     userDisplayName: reservation.userDisplayName,
@@ -144,7 +154,7 @@ export function buildSummary(reservation: Reservation): ReservationSummary {
     id: reservation.id,
     dateText: formatServiceDate(reservation.serviceDate),
     timeText: formatTimeRange(reservation),
-    place: `${reservation.venueName} · ${reservation.resourceName}`,
+    place: placeOf(reservation),
     userDisplayName: reservation.userDisplayName,
     statusLabel: displayStatusLabel(reservation.displayStatus),
   }
