@@ -95,12 +95,15 @@ const classes = computed(() => [
   color: var(--on-accent);
 }
 
+/* 玻璃按钮：边缘与模糊来自 .ui-glass，底色取 --color-surface 的 60%，保证强调色文字在厚玻璃卡片上仍有 4.5:1。 */
 .ui-button--secondary {
+  background-color: color-mix(in srgb, var(--color-surface) 60%, transparent);
   color: var(--color-accent);
 }
 
 .ui-button--destructive {
-  background: color-mix(in srgb, var(--color-danger) var(--tint-strength), transparent);
+  /* 文字是 --color-danger-text：底色只用半档浅色，保证文字对比度 ≥ 4.5:1。 */
+  background: color-mix(in srgb, var(--color-danger) calc(var(--tint-strength) / 2), transparent);
   color: var(--color-danger-text);
 }
 
@@ -124,6 +127,13 @@ const classes = computed(() => [
 @keyframes ui-button-spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+/* 减少透明度：玻璃按钮改为实色。 */
+@media (prefers-reduced-transparency: reduce) {
+  .ui-button--secondary {
+    background-color: var(--color-surface);
   }
 }
 

@@ -86,6 +86,13 @@ defineProps<{ summary: ReservationSummary; moreCount: number }>()
   font: var(--font-callout);
 }
 
+/* 触控目标不小于 44px（docs/17 第 4 节）。 */
+.more a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
 .detail {
   margin-top: var(--space-1);
 }

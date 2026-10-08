@@ -122,6 +122,13 @@ const board = computed(() => presentBoard(state.value))
   align-items: start;
 }
 
+/* 窄屏（例如 iPhone 竖屏）：两栏改为上下排列，避免数字溢出与标签互相重叠（docs/17 第 9 节）。 */
+@media (max-width: 800px) {
+  .body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .venues,
 .side {
   display: flex;

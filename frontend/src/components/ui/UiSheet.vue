@@ -66,7 +66,9 @@ const titleId = useId()
   padding: var(--space-4);
 }
 
+/* 浮层压在遮罩之上：底色取 --color-surface 的 88%，比 --glass-thick 更不透明（docs/17 第 3 节：对比度不达标时加厚材质）。 */
 .sheet {
+  background-color: color-mix(in srgb, var(--color-surface) 88%, transparent);
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
@@ -89,6 +91,18 @@ const titleId = useId()
 
 .title {
   font: var(--font-headline);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .sheet {
+    background-color: color-mix(in srgb, var(--color-surface) 92%, transparent);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .sheet {
+    background-color: var(--color-surface);
+  }
 }
 
 .ui-sheet-enter-active {

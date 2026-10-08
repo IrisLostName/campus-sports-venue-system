@@ -31,6 +31,12 @@ defineProps<{ metrics: MetricView[] }>()
   list-style: none;
 }
 
+@media (max-width: 800px) {
+  .metrics {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .metric {
   display: flex;
   flex-direction: column;

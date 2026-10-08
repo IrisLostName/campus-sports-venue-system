@@ -51,4 +51,9 @@ function isActive(path: string): boolean {
   width: 22px;
   height: 22px;
 }
+
+/* 当前项：文字用主文字色（对比度），图标用强调色。 */
+.dock-item.active .icon {
+  color: var(--color-accent);
+}
 </style>

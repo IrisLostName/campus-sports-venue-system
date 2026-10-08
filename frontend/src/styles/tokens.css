@@ -39,7 +39,7 @@
 
   /* 补充令牌（第 3 节末段）：随主题变化的部分 */
   --tint-strength: 14%;
-  --color-scrim: rgba(0, 0, 0, 0.32);
+  --color-scrim: rgba(0, 0, 0, 0.18);
   --glass-blur-admin: blur(12px) saturate(160%);
 
   /* 补充令牌：与主题无关的部分 */
@@ -114,7 +114,7 @@
     --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.1);
     --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 
-    --tint-strength: 22%;
+    --tint-strength: 16%;
     --color-scrim: rgba(0, 0, 0, 0.5);
   }
 }
@@ -150,7 +150,7 @@
   --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.1);
   --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 
-  --tint-strength: 22%;
+  --tint-strength: 16%;
   --color-scrim: rgba(0, 0, 0, 0.5);
 }
 

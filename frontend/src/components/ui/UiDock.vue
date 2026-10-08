@@ -48,6 +48,6 @@ defineProps<{ label: string }>()
 
 .ui-dock :slotted(.dock-item.active) {
   background: color-mix(in srgb, var(--color-accent) var(--tint-strength), transparent);
-  color: var(--color-accent);
+  color: var(--color-text);
 }
 </style>

@@ -68,6 +68,11 @@ const model = defineModel<string | null>({ required: true })
   gap: var(--space-2);
   padding-bottom: var(--space-1);
   overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.ui-segmented--scroll::-webkit-scrollbar {
+  display: none;
 }
 
 .item {
