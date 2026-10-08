@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { ApiError } from '../../src/api/errors'
 import type { ApiClient } from '../../src/api/client'
 import { createAdminReservations } from '../../src/composables/adminReservations'
-import { buildReservationRow, opsFor, parseUserId } from '../../src/utils/adminReservationDisplay'
+import { opsFor, parseUserId } from '../../src/utils/adminReservationDisplay'
 import { loginAdmin, spyOn, TOMORROW } from './harness'
 
 async function open(wrap: (client: ApiClient) => ApiClient = (client) => client) {
@@ -196,6 +196,9 @@ describe('P2 资源改派', () => {
     expect((await ctx.api.getReservation(1)).status).toBe('CONFIRMED')
   })
 
+})
+
+describe('P2 资源改派（日期与并发）', () => {
   it('日期不限于未来 7 天：换到一个月后的日期也能改派（不受 advanceDays 限制）', async () => {
     const { ctx, board, calls } = await open()
     await board.reassign.open(1)

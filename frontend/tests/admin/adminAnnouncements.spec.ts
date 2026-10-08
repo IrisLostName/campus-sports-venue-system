@@ -82,6 +82,9 @@ describe('P6 board', () => {
     expect(board.venueRows.value[0]?.expiresText).toBe('2026-10-20 18:30')
   })
 
+})
+
+describe('P6 board（归档、筛选、越权）', () => {
   it('归档：先确认；确认后公告变为已归档，用户端不再看到；系统公告不能归档', async () => {
     const { ctx, board } = await open()
     board.askArchive(1)

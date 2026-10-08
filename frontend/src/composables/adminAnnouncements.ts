@@ -5,10 +5,10 @@ import { api } from '../api/index'
 import type { AnnouncementStatus } from '../api/types'
 import type { AdminAnnouncementsQuery } from '../api/requests'
 import {
-  buildAnnouncementRow, CONTENT_REQUIRED_TEXT, TITLE_REQUIRED_TEXT, toExpiresAt,
+  buildAnnouncementRow, CONTENT_REQUIRED_TEXT, TITLE_REQUIRED_TEXT, toExpiresAt, type AnnouncementRowView,
 } from '../utils/announcementDisplay'
 import { createPagedList } from './adminPaged'
-import { createAdminRunner, type AdminDeps } from './adminRunner'
+import { createAdminRunner, type AdminDeps, type AdminRunner } from './adminRunner'
 import { useSession } from './session'
 
 export interface AnnouncementForm {
@@ -38,6 +38,42 @@ function formProblem(form: AnnouncementForm): string | null {
   return form.content.trim() === '' ? CONTENT_REQUIRED_TEXT : null
 }
 
+interface ArchiveHooks {
+  rows: () => AnnouncementRowView[]
+  notify(text: string): void
+  reload(): Promise<void>
+}
+
+// 归档确认对话框：先确认再归档，失败时保持对话框并显示文案。
+function createArchiveDialog(deps: AdminDeps, runner: AdminRunner, hooks: ArchiveHooks) {
+  const archive = ref<ArchiveDialogState | null>(null)
+
+  function askArchive(id: number): void {
+    const row = hooks.rows().find((item) => item.id === id)
+    if (row !== undefined && row.canArchive) {
+      archive.value = { id, title: row.title, busy: false, error: null }
+    }
+  }
+
+  async function confirmArchive(): Promise<void> {
+    const state = archive.value
+    if (state === null || state.busy) {
+      return
+    }
+    archive.value = { ...state, busy: true, error: null }
+    const result = await runner.run(() => deps.api.adminArchiveAnnouncement(state.id))
+    if (result.ok) {
+      archive.value = null
+      hooks.notify(ARCHIVED_NOTICE)
+      await hooks.reload()
+    } else {
+      archive.value = result.sessionEnded ? null : { ...state, busy: false, error: result.message }
+    }
+  }
+
+  return { archive, askArchive, confirmArchive, dismissArchive: () => { archive.value = null } }
+}
+
 export function createAdminAnnouncements(deps: AdminDeps, venueId: number) {
   const status = ref<AnnouncementStatus | ''>('')
   const withStatus = (query: AdminAnnouncementsQuery): AdminAnnouncementsQuery =>
@@ -48,8 +84,6 @@ export function createAdminAnnouncements(deps: AdminDeps, venueId: number) {
   const notice = ref<string | null>(null)
   const form = reactive<AnnouncementForm>(emptyForm())
   const formError = ref<string | null>(null)
-  const archive = ref<ArchiveDialogState | null>(null)
-
   const venueRows = computed(() => venueList.items.value.map(buildAnnouncementRow))
   const systemRows = computed(() => systemList.items.value.map(buildAnnouncementRow))
   // 系统公告只读，只取第一页；超出时提示。
@@ -86,36 +120,11 @@ export function createAdminAnnouncements(deps: AdminDeps, venueId: number) {
     }
   }
 
-  function askArchive(id: number): void {
-    const row = venueRows.value.find((item) => item.id === id)
-    if (row !== undefined && row.canArchive) {
-      archive.value = { id, title: row.title, busy: false, error: null }
-    }
-  }
-
-  async function confirmArchive(): Promise<void> {
-    const state = archive.value
-    if (state === null || state.busy) {
-      return
-    }
-    archive.value = { ...state, busy: true, error: null }
-    const result = await runner.run(() => deps.api.adminArchiveAnnouncement(state.id))
-    if (result.ok) {
-      archive.value = null
-      notice.value = ARCHIVED_NOTICE
-      await load()
-    } else {
-      archive.value = result.sessionEnded ? null : { ...state, busy: false, error: result.message }
-    }
-  }
-
-  function dismissArchive(): void {
-    archive.value = null
-  }
+  const archiver = createArchiveDialog(deps, runner, { rows: () => venueRows.value, notify: (text) => { notice.value = text }, reload: load })
 
   return {
-    status, venueList, systemList, venueRows, systemRows, systemTruncated, notice, form, formError, archive,
-    publishing: runner.busy, load, setStatus, publish, askArchive, confirmArchive, dismissArchive,
+    status, venueList, systemList, venueRows, systemRows, systemTruncated, notice, form, formError,
+    publishing: runner.busy, load, setStatus, publish, ...archiver,
     goTo: (page: number) => venueList.load(page),
   }
 }
