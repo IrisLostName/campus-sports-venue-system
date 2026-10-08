@@ -1,0 +1,105 @@
+/* 全局基础样式（docs/17 第 8 节）：重置、画布、字体、玻璃底座与四个用户端页面共用的版式。只引用令牌。 */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-canvas);
+  color: var(--color-text);
+  font: var(--font-body);
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 画布柔光：固定在视口，给玻璃提供可模糊的背景。 */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--canvas-glow);
+  pointer-events: none;
+}
+
+h1,
+h2,
+h3,
+h4,
+p,
+dl,
+dd,
+figure {
+  margin: 0;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+a {
+  color: var(--color-accent);
+}
+
+:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-accent) 55%, transparent);
+  outline-offset: 2px;
+}
+
+/* 管理端（第 7 节）：正文用 callout。 */
+[data-surface="admin"] {
+  font: var(--font-callout);
+}
+
+/* 玻璃底座：只给 Ui 组件使用。 */
+.ui-glass {
+  background: var(--glass-regular);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  box-shadow: var(--glass-highlight), var(--glass-shadow);
+}
+
+.ui-glass--thin {
+  background: var(--glass-thin);
+}
+
+.ui-glass--thick {
+  background: var(--glass-thick);
+}
+
+/* 用户端四个页面共用的版式。 */
+.page {
+  padding: var(--space-4);
+}
+
+.page-title {
+  margin-bottom: var(--space-3);
+  padding-inline: var(--space-1);
+  font: var(--font-large-title);
+  letter-spacing: -0.02em;
+}
+
+.hint {
+  margin-bottom: var(--space-3);
+  color: var(--color-text-secondary);
+  font: var(--font-footnote);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
