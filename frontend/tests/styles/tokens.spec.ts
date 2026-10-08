@@ -71,7 +71,7 @@ describe('令牌齐全（docs/17 第 2–5 节）', () => {
     expect(valueOf(light, '--color-danger-text')).toBe('#d70015')
     expect(valueOf(light, '--color-text-secondary')).toBe('rgba(60, 60, 67, 0.78)')
     for (const dark of [systemDark, fixedDark]) {
-      expect(valueOf(dark, '--color-accent')).toBe('#0a84ff')
+      expect(valueOf(dark, '--color-accent')).toBe('#409cff')
       expect(valueOf(dark, '--color-accent-fill')).toBe('#0071e3')
       expect(valueOf(dark, '--color-danger-text')).toBe('#ff453a')
     }
