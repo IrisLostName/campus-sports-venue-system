@@ -2,7 +2,14 @@
 // 登录状态失效（sessionEnded）时已回到登录页，不再展示错误。
 import { ref } from 'vue'
 
+import type { ApiClient } from '../api/client'
 import type { ApiCaller, ApiResult } from './session'
+
+// 各 board 的依赖：api 实例与绑定好 router / auth 的 ApiCaller（测试注入 mock）。
+export interface AdminDeps {
+  api: ApiClient
+  call: ApiCaller
+}
 
 export function createAdminRunner(call: ApiCaller) {
   const busy = ref(false)
