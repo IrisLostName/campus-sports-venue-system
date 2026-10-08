@@ -10,16 +10,16 @@
   --color-canvas: #f2f2f7;
   --color-surface: #ffffff;
   --color-text: rgba(0, 0, 0, 0.88);
-  --color-text-secondary: rgba(60, 60, 67, 0.78);
+  --color-text-secondary: rgba(60, 60, 67, 0.84);
   --color-text-tertiary: rgba(60, 60, 67, 0.4);
   --color-separator: rgba(60, 60, 67, 0.18);
-  --color-accent: #0062cc;
-  --color-accent-fill: #0062cc;
+  --color-accent: #0052ad;
+  --color-accent-fill: #0052ad;
   --on-accent: #ffffff;
   --color-success: #34c759;
   --color-warning: #ff9500;
   --color-danger: #ff3b30;
-  --color-danger-text: #d70015;
+  --color-danger-text: #b3001b;
   --color-neutral: #8e8e93;
 
   /* 画布柔光：蓝、青、粉三团，透明度 0.25–0.35 */
@@ -99,7 +99,7 @@
     --color-success: #30d158;
     --color-warning: #ff9f0a;
     --color-danger: #ff453a;
-    --color-danger-text: #ff453a;
+    --color-danger-text: #ff7a72;
     --color-neutral: #98989d;
 
     --canvas-glow:
@@ -135,7 +135,7 @@
   --color-success: #30d158;
   --color-warning: #ff9f0a;
   --color-danger: #ff453a;
-  --color-danger-text: #ff453a;
+  --color-danger-text: #ff7a72;
   --color-neutral: #98989d;
 
   --canvas-glow:

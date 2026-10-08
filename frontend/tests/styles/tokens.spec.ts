@@ -66,14 +66,14 @@ describe('令牌齐全（docs/17 第 2–5 节）', () => {
   })
 
   it('浅色与深色的关键取值按 docs/17 第 2 节', () => {
-    expect(valueOf(light, '--color-accent')).toBe('#0062cc')
-    expect(valueOf(light, '--color-accent-fill')).toBe('#0062cc')
-    expect(valueOf(light, '--color-danger-text')).toBe('#d70015')
-    expect(valueOf(light, '--color-text-secondary')).toBe('rgba(60, 60, 67, 0.78)')
+    expect(valueOf(light, '--color-accent')).toBe('#0052ad')
+    expect(valueOf(light, '--color-accent-fill')).toBe('#0052ad')
+    expect(valueOf(light, '--color-danger-text')).toBe('#b3001b')
+    expect(valueOf(light, '--color-text-secondary')).toBe('rgba(60, 60, 67, 0.84)')
     for (const dark of [systemDark, fixedDark]) {
       expect(valueOf(dark, '--color-accent')).toBe('#409cff')
       expect(valueOf(dark, '--color-accent-fill')).toBe('#0071e3')
-      expect(valueOf(dark, '--color-danger-text')).toBe('#ff453a')
+      expect(valueOf(dark, '--color-danger-text')).toBe('#ff7a72')
     }
   })
 
