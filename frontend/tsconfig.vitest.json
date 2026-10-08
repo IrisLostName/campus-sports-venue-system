@@ -21,7 +21,9 @@
     "src/utils/**/*.ts",
     "src/stores/**/*.ts",
     "src/composables/**/*.ts",
-    "src/router/**/*.ts"
+    "src/router/**/*.ts",
+    "src/components/**/*.vue",
+    "src/views/**/*.vue"
   ],
   "exclude": ["src/router/index.ts"]
 }
