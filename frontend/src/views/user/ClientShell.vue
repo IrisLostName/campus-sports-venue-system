@@ -14,27 +14,32 @@ import ClientDock from '../../components/ClientDock.vue'
 </template>
 
 <style scoped>
-/* iPhone 16 竖屏逻辑宽度 393px：窄屏撑满，桌面居中。内容区滚动，Dock 是同一列里的固定一行，不会遮挡内容。 */
+/* iPhone 16 竖屏逻辑宽度 393px：窄屏撑满，桌面居中。Dock 悬浮在这一列的底部；
+   内容区自己滚动，并在底部留出 Dock 高度 + 悬浮间距 + 安全区，滚到底时最后一项也在 Dock 之上（ACC-M2-10）。 */
 .stage {
   display: flex;
   justify-content: center;
   min-height: 100vh;
-  background: #e8ecf1;
 }
 
 .phone {
-  display: flex;
-  flex-direction: column;
+  position: relative;
   width: 100%;
   max-width: 393px;
   height: 100vh;
   height: 100dvh;
-  background: #f7f9fb;
+  overflow: hidden;
 }
 
 .content {
-  flex: 1;
-  min-height: 0;
+  height: 100%;
   overflow-y: auto;
+  padding-bottom: calc(var(--dock-height) + var(--dock-offset) + env(safe-area-inset-bottom) + var(--space-4));
+}
+
+@media (min-width: 394px) {
+  .phone {
+    border-inline: 1px solid var(--color-separator);
+  }
 }
 </style>
