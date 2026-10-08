@@ -52,3 +52,19 @@ describe('UiButton 的减少透明度与减少动态效果规则', () => {
     expect(rule).toContain('.spinner { animation: none; }')
   })
 })
+
+describe('UiSegmented 的减少透明度规则（N3）', () => {
+  it('选中项加 1px 分隔线描边，且不改字重', () => {
+    const rule = block(styleOf('UiSegmented.vue'), REDUCED_TRANSPARENCY)
+
+    expect(rule).toContain('.ui-segmented--capsule .item.active { border: 1px solid var(--color-separator); }')
+    expect(rule).not.toContain('font-weight')
+  })
+
+  it('正常模式的选中项外观不变：没有描边，字重 600', () => {
+    const rule = block(styleOf('UiSegmented.vue'), '.ui-segmented--capsule .item.active {')
+
+    expect(rule).not.toContain('border')
+    expect(rule).toContain('font-weight: 600;')
+  })
+})

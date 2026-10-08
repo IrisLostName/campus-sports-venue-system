@@ -112,6 +112,13 @@ const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
   font-weight: 600;
 }
 
+/* 减少透明度：选中项与底座同为实色表面，加一圈分隔线描边使其仍可区分（字重不变）。 */
+@media (prefers-reduced-transparency: reduce) {
+  .ui-segmented--capsule .item.active {
+    border: 1px solid var(--color-separator);
+  }
+}
+
 /* 卡片式的日期条：每项自带玻璃底，选中时换成强调色。 */
 .ui-segmented--scroll .item {
   flex: none;
