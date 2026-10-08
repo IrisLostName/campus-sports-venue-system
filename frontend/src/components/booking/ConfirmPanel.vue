@@ -46,7 +46,7 @@ defineEmits<{ submit: []; back: [] }>()
         v-model="purpose"
         type="text"
         :maxlength="PURPOSE_MAX_LENGTH"
-        placeholder="例如：网球训练"
+        placeholder="例如：朋友约练"
       >
     </label>
 

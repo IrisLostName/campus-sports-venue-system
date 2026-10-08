@@ -43,7 +43,7 @@ defineEmits<{ submit: [] }>()
         v-model="description"
         rows="3"
         :maxlength="REPAIR_DESCRIPTION_MAX_LENGTH"
-        placeholder="例如：网球场3 的球网损坏"
+        placeholder="例如：灯光损坏、地面积水"
       />
     </label>
 
