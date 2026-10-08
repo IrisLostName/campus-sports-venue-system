@@ -1,7 +1,7 @@
 // 启动恢复失败时的登录页提示与网络失败（FE-2 审计 N-2、N-8）。用内存路由 + Pinia + mock ApiClient，不使用真实时间。
 import { describe, expect, it } from 'vitest'
 
-import { mapNetworkError } from '../../src/api/http/transport'
+import { ApiError } from '../../src/api/errors'
 import { createAuthHarness, DEMO_PASSWORD, START } from './harness'
 
 const STORAGE_KEY = 'campus-venue.auth'
@@ -58,7 +58,7 @@ describe('N-8 启动恢复：网络失败与过期来源可区分', () => {
   it('getMe 网络失败（ApiError status 0）：清除登录态与 storage，静默无提示', async () => {
     const h = createAuthHarness()
     await h.auth.login({ username: 'zhangsan', password: DEMO_PASSWORD })
-    const reloaded = h.reload({ getMe: () => Promise.reject(mapNetworkError(new Error('Failed to fetch'))) })
+    const reloaded = h.reload({ getMe: () => Promise.reject(new ApiError(0, 'INTERNAL_ERROR', 'Failed to fetch')) })
     await reloaded.auth.restore()
 
     expect(reloaded.getMeCalls()).toBe(1)
