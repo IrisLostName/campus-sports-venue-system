@@ -1,5 +1,10 @@
 <script setup lang="ts">
 import type { RepairView } from '../../utils/meDisplay'
+import { toneForRepairStatus } from '../../utils/statusTone'
+import UiBanner from '../ui/UiBanner.vue'
+import UiButton from '../ui/UiButton.vue'
+import UiGlassCard from '../ui/UiGlassCard.vue'
+import UiStatusPill from '../ui/UiStatusPill.vue'
 
 defineProps<{ items: RepairView[]; loaded: boolean; error: string | null }>()
 
@@ -12,33 +17,41 @@ defineEmits<{ retry: [] }>()
     aria-label="我的报修"
   >
     <h3>我的报修</h3>
-    <div
+    <UiBanner
       v-if="error !== null"
       class="error"
+      tone="danger"
       role="alert"
     >
       <p>报修记录加载失败：{{ error }}</p>
-      <button
-        type="button"
+      <UiButton
+        variant="plain"
         @click="$emit('retry')"
       >
         重试
-      </button>
-    </div>
+      </UiButton>
+    </UiBanner>
     <p
       v-else-if="loaded && items.length === 0"
       class="none"
     >
       暂无报修记录
     </p>
-    <article
+    <UiGlassCard
       v-for="item in items"
       :key="item.id"
+      tag="article"
+      class="item"
       :data-status="item.status"
     >
       <header>
         <span class="venue">{{ item.venueName }}</span>
-        <span class="badge">{{ item.statusLabel }}</span>
+        <UiStatusPill
+          class="badge"
+          :tone="toneForRepairStatus(item.status)"
+        >
+          {{ item.statusLabel }}
+        </UiStatusPill>
       </header>
       <p class="description">
         {{ item.description }}
@@ -52,81 +65,56 @@ defineEmits<{ retry: [] }>()
       <p class="time">
         {{ item.createdText }}
       </p>
-    </article>
+    </UiGlassCard>
   </section>
 </template>
 
 <style scoped>
 .repairs {
-  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
 }
 
 h3 {
-  margin: 0 0 8px;
-  font-size: 16px;
+  padding-inline: var(--space-1);
+  font: var(--font-headline);
 }
 
-article {
-  margin-bottom: 8px;
-  padding: 12px 14px;
-  border: 1px solid #dde3ea;
-  border-radius: 10px;
-  background: #ffffff;
+.item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
 }
 
 header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .venue {
-  font-size: 15px;
-  font-weight: 600;
+  font: var(--font-headline);
 }
 
 .badge {
   flex: none;
-  padding: 0 10px;
-  border-radius: 999px;
-  background: #e3f2ec;
-  color: #0b6b4f;
-  font-size: 13px;
-  line-height: 1.6;
-}
-
-[data-status='SUBMITTED'] .badge {
-  background: #fff4e0;
-  color: #8a4b00;
-}
-
-p {
-  margin: 4px 0 0;
 }
 
 .description,
 .result {
-  font-size: 14px;
+  font: var(--font-callout);
   overflow-wrap: anywhere;
 }
 
-.result {
-  color: #0b6b4f;
-}
-
 .time {
-  color: #5f6b7a;
-  font-size: 12px;
+  color: var(--color-text-secondary);
+  font: var(--font-footnote);
 }
 
 .none {
-  color: #5f6b7a;
-  font-size: 14px;
-}
-
-.error {
-  color: #b3261e;
-  font-size: 14px;
+  color: var(--color-text-secondary);
+  font: var(--font-callout);
 }
 </style>

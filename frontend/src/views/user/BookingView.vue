@@ -7,6 +7,8 @@ import DateStrip from '../../components/booking/DateStrip.vue'
 import SlotGrid from '../../components/booking/SlotGrid.vue'
 import VenueList from '../../components/booking/VenueList.vue'
 import VenueNotices from '../../components/booking/VenueNotices.vue'
+import UiBanner from '../../components/ui/UiBanner.vue'
+import UiButton from '../../components/ui/UiButton.vue'
 import { useBookingBoard } from '../../composables/bookingBoard'
 
 const board = useBookingBoard()
@@ -22,7 +24,9 @@ onMounted(() => {
 
 <template>
   <section class="page">
-    <h1>订场</h1>
+    <h1 class="page-title">
+      订场
+    </h1>
 
     <template v-if="step === 'venues'">
       <p
@@ -31,19 +35,20 @@ onMounted(() => {
       >
         加载中…
       </p>
-      <div
+      <UiBanner
         v-if="venuesError !== null"
         class="error"
+        tone="danger"
         role="alert"
       >
         <p>{{ venuesError }}</p>
-        <button
-          type="button"
+        <UiButton
+          variant="plain"
           @click="board.load()"
         >
           重试
-        </button>
-      </div>
+        </UiButton>
+      </UiBanner>
       <VenueList
         :venues="venues"
         @select="board.selectVenue($event)"
@@ -51,56 +56,59 @@ onMounted(() => {
     </template>
 
     <template v-else-if="step === 'slots' && venue !== null">
-      <button
-        type="button"
+      <UiButton
+        variant="plain"
         class="back"
         @click="board.backToVenues()"
       >
         ← 重选场馆
-      </button>
+      </UiButton>
       <h2>{{ venue.name }}</h2>
       <VenueNotices
         :items="announcementItems"
         :error="announcementError"
       />
-      <p
+      <UiBanner
         v-if="rulesError !== null"
         class="error"
+        tone="danger"
         role="alert"
       >
         无法取得可预约的日期范围：{{ rulesError }}
-      </p>
+      </UiBanner>
       <DateStrip
         :dates="dates"
         :selected="date"
         @select="board.selectDate($event)"
       />
-      <p
+      <UiBanner
         v-if="submitError !== null"
         class="error banner"
+        tone="danger"
         role="alert"
       >
         {{ submitError }}
-      </p>
+      </UiBanner>
       <p
         v-if="slotsPhase === 'loading'"
         class="hint"
       >
         加载中…
       </p>
-      <div
+      <UiBanner
         v-else-if="slotsError !== null"
         class="error"
+        tone="danger"
         role="alert"
       >
         <p>{{ slotsError }}</p>
-        <button
-          type="button"
+        <UiButton
+          variant="plain"
           @click="board.loadSlots()"
         >
           重试
-        </button>
-      </div>
+        </UiButton>
+      </UiBanner>
       <SlotGrid
         v-else
         :groups="groups"
@@ -127,47 +135,12 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.page {
-  padding: 16px;
-}
-
-h1 {
-  margin: 0 0 12px;
-  font-size: 22px;
-}
-
 h2 {
-  margin: 8px 0 12px;
-  font-size: 18px;
-}
-
-.hint {
-  margin: 0 0 12px;
-  color: #5f6b7a;
-  font-size: 14px;
-}
-
-.error {
-  margin: 0 0 12px;
-  color: #b3261e;
-  font-size: 14px;
-}
-
-.error p {
-  margin: 0 0 8px;
-}
-
-.banner {
-  margin-top: 12px;
+  padding-inline: var(--space-1);
+  font: var(--font-title);
 }
 
 .back {
-  min-height: 44px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: #0b6b4f;
-  font-size: 15px;
-  cursor: pointer;
+  align-self: flex-start;
 }
 </style>

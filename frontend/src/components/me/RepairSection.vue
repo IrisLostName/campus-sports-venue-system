@@ -2,6 +2,7 @@
 import { onMounted } from 'vue'
 
 import { useRepairBoard } from '../../composables/repairBoard'
+import UiBanner from '../ui/UiBanner.vue'
 import RepairForm from './RepairForm.vue'
 import RepairList from './RepairList.vue'
 
@@ -21,13 +22,14 @@ onMounted(() => {
     aria-label="报修"
   >
     <h2>报修</h2>
-    <p
+    <UiBanner
       v-if="venuesError !== null"
       class="error"
+      tone="danger"
       role="alert"
     >
       场馆列表加载失败：{{ venuesError }}
-    </p>
+    </UiBanner>
     <RepairForm
       v-model:venue-id="venueId"
       v-model:description="description"
@@ -47,14 +49,14 @@ onMounted(() => {
 </template>
 
 <style scoped>
-h2 {
-  margin: 0 0 8px;
-  font-size: 17px;
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
 }
 
-.error {
-  margin: 0 0 8px;
-  color: #b3261e;
-  font-size: 14px;
+h2 {
+  padding-inline: var(--space-1);
+  font: var(--font-title);
 }
 </style>

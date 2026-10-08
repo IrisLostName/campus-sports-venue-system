@@ -10,7 +10,7 @@ export interface SegmentedItem {
 
 withDefaults(defineProps<{
   items: SegmentedItem[]
-  ariaLabel: string
+  label: string
   mode?: 'tabs' | 'pressed'
   layout?: 'capsule' | 'scroll'
   itemClass?: string
@@ -30,7 +30,7 @@ const model = defineModel<string | null>({ required: true })
     class="ui-segmented"
     :class="[`ui-segmented--${layout}`, layout === 'capsule' ? ['ui-glass', 'ui-glass--thin'] : []]"
     :role="mode === 'tabs' ? 'tablist' : 'group'"
-    :aria-label="ariaLabel"
+    :aria-label="label"
   >
     <button
       v-for="item in items"

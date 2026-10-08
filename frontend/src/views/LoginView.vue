@@ -34,7 +34,7 @@ function onModeChange(value: string | null): void {
       <UiSegmented
         :items="MODE_ITEMS"
         :model-value="form.mode.value"
-        aria-label="登录方式"
+        label="登录方式"
         mode="tabs"
         @update:model-value="onModeChange"
       />

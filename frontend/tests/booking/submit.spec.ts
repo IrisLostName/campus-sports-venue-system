@@ -29,7 +29,7 @@ describe('ACC-M2-04 订场成功', () => {
     expect(ctx.board.step.value).toBe('done')
     expect(ctx.board.result.value).toEqual({
       id: 3, dateText: '2026-10-13 周二', timeText: '11:00–12:30', place: '网球馆 · 网球场4',
-      userDisplayName: '张三', statusLabel: '待使用',
+      userDisplayName: '张三', statusLabel: '待使用', displayStatus: 'UPCOMING',
     })
     expect(ctx.board.submitError.value).toBeNull()
 

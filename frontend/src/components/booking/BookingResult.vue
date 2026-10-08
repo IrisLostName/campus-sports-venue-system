@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { PATHS } from '../../router/paths'
 import type { ReservationSummary } from '../../utils/reservationDisplay'
+import { toneForDisplayStatus } from '../../utils/statusTone'
+import UiButton from '../ui/UiButton.vue'
+import UiGlassCard from '../ui/UiGlassCard.vue'
+import UiStatusPill from '../ui/UiStatusPill.vue'
 
 defineProps<{ result: ReservationSummary }>()
 
@@ -8,9 +12,13 @@ defineEmits<{ again: [] }>()
 </script>
 
 <template>
-  <section
+  <UiGlassCard
+    tag="section"
     class="result"
     aria-label="预约结果"
+    material="thick"
+    radius="2xl"
+    :padding="5"
   >
     <h2>预约成功</h2>
     <dl class="rows">
@@ -28,107 +36,79 @@ defineEmits<{ again: [] }>()
       </div>
       <div>
         <dt>状态</dt>
-        <dd>{{ result.statusLabel }}</dd>
+        <dd>
+          <UiStatusPill :tone="toneForDisplayStatus(result.displayStatus)">
+            {{ result.statusLabel }}
+          </UiStatusPill>
+        </dd>
       </div>
     </dl>
     <div class="links">
-      <RouterLink
-        class="primary"
+      <UiButton
+        class="link"
         :to="PATHS.reservation"
       >
         查看预约
-      </RouterLink>
-      <RouterLink
-        class="secondary"
+      </UiButton>
+      <UiButton
+        class="link"
+        variant="secondary"
         :to="PATHS.home"
       >
         回到首页
-      </RouterLink>
+      </UiButton>
     </div>
-    <button
-      type="button"
-      class="again"
+    <UiButton
+      variant="plain"
+      block
       @click="$emit('again')"
     >
       继续订场
-    </button>
-  </section>
+    </UiButton>
+  </UiGlassCard>
 </template>
 
 <style scoped>
 .result {
-  padding: 20px 16px;
-  border: 1px solid #b7dccd;
-  border-radius: 12px;
-  background: #e3f2ec;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
 }
 
 h2 {
-  margin: 0 0 12px;
-  color: #0b6b4f;
-  font-size: 20px;
+  font: var(--font-title);
 }
 
 .rows {
-  margin: 0 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
 }
 
 .rows div {
   display: flex;
-  gap: 12px;
-  padding: 4px 0;
-  font-size: 15px;
+  align-items: center;
+  gap: var(--space-3);
+  font: var(--font-callout);
 }
 
 dt {
   flex: none;
   width: 3em;
-  color: #3d5a4f;
+  color: var(--color-text-secondary);
 }
 
 dd {
-  margin: 0;
   min-width: 0;
   overflow-wrap: anywhere;
 }
 
 .links {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
-.links a {
+.link {
   flex: 1;
-  box-sizing: border-box;
-  min-height: 44px;
-  padding: 10px 0;
-  border-radius: 8px;
-  font-size: 16px;
-  text-align: center;
-  text-decoration: none;
-}
-
-.primary {
-  border: 1px solid #0b6b4f;
-  background: #0b6b4f;
-  color: #ffffff;
-}
-
-.secondary {
-  border: 1px solid #0b6b4f;
-  background: #ffffff;
-  color: #0b6b4f;
-}
-
-.again {
-  display: block;
-  width: 100%;
-  min-height: 44px;
-  margin-top: 8px;
-  border: 0;
-  background: transparent;
-  color: #0b6b4f;
-  font-size: 15px;
-  cursor: pointer;
 }
 </style>

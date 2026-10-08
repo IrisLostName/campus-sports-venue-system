@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { VenueSummary } from '../../api/types'
 import { NOT_BOOKABLE_TEXT } from '../../utils/bookingDisplay'
+import UiGlassCard from '../ui/UiGlassCard.vue'
+import UiListRow from '../ui/UiListRow.vue'
 
 defineProps<{ venues: VenueSummary[] }>()
 
@@ -8,15 +10,21 @@ defineEmits<{ select: [venueId: number] }>()
 </script>
 
 <template>
-  <ul class="venues">
+  <UiGlassCard
+    v-if="venues.length > 0"
+    tag="ul"
+    class="venues"
+    :padding="0"
+  >
     <li
       v-for="venue in venues"
       :key="venue.id"
     >
-      <button
-        type="button"
+      <UiListRow
+        tag="button"
         class="venue"
         :class="{ closed: !venue.bookable }"
+        :arrow="venue.bookable"
         :disabled="!venue.bookable"
         @click="$emit('select', venue.id)"
       >
@@ -33,56 +41,32 @@ defineEmits<{ select: [venueId: number] }>()
         >
           {{ NOT_BOOKABLE_TEXT }}
         </span>
-      </button>
+      </UiListRow>
     </li>
-  </ul>
+  </UiGlassCard>
 </template>
 
 <style scoped>
 .venues {
   margin: 0;
-  padding: 0;
   list-style: none;
+  overflow: hidden;
 }
 
-li {
-  margin-bottom: 8px;
-}
-
-.venue {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-  width: 100%;
-  min-height: 56px;
-  padding: 12px 16px;
-  border: 1px solid #dde3ea;
-  border-radius: 12px;
-  background: #ffffff;
-  color: #1f2933;
-  text-align: left;
-  cursor: pointer;
+li + li {
+  border-top: 1px solid var(--color-separator);
 }
 
 .name {
-  font-size: 17px;
-  font-weight: 600;
+  font: var(--font-headline);
 }
 
 .meta {
-  color: #5f6b7a;
-  font-size: 14px;
+  color: var(--color-text-secondary);
+  font: var(--font-footnote);
 }
 
 .venue.closed {
-  border-style: dashed;
-  background: #f1f4f8;
-  color: #8a94a1;
-  cursor: not-allowed;
-}
-
-.not-bookable {
-  color: #8a94a1;
+  opacity: 0.6;
 }
 </style>

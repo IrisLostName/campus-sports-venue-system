@@ -5,6 +5,8 @@ import LogoutButton from '../../components/LogoutButton.vue'
 import ProfileCard from '../../components/me/ProfileCard.vue'
 import RepairSection from '../../components/me/RepairSection.vue'
 import ReservationCardView from '../../components/reservation/ReservationCard.vue'
+import UiBanner from '../../components/ui/UiBanner.vue'
+import UiButton from '../../components/ui/UiButton.vue'
 import { useMeBoard } from '../../composables/meBoard'
 import { useAuthStore } from '../../stores/auth'
 import { buildProfile } from '../../utils/meDisplay'
@@ -24,7 +26,9 @@ onMounted(() => {
 
 <template>
   <section class="page">
-    <h1>我的</h1>
+    <h1 class="page-title">
+      我的
+    </h1>
 
     <ProfileCard
       v-if="profile !== null"
@@ -46,27 +50,29 @@ onMounted(() => {
         加载中…
       </p>
 
-      <div
+      <UiBanner
         v-if="loadError !== null"
         class="error"
+        tone="danger"
         role="alert"
       >
         <p>{{ loadError }}</p>
-        <button
-          type="button"
+        <UiButton
+          variant="plain"
           @click="board.load()"
         >
           重试
-        </button>
-      </div>
+        </UiButton>
+      </UiBanner>
 
-      <p
+      <UiBanner
         v-if="pageFeedback !== null"
         class="error"
+        tone="danger"
         role="alert"
       >
         {{ pageFeedback }}
-      </p>
+      </UiBanner>
 
       <p
         v-if="isEmpty"
@@ -85,15 +91,16 @@ onMounted(() => {
         @action="trigger($event, card.id)"
       />
 
-      <button
+      <UiButton
         v-if="hasMore"
-        type="button"
+        variant="secondary"
         class="more"
+        block
         :disabled="loadingMore"
         @click="board.loadMore()"
       >
         {{ loadingMore ? '加载中…' : '加载更多' }}
-      </button>
+      </UiButton>
     </section>
 
     <RepairSection />
@@ -101,54 +108,14 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.page {
-  padding: 16px;
-}
-
-h1 {
-  margin: 0 0 12px;
-  font-size: 22px;
+.history {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
 }
 
 h2 {
-  margin: 0 0 8px;
-  font-size: 17px;
-}
-
-.history {
-  margin-bottom: 20px;
-}
-
-.hint {
-  margin: 0 0 12px;
-  color: #5f6b7a;
-  font-size: 14px;
-}
-
-.error {
-  margin: 0 0 12px;
-  color: #b3261e;
-  font-size: 14px;
-}
-
-.error p {
-  margin: 0 0 8px;
-}
-
-.more {
-  display: block;
-  width: 100%;
-  min-height: 44px;
-  border: 1px solid #c8d0da;
-  border-radius: 8px;
-  background: #ffffff;
-  color: #1f2933;
-  font-size: 16px;
-  cursor: pointer;
-}
-
-.more:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+  padding-inline: var(--space-1);
+  font: var(--font-title);
 }
 </style>
