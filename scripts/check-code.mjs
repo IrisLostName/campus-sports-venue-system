@@ -76,7 +76,7 @@ scan(feSrc, [
 // QA-1：前端测试同样不得跳过、压制、使用 any 或留调试输出。测试本来就要用 mock、storage，所以不加那几条规则。
 scan(feTests, [
   ...banned,
-  [/\.(skip|only|todo)\(/, '不得跳过、遗留 .only 或占位测试'],
+  [/\.(skip|only|todo|skipIf|runIf)(?![\w$])/, '不得跳过、遗留 .only、占位测试或按条件运行（含 .skip.each、.only.each、.skipIf()、.runIf() 等链式写法）'],
   [/\b(xit|xdescribe|fit|fdescribe)\(/, '不得跳过、遗留聚焦的测试'],
   [/@ts-ignore|@ts-nocheck|@ts-expect-error|eslint-disable/, '不得压制类型或 lint 检查'],
   [/:\s*any\b|\bas any\b|<any>/, '不得使用 any（用 unknown 或精确类型）'],
