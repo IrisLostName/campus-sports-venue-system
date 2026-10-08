@@ -26,6 +26,15 @@ describe('tabs 语义（登录/注册切换）', () => {
 
     expect(wrapper.emitted('update:modelValue')).toEqual([['register']])
   })
+
+  it('点击已选中的项也发出 update:modelValue（每次点击都发出，页面靠它清提示或重新拉取）', async () => {
+    const wrapper = mount(UiSegmented, { props: { items: ITEMS, label: '登录方式', mode: 'tabs', modelValue: 'login' } })
+
+    await wrapper.findAll('[role="tab"]')[0]?.trigger('click')
+    await wrapper.findAll('[role="tab"]')[0]?.trigger('click')
+
+    expect(wrapper.emitted('update:modelValue')).toEqual([['login'], ['login']])
+  })
 })
 
 describe('pressed 语义（日期条、标签）', () => {

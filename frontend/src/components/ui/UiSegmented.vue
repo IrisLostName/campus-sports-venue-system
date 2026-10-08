@@ -10,6 +10,7 @@ export interface SegmentedItem {
 
 withDefaults(defineProps<{
   items: SegmentedItem[]
+  modelValue: string | null
   label: string
   mode?: 'tabs' | 'pressed'
   layout?: 'capsule' | 'scroll'
@@ -22,7 +23,9 @@ withDefaults(defineProps<{
   valueAttribute: 'data-value',
 })
 
-const model = defineModel<string | null>({ required: true })
+// 每次点击都发出事件（含点击已选中项）：页面靠它重新拉取或清掉提示，与 main 的行为一致，
+// 所以不用 defineModel（值未变时它不发事件）。
+const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
 </script>
 
 <template>
@@ -37,12 +40,12 @@ const model = defineModel<string | null>({ required: true })
       :key="item.value"
       type="button"
       class="item"
-      :class="[itemClass, { active: item.value === model }]"
+      :class="[itemClass, { active: item.value === modelValue }]"
       :role="mode === 'tabs' ? 'tab' : undefined"
-      :aria-selected="mode === 'tabs' ? item.value === model : undefined"
-      :aria-pressed="mode === 'pressed' ? item.value === model : undefined"
+      :aria-selected="mode === 'tabs' ? item.value === modelValue : undefined"
+      :aria-pressed="mode === 'pressed' ? item.value === modelValue : undefined"
       :[valueAttribute]="item.value"
-      @click="model = item.value"
+      @click="emit('update:modelValue', item.value)"
     >
       <span class="label">{{ item.label }}</span>
       <span

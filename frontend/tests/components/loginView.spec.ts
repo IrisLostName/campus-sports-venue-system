@@ -84,6 +84,18 @@ describe('登录/注册切换', () => {
     await wrapper.findAll('[role="tab"]')[1]?.trigger('click')
     expect(errorText(wrapper)).toBeNull()
   })
+
+  it('重复点击当前选中的标签也会清掉错误提示（与 main 一致）', async () => {
+    const wrapper = await openLogin(createAuthHarness())
+    await fill(wrapper, { 用户名: 'zhangsan', 密码: 'wrong-password' })
+    await submit(wrapper)
+    expect(errorText(wrapper)).toBe('用户名或密码错误')
+
+    await wrapper.findAll('[role="tab"]')[0]?.trigger('click')
+
+    expect(selectedTabs(wrapper)).toEqual(['true', 'false'])
+    expect(errorText(wrapper)).toBeNull()
+  })
 })
 
 describe('登录失败', () => {
