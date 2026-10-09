@@ -3,6 +3,7 @@
 import type { CancelState } from '../../../composables/adminReservationActions'
 import UiTextField from '../../ui/UiTextField.vue'
 import AdminActionDialog from '../AdminActionDialog.vue'
+import { REASON_MAX_LENGTH } from '../../../utils/fieldLimits'
 
 defineProps<{ state: CancelState | null }>()
 
@@ -26,6 +27,7 @@ defineEmits<{ patch: [change: Partial<CancelState>]; confirm: []; dismiss: [] }>
     <UiTextField
       :model-value="state?.reason ?? ''"
       label="取消原因（必填）"
+      :maxlength="REASON_MAX_LENGTH"
       control="textarea"
       rows="3"
       @update:model-value="$emit('patch', { reason: $event })"

@@ -3,6 +3,7 @@
 import type { UserReassignState } from '../../../composables/adminReservationActions'
 import UiTextField from '../../ui/UiTextField.vue'
 import AdminActionDialog from '../AdminActionDialog.vue'
+import { REASON_MAX_LENGTH } from '../../../utils/fieldLimits'
 
 defineProps<{ state: UserReassignState | null }>()
 
@@ -34,6 +35,7 @@ defineEmits<{ patch: [change: Partial<UserReassignState>]; confirm: []; dismiss:
     <UiTextField
       :model-value="state?.reason ?? ''"
       label="改派原因（必填）"
+      :maxlength="REASON_MAX_LENGTH"
       control="textarea"
       rows="3"
       @update:model-value="$emit('patch', { reason: $event })"

@@ -20,7 +20,12 @@ export interface RouteViews {
   venueAdminAnnouncements: View
   venueAdminRepairs: View
   venueAdminLogs: View
-  sysAdmin: View
+  sysAdmin: View              // 系统管理员外壳（AdminShell + 场馆选择），其余是它的子页面；场馆运营五页复用 venueAdmin* 视图
+  sysAdminVenues: View
+  sysAdminAdmins: View
+  sysAdminUsers: View
+  sysAdminAnnouncements: View
+  sysAdminStats: View
   display: View
 }
 
@@ -58,7 +63,28 @@ export function buildRoutes(views: RouteViews): RouteRecordRaw[] {
         { path: ':pathMatch(.*)*', component: NEVER_RENDERED, beforeEnter: (to) => ({ path: PATHS.venueAdmin, query: to.query }) },
       ],
     },
-    { path: `${PATHS.sysAdmin}/:rest(.*)*`, name: 'sys-admin', component: views.sysAdmin, meta: { access: 'SYS_ADMIN' } },
+    {
+      path: PATHS.sysAdmin,
+      component: views.sysAdmin,
+      meta: { access: 'SYS_ADMIN' },
+      children: [
+        // meta.venueScope 是各页面对场馆上下文的要求（FE-6 S4），外壳从匹配到的路由记录读取，不按地址字符串判断。
+        { path: '', name: 'sys-admin', component: views.sysAdminVenues, meta: { venueScope: 'none' } },
+        { path: PATHS.sysAdminAdmins, name: 'sys-admin-admins', component: views.sysAdminAdmins, meta: { venueScope: 'none' } },
+        { path: PATHS.sysAdminUsers, name: 'sys-admin-users', component: views.sysAdminUsers, meta: { venueScope: 'none' } },
+        { path: PATHS.sysAdminAnnouncements, name: 'sys-admin-announcements', component: views.sysAdminAnnouncements, meta: { venueScope: 'none' } },
+        { path: PATHS.sysAdminStats, name: 'sys-admin-stats', component: views.sysAdminStats, meta: { venueScope: 'none' } },
+        { path: PATHS.sysAdminLogs, name: 'sys-admin-logs', component: views.venueAdminLogs, meta: { venueScope: 'venue-or-all' } },
+        // 场馆运营五页直接复用场馆管理员端的页面组件（FE-6 S2），场馆上下文由系统管理员外壳提供。
+        { path: PATHS.sysAdminReservations, name: 'sys-admin-reservations', component: views.venueAdminReservations, meta: { venueScope: 'venue-or-all' } },
+        { path: PATHS.sysAdminResources, name: 'sys-admin-resources', component: views.venueAdminResources, meta: { venueScope: 'venue' } },
+        { path: PATHS.sysAdminOccupancy, name: 'sys-admin-occupancy', component: views.venueAdminOccupancy, meta: { venueScope: 'venue' } },
+        { path: PATHS.sysAdminVenueAnnouncements, name: 'sys-admin-venue-announcements', component: views.venueAdminAnnouncements, meta: { venueScope: 'venue' } },
+        { path: PATHS.sysAdminRepairs, name: 'sys-admin-repairs', component: views.venueAdminRepairs, meta: { venueScope: 'venue' } },
+        // 同 FE-5：未知子路径回到 /sys-admin，保留查询参数；beforeEnter 在全局守卫之后运行。
+        { path: ':pathMatch(.*)*', component: NEVER_RENDERED, beforeEnter: (to) => ({ path: PATHS.sysAdmin, query: to.query }) },
+      ],
+    },
     { path: PATHS.display, name: 'display', component: views.display, meta: { access: 'public' } },
     { path: '/:pathMatch(.*)*', name: 'not-found', component: NEVER_RENDERED, meta: { access: 'fallback' } },
   ]

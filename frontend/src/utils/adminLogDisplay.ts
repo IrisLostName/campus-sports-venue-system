@@ -49,10 +49,15 @@ export interface LogRowView {
   reasonText: string | null
   before: string | null
   after: string | null
+  venueText?: string      // 仅“全部场馆”模式（FE-6 G6）：venueId 为 null 显示“全局”
 }
 
-export function buildLogRow(log: OperationLog): LogRowView {
+export const GLOBAL_VENUE_TEXT = '全局'
+
+// venueNames 给出时（全部场馆模式）附带场馆列文字。
+export function buildLogRow(log: OperationLog, venueNames?: ReadonlyMap<number, string>): LogRowView {
   const target = LOG_TARGET_LABELS[log.targetType]
+  const venueText = log.venueId === null ? GLOBAL_VENUE_TEXT : (venueNames?.get(log.venueId) ?? `场馆 #${log.venueId}`)
   return {
     id: log.id,
     timeText: formatTimestamp(log.createdAt),
@@ -62,5 +67,6 @@ export function buildLogRow(log: OperationLog): LogRowView {
     reasonText: log.reason === null || log.reason.trim() === '' ? null : log.reason,
     before: formatJson(log.before),
     after: formatJson(log.after),
+    ...(venueNames === undefined ? {} : { venueText }),
   }
 }

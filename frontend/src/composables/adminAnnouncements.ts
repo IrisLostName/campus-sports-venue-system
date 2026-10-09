@@ -27,25 +27,25 @@ export interface ArchiveDialogState {
 export const PUBLISHED_NOTICE = '公告已发布'
 export const ARCHIVED_NOTICE = '公告已归档'
 
-function emptyForm(): AnnouncementForm {
+export function emptyForm(): AnnouncementForm {
   return { title: '', content: '', expiresAt: '' }
 }
 
-function formProblem(form: AnnouncementForm): string | null {
+export function formProblem(form: AnnouncementForm): string | null {
   if (form.title.trim() === '') {
     return TITLE_REQUIRED_TEXT
   }
   return form.content.trim() === '' ? CONTENT_REQUIRED_TEXT : null
 }
 
-interface ArchiveHooks {
+export interface ArchiveHooks {
   rows: () => AnnouncementRowView[]
   notify(text: string): void
   reload(): Promise<void>
 }
 
 // 归档确认对话框：先确认再归档，失败时保持对话框并显示文案。
-function createArchiveDialog(deps: AdminDeps, runner: AdminRunner, hooks: ArchiveHooks) {
+export function createArchiveDialog(deps: AdminDeps, runner: AdminRunner, hooks: ArchiveHooks) {
   const archive = ref<ArchiveDialogState | null>(null)
 
   function askArchive(id: number): void {

@@ -5,6 +5,7 @@ import { computed } from 'vue'
 import type { ReassignState } from '../../../composables/adminReassign'
 import UiTextField from '../../ui/UiTextField.vue'
 import AdminActionDialog from '../AdminActionDialog.vue'
+import { REASON_MAX_LENGTH } from '../../../utils/fieldLimits'
 
 const props = defineProps<{ state: ReassignState | null }>()
 
@@ -91,6 +92,7 @@ const slots = computed(() => {
     <UiTextField
       :model-value="state?.reason ?? ''"
       label="改派原因（必填）"
+      :maxlength="REASON_MAX_LENGTH"
       control="textarea"
       rows="3"
       @update:model-value="$emit('patch', { reason: $event })"

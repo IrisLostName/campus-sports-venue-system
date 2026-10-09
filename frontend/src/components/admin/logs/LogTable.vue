@@ -1,11 +1,14 @@
 <script setup lang="ts">
 // 操作记录表（FE-5 P8）：时间、操作人、动作、对象、原因；变更前 / 变更后是可展开的格式化 JSON，不做解释。
+import { computed } from 'vue'
+
 import type { LogRowView } from '../../../utils/adminLogDisplay'
 import AdminDataTable from '../AdminDataTable.vue'
 
-defineProps<{ rows: LogRowView[] }>()
+// showVenue（FE-6 G6，全部场馆）：多一列“场馆”，venueId 为 null 的记录显示“全局”。
+const props = withDefaults(defineProps<{ rows: LogRowView[]; showVenue?: boolean }>(), { showVenue: false })
 
-const COLUMNS = [
+const BASE_COLUMNS = [
   { key: 'timeText', label: '时间' },
   { key: 'adminName', label: '操作人' },
   { key: 'actionLabel', label: '动作' },
@@ -13,6 +16,8 @@ const COLUMNS = [
   { key: 'reasonText', label: '原因' },
   { key: 'detail', label: '详情' },
 ]
+
+const COLUMNS = computed(() => (props.showVenue ? [{ key: 'venueText', label: '场馆' }, ...BASE_COLUMNS] : BASE_COLUMNS))
 </script>
 
 <template>
