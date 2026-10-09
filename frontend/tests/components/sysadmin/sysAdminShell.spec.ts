@@ -176,3 +176,68 @@ describe('S4 场馆选择器', () => {
     expect(router.currentRoute.value.query.venueId).toBe('1')
   })
 })
+
+// F1：场馆要求取自匹配到的路由记录，不按地址字符串判断；vue-router 接受的等价地址（尾部斜杠、大小写）与规范地址行为一致。
+describe('F1 等价地址得到与规范地址相同的场馆要求', () => {
+  const VENUE_PAGES: [string, string, string][] = [
+    ['/sys-admin/resources/', '/sys-admin/resources', '场地与开放规则'],
+    ['/sys-admin/Resources', '/sys-admin/resources', '场地与开放规则'],
+    ['/sys-admin/occupancy/', '/sys-admin/occupancy', '场地占用总览'],
+    ['/sys-admin/Venue-Announcements', '/sys-admin/venue-announcements', '公告'],
+    ['/sys-admin/REPAIRS/', '/sys-admin/repairs', '报修'],
+  ]
+  const ALL_VENUE_PAGES: [string, string][] = [
+    ['/sys-admin/reservations/', '预约管理'],
+    ['/sys-admin/Logs', '操作记录'],
+  ]
+
+  it.each(VENUE_PAGES)('%s：必须选定场馆——页面照常渲染，选择器没有“全部场馆”，地址栏写入第一个场馆', async (path, canonical, title) => {
+    const { root, router } = await openSysApp(path)
+    const select = fieldByLabel(root.get('header'), '场馆')
+
+    expect(content(root).get('h1').text()).toBe(title)
+    expect(select.findAll('option').map((option) => option.text())).toEqual(['网球馆', '羽毛球馆', '游泳馆'])
+    expect(router.currentRoute.value.path).toBe(canonical)
+    expect(router.currentRoute.value.query.venueId).toBe('1')
+  })
+
+  it.each(ALL_VENUE_PAGES)('%s：可选“全部场馆”——有选择器，缺省是全部场馆，地址栏不带 venueId', async (path, title) => {
+    const { root, router } = await openSysApp(path)
+    const select = fieldByLabel(root.get('header'), '场馆')
+
+    expect(content(root).get('h1').text()).toBe(title)
+    expect(select.findAll('option').map((option) => option.text())).toEqual(['全部场馆', '网球馆', '羽毛球馆', '游泳馆'])
+    expect(router.currentRoute.value.query.venueId).toBeUndefined()
+  })
+
+  it('场馆列表还没返回时不渲染需要场馆的页面；返回并选定场馆后才出现', async () => {
+    let release: () => void = () => undefined
+    const gate = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    const { root } = await openSysApp('/sys-admin/Resources', {
+      wrap: (api) => ({
+        ...api,
+        adminListVenues: async () => {
+          await gate
+          return api.adminListVenues()
+        },
+      }),
+    })
+
+    expect(root.find('main h1').exists()).toBe(false)
+    expect(root.get('main').text()).toContain('加载中')
+    release()
+    await flushPromises()
+
+    expect(content(root).get('h1').text()).toBe('场地与开放规则')
+  })
+
+  it('等价地址上带着已有的 venueId：导航链接仍按规范路径携带场馆', async () => {
+    const { root } = await openSysApp('/sys-admin/Resources/?venueId=2')
+    const hrefs = Object.fromEntries(root.findAll('nav a').map((link) => [link.text(), link.attributes('href')]))
+
+    expect(hrefs['场地占用总览']).toBe('/sys-admin/occupancy?venueId=2')
+    expect(hrefs['用户']).toBe('/sys-admin/users')
+  })
+})

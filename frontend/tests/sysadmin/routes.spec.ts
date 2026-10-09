@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import { resolvePostLoginTarget } from '../../src/router/access'
 import { PATHS } from '../../src/router/paths'
-import { GLOBAL_GROUP, OPERATION_GROUP, scopeOfPath, SYS_ADMIN_NAV } from '../../src/router/sysAdminNav'
+import { GLOBAL_GROUP, OPERATION_GROUP, scopeOfRoute, SYS_ADMIN_NAV, type VenueScope } from '../../src/router/sysAdminNav'
 import { createAuthHarness, DEMO_PASSWORD, type AuthHarness } from '../auth/harness'
 
 async function loginAs(h: AuthHarness, username: string): Promise<void> {
@@ -37,15 +37,39 @@ describe('S2 两组导航', () => {
   })
 
   it('S4：只有预约管理与操作记录可以选“全部场馆”；运营页面必须选定场馆；其余全局页面不要场馆', () => {
-    const scopes = Object.fromEntries(SYS_ADMIN_NAV.map((entry) => [entry.label, entry.scope]))
+    const { router } = createAuthHarness()
+    const scopes = Object.fromEntries(SYS_ADMIN_NAV.map((entry) => [entry.label, scopeOfRoute(router.resolve(entry.path))]))
 
     expect(scopes).toEqual({
       场馆资料与开关: 'none', 管理员与授权: 'none', 用户: 'none', 系统公告: 'none', 全局统计: 'none',
       操作记录: 'venue-or-all', 预约管理: 'venue-or-all',
       场地与开放规则: 'venue', 场地占用总览: 'venue', 场馆公告: 'venue', 报修: 'venue',
     })
-    expect(scopeOfPath(PATHS.sysAdminLogs)).toBe('venue-or-all')
-    expect(scopeOfPath('/sys-admin/nope')).toBe('none')
+    expect(scopeOfRoute(router.resolve('/sys-admin/nope'))).toBe('none')
+  })
+
+  // F1：场馆要求来自匹配到的路由记录；vue-router 接受的等价地址（尾部斜杠、大小写）route.path 保留原样，
+  // 但必须得到与规范路径相同的要求。
+  const EQUIVALENT_ADDRESSES: [string, string, VenueScope][] = [
+    ['/sys-admin/resources', '/sys-admin/resources/', 'venue'],
+    ['/sys-admin/resources', '/sys-admin/Resources', 'venue'],
+    ['/sys-admin/occupancy', '/sys-admin/OCCUPANCY/', 'venue'],
+    ['/sys-admin/venue-announcements', '/sys-admin/Venue-Announcements', 'venue'],
+    ['/sys-admin/repairs', '/sys-admin/repairs/', 'venue'],
+    ['/sys-admin/reservations', '/sys-admin/reservations/', 'venue-or-all'],
+    ['/sys-admin/logs', '/sys-admin/Logs', 'venue-or-all'],
+    ['/sys-admin/users', '/sys-admin/Users/', 'none'],
+    ['/sys-admin', '/sys-admin/', 'none'],
+  ]
+
+  it.each(EQUIVALENT_ADDRESSES)('F1：%s 的等价地址 %s 与规范路径同为 %s', (canonical, variant, expected) => {
+    const { router } = createAuthHarness()
+    const resolved = router.resolve(variant)
+
+    expect(resolved.path).toBe(variant)
+    expect(resolved.name).toBe(router.resolve(canonical).name)
+    expect(scopeOfRoute(resolved)).toBe(expected)
+    expect(scopeOfRoute(router.resolve(canonical))).toBe(expected)
   })
 })
 
