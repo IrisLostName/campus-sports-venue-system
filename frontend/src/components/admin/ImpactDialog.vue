@@ -6,6 +6,7 @@ import type { ImpactDialogState } from '../../composables/impactFlow'
 import { briefText } from '../../utils/impactDisplay'
 import UiTextField from '../ui/UiTextField.vue'
 import AdminActionDialog from './AdminActionDialog.vue'
+import { REASON_MAX_LENGTH } from '../../utils/fieldLimits'
 
 defineProps<{ state: ImpactDialogState | null }>()
 
@@ -72,6 +73,7 @@ defineEmits<{
         <UiTextField
           :model-value="state.reason"
           label="原因（选择取消时必填）"
+          :maxlength="REASON_MAX_LENGTH"
           control="textarea"
           rows="2"
           @update:model-value="$emit('update:reason', $event)"

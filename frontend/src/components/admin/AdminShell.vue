@@ -9,6 +9,12 @@ import LogoutButton from '../LogoutButton.vue'
 
 defineProps<{ brand: string; items: AdminNavItem[] }>()
 
+// 分组标题（FE-6 S2）：条目带 group 且与前一条不同组时，在它前面显示一次标题；不带 group 的导航没有标题。
+function headingBefore(items: AdminNavItem[], index: number): string | null {
+  const group = items[index]?.group
+  return group !== undefined && group !== items[index - 1]?.group ? group : null
+}
+
 const auth = useAuthStore()
 const userName = computed(() => auth.user?.displayName ?? '')
 </script>
@@ -26,15 +32,24 @@ const userName = computed(() => auth.user?.displayName ?? '')
         class="nav"
         aria-label="管理端导航"
       >
-        <RouterLink
-          v-for="item in items"
+        <template
+          v-for="(item, index) in items"
           :key="item.label"
-          :to="item.to"
-          class="nav-item"
-          exact-active-class="active"
         >
-          {{ item.label }}
-        </RouterLink>
+          <p
+            v-if="headingBefore(items, index) !== null"
+            class="group"
+          >
+            {{ headingBefore(items, index) }}
+          </p>
+          <RouterLink
+            :to="item.to"
+            class="nav-item"
+            exact-active-class="active"
+          >
+            {{ item.label }}
+          </RouterLink>
+        </template>
       </nav>
     </aside>
     <div class="main">
@@ -82,6 +97,13 @@ const userName = computed(() => auth.user?.displayName ?? '')
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
+}
+
+.group {
+  padding: var(--space-3) var(--space-3) var(--space-1);
+  color: var(--color-text-secondary);
+  font: var(--font-footnote);
+  font-weight: 600;
 }
 
 .nav-item {

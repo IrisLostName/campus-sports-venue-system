@@ -8,6 +8,7 @@ import UiButton from '../../ui/UiButton.vue'
 import UiGlassCard from '../../ui/UiGlassCard.vue'
 import UiTextField from '../../ui/UiTextField.vue'
 import AdminDataTable from '../AdminDataTable.vue'
+import { REASON_MAX_LENGTH } from '../../../utils/fieldLimits'
 
 const form = defineModel<ClosureForm>('form', { required: true })
 
@@ -88,6 +89,7 @@ const COLUMNS = [
         <UiTextField
           v-model="form.reason"
           label="原因（可选）"
+          :maxlength="REASON_MAX_LENGTH"
         />
       </div>
       <div>

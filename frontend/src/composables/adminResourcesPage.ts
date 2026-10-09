@@ -12,13 +12,18 @@ import { useSession } from './session'
 export const DESCRIPTION_SAVED_NOTICE = '场馆简介已保存'
 
 // 场馆简介：场馆管理员只能改 description（docs/12 第 5.5 节），请求里不带其他字段。
+// FE-6 N5：简介没有改动时不提交（原先 null 简介会提交空串）；清空非空简介时照实提交，失败显示接口文案。
 function createVenueProfile(deps: AdminDeps, venueId: number, hooks: PageHooks) {
   const runner = createAdminRunner(deps.call, hooks.error)
   const form = reactive({ description: hooks.venue.description() })
 
   async function save(): Promise<void> {
     hooks.notice.value = null
-    const result = await runner.run(() => deps.api.adminUpdateVenue(venueId, { description: form.description.trim() }))
+    const description = form.description.trim()
+    if (description === hooks.venue.description().trim()) {
+      return
+    }
+    const result = await runner.run(() => deps.api.adminUpdateVenue(venueId, { description }))
     if (result.ok) {
       hooks.notice.value = DESCRIPTION_SAVED_NOTICE
       await hooks.venue.reload()

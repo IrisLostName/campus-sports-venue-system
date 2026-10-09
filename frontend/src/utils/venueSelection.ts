@@ -7,10 +7,11 @@ export function parseVenueId(raw: unknown): number | null {
   return Number(value)
 }
 
-export function resolveVenueId(raw: unknown, venues: readonly { id: number }[]): number | null {
+// allowAll（FE-6 S4）：系统管理员端的“全部场馆”页面——查询参数缺省或无效时不取第一个场馆，而是不选（null）。
+export function resolveVenueId(raw: unknown, venues: readonly { id: number }[], allowAll = false): number | null {
   const wanted = parseVenueId(raw)
   if (wanted !== null && venues.some((venue) => venue.id === wanted)) {
     return wanted
   }
-  return venues[0]?.id ?? null
+  return allowAll ? null : (venues[0]?.id ?? null)
 }

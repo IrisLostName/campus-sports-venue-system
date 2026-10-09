@@ -9,7 +9,8 @@ import UiTextField from '../../ui/UiTextField.vue'
 
 const form = defineModel<AnnouncementForm>('form', { required: true })
 
-defineProps<{ error: string | null; busy: boolean }>()
+// heading（FE-6 G4）：表单标题，缺省“发布场馆公告”；同时作为表单的无障碍名称。
+const props = withDefaults(defineProps<{ error: string | null; busy: boolean; heading?: string }>(), { heading: '发布场馆公告' })
 
 defineEmits<{ publish: [] }>()
 </script>
@@ -20,11 +21,11 @@ defineEmits<{ publish: [] }>()
     material="solid"
     radius="lg"
     class="form"
-    aria-label="发布场馆公告"
+    :aria-label="props.heading"
     @submit.prevent="$emit('publish')"
   >
     <h2 class="heading">
-      发布场馆公告
+      {{ props.heading }}
     </h2>
     <UiTextField
       v-model="form.title"

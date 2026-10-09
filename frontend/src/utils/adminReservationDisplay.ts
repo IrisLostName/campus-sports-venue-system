@@ -49,13 +49,14 @@ export interface AdminReservationRow {
   ops: ReservationOp[]
 }
 
-export function buildReservationRow(reservation: AdminReservation): AdminReservationRow {
+// withVenue（FE-6 G7，全部场馆）：场地列前加场馆名。
+export function buildReservationRow(reservation: AdminReservation, withVenue = false): AdminReservationRow {
   const note = reservation.adminNote
   return {
     id: reservation.id,
     dateText: reservation.serviceDate,
     timeText: formatTimeRange(reservation),
-    place: reservation.resourceName,
+    place: withVenue ? `${reservation.venueName} · ${reservation.resourceName}` : reservation.resourceName,
     userName: reservation.userDisplayName,
     userDetail: reservation.userPhone === null ? reservation.userUsername : `${reservation.userUsername} · ${reservation.userPhone}`,
     statusLabel: displayStatusLabel(reservation.displayStatus),

@@ -1,15 +1,15 @@
 <script setup lang="ts">
-// 操作记录（FE-5 P8）：所选场馆的管理员操作留痕，时间倒序。
+// 操作记录（FE-5 P8）：所选场馆的管理员操作留痕，时间倒序。系统管理员端可选“全部场馆”（FE-6 G6）。
 import { onMounted } from 'vue'
 
 import AdminPage from '../../components/admin/AdminPage.vue'
 import AdminPagination from '../../components/admin/AdminPagination.vue'
 import LogFilters from '../../components/admin/logs/LogFilters.vue'
 import LogTable from '../../components/admin/logs/LogTable.vue'
-import { useCurrentVenue } from '../../composables/adminVenue'
+import { useOptionalVenue } from '../../composables/adminVenue'
 import { useAdminLogs } from '../../composables/adminLogs'
 
-const { venueId } = useCurrentVenue()
+const { venueId } = useOptionalVenue()
 const { filters, rows, list, search, load, goTo } = useAdminLogs(venueId)
 const { page, pageSize, total, loaded, busy, error } = list
 
@@ -27,7 +27,10 @@ onMounted(load)
       @search="search"
     />
     <template v-if="loaded">
-      <LogTable :rows="rows" />
+      <LogTable
+        :rows="rows"
+        :show-venue="venueId === undefined"
+      />
       <AdminPagination
         :page="page"
         :page-size="pageSize"
