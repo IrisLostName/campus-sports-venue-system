@@ -92,6 +92,25 @@ describe('G2 管理员与授权页', () => {
     expect(dialog().get('[role="alert"]').text()).toBe('用户名已被占用')
     expect(content(root).findAll('tbody tr')).toHaveLength(2)
   })
+})
+
+describe('N1 新建账号对话框的规则说明', () => {
+  it('用户名与密码的规则是输入框下方的可见说明文字，不只放在占位符里', async () => {
+    const { root } = await openSysApp('/sys-admin/admins')
+    await buttonIn(content(root), '新建账号').trigger('click')
+    const dialog = dialogOf(content(root))
+    const fieldOf = (label: string) => fieldByLabel(dialog, label).element.closest('.field')
+
+    expect(dialog.findAll('p.rule').map((rule) => rule.text())).toEqual(['3–32 位字母、数字或下划线', '8–64 位'])
+    expect(fieldOf('用户名')?.querySelector('p.rule')?.textContent?.trim()).toBe('3–32 位字母、数字或下划线')
+    expect(fieldOf('密码')?.querySelector('p.rule')?.textContent?.trim()).toBe('8–64 位')
+    expect(fieldByLabel(dialog, '用户名').attributes('placeholder')).toBeUndefined()
+    expect(fieldByLabel(dialog, '密码').attributes('placeholder')).toBeUndefined()
+    // 输入内容后说明仍在；它不是错误提示，不带 role=alert。
+    await fieldByLabel(dialog, '用户名').setValue('admin_new')
+    expect(dialog.findAll('p.rule')).toHaveLength(2)
+    expect(dialog.find('[role="alert"]').exists()).toBe(false)
+  })
 
 })
 

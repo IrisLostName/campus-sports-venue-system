@@ -27,23 +27,31 @@ defineEmits<{ patch: [change: Partial<CreateUserState>]; confirm: []; dismiss: [
     @confirm="$emit('confirm')"
     @dismiss="$emit('dismiss')"
   >
-    <UiTextField
-      :model-value="state?.username ?? ''"
-      label="用户名"
-      autocomplete="off"
-      :maxlength="USERNAME_MAX_LENGTH"
-      placeholder="3–32 位字母、数字或下划线"
-      @update:model-value="$emit('patch', { username: $event })"
-    />
-    <UiTextField
-      :model-value="state?.password ?? ''"
-      label="密码"
-      type="password"
-      autocomplete="new-password"
-      :maxlength="PASSWORD_MAX_LENGTH"
-      placeholder="8–64 位"
-      @update:model-value="$emit('patch', { password: $event })"
-    />
+    <div class="field">
+      <UiTextField
+        :model-value="state?.username ?? ''"
+        label="用户名"
+        autocomplete="off"
+        :maxlength="USERNAME_MAX_LENGTH"
+        @update:model-value="$emit('patch', { username: $event })"
+      />
+      <p class="rule">
+        3–32 位字母、数字或下划线
+      </p>
+    </div>
+    <div class="field">
+      <UiTextField
+        :model-value="state?.password ?? ''"
+        label="密码"
+        type="password"
+        autocomplete="new-password"
+        :maxlength="PASSWORD_MAX_LENGTH"
+        @update:model-value="$emit('patch', { password: $event })"
+      />
+      <p class="rule">
+        8–64 位
+      </p>
+    </div>
     <UiTextField
       :model-value="state?.displayName ?? ''"
       label="显示名"
@@ -95,3 +103,18 @@ defineEmits<{ patch: [change: Partial<CreateUserState>]; confirm: []; dismiss: [
     />
   </AdminActionDialog>
 </template>
+
+<style scoped>
+/* 规则说明放在输入框下方的可见文字里（docs/17 第 2 节：第三级文字不得用于需要阅读的文字，所以不用占位符）。 */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.rule {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font: var(--font-footnote);
+}
+</style>
