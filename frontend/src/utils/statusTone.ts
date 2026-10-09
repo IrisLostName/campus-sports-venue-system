@@ -1,6 +1,6 @@
 // 状态 → 色调（docs/17 第 6 节）。只决定颜色：不改变任何状态判断，也不碰中文名（名称仍在各自的 *Display 模块里）。
 // Record 的键是完整枚举，漏掉任何一个状态都会编译失败。
-import type { DisplayStatus, RepairStatus, ResourceLiveState, SlotStatus } from '../api/types'
+import type { DisplayStatus, RepairStatus, ResourceLiveState, ResourceStatus, SlotStatus } from '../api/types'
 
 export type Tone = 'accent' | 'success' | 'warning' | 'danger' | 'neutral'
 
@@ -37,6 +37,13 @@ const REPAIR_STATUS_TONES: Record<RepairStatus, Tone> = {
   RESOLVED: 'success',
 }
 
+// docs/17 第 6 节“ResourceStatus（管理端）”一行。
+const RESOURCE_STATUS_TONES: Record<ResourceStatus, Tone> = {
+  OPEN: 'success',
+  MAINTENANCE: 'danger',
+  DISABLED: 'neutral',
+}
+
 export function toneForDisplayStatus(status: DisplayStatus): Tone {
   return DISPLAY_STATUS_TONES[status]
 }
@@ -51,4 +58,8 @@ export function toneForResourceState(state: ResourceLiveState): Tone {
 
 export function toneForRepairStatus(status: RepairStatus): Tone {
   return REPAIR_STATUS_TONES[status]
+}
+
+export function toneForResourceStatus(status: ResourceStatus): Tone {
+  return RESOURCE_STATUS_TONES[status]
 }
