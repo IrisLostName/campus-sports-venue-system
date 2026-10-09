@@ -111,7 +111,7 @@ export function useCurrentVenue() {
   const context = inject(CONTEXT_KEY)
   const venueId = context?.venueId.value
   if (context === undefined || venueId === null || venueId === undefined) {
-    throw new Error('页面必须在已确定场馆的场馆管理员外壳内使用')
+    throw new Error('页面必须在已确定场馆的管理端外壳内使用')
   }
   return { venueId, venue: context.venue, reloadVenues: context.load }
 }
