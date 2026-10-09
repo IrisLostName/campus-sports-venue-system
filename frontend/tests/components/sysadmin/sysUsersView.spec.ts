@@ -260,6 +260,7 @@ describe('G3 新建、改名与停用', () => {
     await buttonIn(rowOf(content(root), 'zhangsan'), '启用').trigger('click')
     await flushPromises()
     expect(rowOf(content(root), 'zhangsan').findAll('td')[3]?.text()).toBe('正常')
-    expect(await h.clientFor('zhangsan')).toBeDefined()
+    const client = await h.clientFor('zhangsan')
+    expect(await client.listVenues()).toHaveLength(3)
   })
 })
