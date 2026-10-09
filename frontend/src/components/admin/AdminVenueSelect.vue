@@ -12,13 +12,16 @@ const props = withDefaults(defineProps<{ venues: VenueSummary[]; venueId: number
 
 const emit = defineEmits<{ select: [venueId: number | null] }>()
 
-const model = computed<number | null>({
-  get: () => props.venueId,
+// “全部场馆”的选项值是空串（option 的 value 为 null 时浏览器会取文字作值）。
+const model = computed<number | string | null>({
+  get: () => props.venueId ?? (props.allowAll ? '' : null),
   set: (value) => {
-    if (value !== null) {
+    if (value === null || value === '') {
+      if (props.allowAll) {
+        emit('select', null)
+      }
+    } else {
       emit('select', Number(value))
-    } else if (props.allowAll) {
-      emit('select', null)
     }
   },
 })
@@ -33,7 +36,7 @@ const model = computed<number | null>({
   >
     <option
       v-if="allowAll"
-      :value="null"
+      value=""
     >
       全部场馆
     </option>
