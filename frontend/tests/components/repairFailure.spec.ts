@@ -7,7 +7,7 @@ import { ApiError } from '../../src/api/errors'
 import MeView from '../../src/views/user/MeView.vue'
 import { loginAs } from '../reservations/harness'
 import { useApiClient } from './apiSwap'
-import { mountWithApp, texts } from './support'
+import { mountWithApp } from './support'
 
 vi.mock('../../src/api/index', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../src/api/index')>()
@@ -50,7 +50,7 @@ describe('我的报修列表加载失败', () => {
     const list = page.get('section[aria-label="我的报修"]')
 
     expect(list.get('[role="alert"] p').text()).toBe(`报修记录加载失败：${FAILURE_TEXT}`)
-    expect(texts(list, '[role="alert"] button')).toEqual(['重试'])
+    expect(list.findAll('[role="alert"] button').map((button) => button.text())).toEqual(['重试'])
     expect(list.find('.none').exists()).toBe(false)
 
     await list.get('[role="alert"] button').trigger('click')
