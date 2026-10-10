@@ -54,10 +54,13 @@ describe('UiButton 的减少透明度与减少动态效果规则', () => {
 })
 
 describe('UiSegmented 的减少透明度规则（N3）', () => {
-  it('选中项加 1px 分隔线描边，且不改字重', () => {
+  it('选中项加 1px 内嵌分隔线（内嵌阴影，不是 border，不占宽度），且不改字重（FE-8 L6）', () => {
     const rule = block(styleOf('UiSegmented.vue'), REDUCED_TRANSPARENCY)
 
-    expect(rule).toContain('.ui-segmented--capsule .item.active { border: 1px solid var(--color-separator); }')
+    expect(rule).toContain(
+      '.ui-segmented--capsule .item.active { box-shadow: var(--glass-shadow), inset 0 0 0 1px var(--color-separator); }',
+    )
+    expect(rule).not.toContain('border')
     expect(rule).not.toContain('font-weight')
   })
 
