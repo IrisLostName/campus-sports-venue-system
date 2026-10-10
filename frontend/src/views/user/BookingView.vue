@@ -74,7 +74,13 @@ onMounted(() => {
         tone="danger"
         role="alert"
       >
-        无法取得可预约的日期范围：{{ rulesError }}
+        <p>无法取得可预约的日期范围：{{ rulesError }}</p>
+        <UiButton
+          variant="plain"
+          @click="board.retryRules()"
+        >
+          重试
+        </UiButton>
       </UiBanner>
       <DateStrip
         :dates="dates"

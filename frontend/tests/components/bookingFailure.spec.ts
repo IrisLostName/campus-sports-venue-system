@@ -58,3 +58,45 @@ describe('BookingRules 取不到：没有可选日期', () => {
     expect(page.findAll('.cell')).toHaveLength(0)
   })
 })
+
+describe('FE-8 L4 BookingRules 取不到时就地重试', () => {
+  it('横幅里有“重试”；点后补出日期条与时段，横幅消失', async () => {
+    let calls = 0
+    const { page } = await openPage({
+      wrap: (api: ApiClient) => ({
+        ...api,
+        // 进入页面与进入网球馆各取一次都失败，第三次（点“重试”）才成功。
+        getBookingRules: () => {
+          calls += 1
+          return calls <= 2 ? Promise.reject(failure()) : api.getBookingRules()
+        },
+      }),
+    })
+    await venueButton(page, '网球馆').trigger('click')
+    await flushPromises()
+
+    expect(texts(page, '[role="alert"] button')).toEqual(['重试'])
+    expect(page.findAll('[data-date]')).toHaveLength(0)
+
+    await page.get('[role="alert"] button').trigger('click')
+    await flushPromises()
+
+    expect(page.find('[role="alert"]').exists()).toBe(false)
+    expect(page.findAll('[data-date]')).toHaveLength(7)
+    expect(page.findAll('.cell').length).toBeGreaterThan(0)
+  })
+
+  it('重试仍失败：横幅保持，仍然没有日期条', async () => {
+    const { page } = await openPage({
+      wrap: (api: ApiClient) => ({ ...api, getBookingRules: () => Promise.reject(failure()) }),
+    })
+    await venueButton(page, '网球馆').trigger('click')
+    await flushPromises()
+
+    await page.get('[role="alert"] button').trigger('click')
+    await flushPromises()
+
+    expect(page.get('[role="alert"]').text()).toContain(`无法取得可预约的日期范围：${FAILURE_TEXT}`)
+    expect(page.findAll('[data-date]')).toHaveLength(0)
+  })
+})

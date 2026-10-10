@@ -142,6 +142,13 @@ export function createBookingBrowse(deps: BrowseDeps) {
     notices.reset()
   }
 
+  // 日期选项为 [今天, 今天 + advanceDays)（B4）；规则没取到（ready 为 false）就没有选项，不写死天数。默认选中第一个。
+  function applyDates(ready: boolean): void {
+    const advanceDays = deps.reference.bookingRules?.advanceDays ?? 0
+    dates.value = ready ? dateOptions(deps.today(), advanceDays) : []
+    date.value = dates.value[0]?.value ?? null
+  }
+
   // B2：bookable=false 的场馆不能进入。可选日期需要 BookingRules.advanceDays；之前取失败则这里再取一次。
   async function selectVenue(id: number): Promise<void> {
     const target = catalog.venues.value.find((item) => item.id === id)
@@ -150,11 +157,22 @@ export function createBookingBrowse(deps: BrowseDeps) {
     }
     clearVenue()
     venueId.value = id
-    const ready = deps.reference.bookingRules !== null || await catalog.fetchRules()
-    const advanceDays = deps.reference.bookingRules?.advanceDays ?? 0
-    dates.value = ready ? dateOptions(deps.today(), advanceDays) : []
-    date.value = dates.value[0]?.value ?? null
+    applyDates(deps.reference.bookingRules !== null || await catalog.fetchRules())
     await Promise.all([slotLoader.load(), notices.load(id)])
+  }
+
+  // FE-8 L4：已选场馆但 BookingRules 没取到时，就地重试；成功后补出日期并加载时段。期间换了场馆则放弃。
+  async function retryRules(): Promise<void> {
+    const id = venueId.value
+    if (id === null) {
+      return
+    }
+    const ready = await catalog.fetchRules()
+    if (venueId.value !== id) {
+      return
+    }
+    applyDates(ready)
+    await slotLoader.load()
   }
 
   // 越出选项的日期不接受；越界仍以后端 DATE_OUT_OF_RANGE 为准（B4）。
@@ -171,7 +189,7 @@ export function createBookingBrowse(deps: BrowseDeps) {
     venueId, venue, dates, date,
     slots: slotLoader.slots, slotsPhase: slotLoader.phase, slotsError: slotLoader.error,
     announcementItems: notices.items, announcementError: notices.error,
-    load: catalog.load, selectVenue, selectDate, loadSlots: slotLoader.load, clearVenue,
+    load: catalog.load, selectVenue, retryRules, selectDate, loadSlots: slotLoader.load, clearVenue,
   }
 }
 
