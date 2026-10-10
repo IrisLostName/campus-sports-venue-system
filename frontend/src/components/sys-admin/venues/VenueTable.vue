@@ -2,6 +2,7 @@
 // 场馆列表（FE-6 G1）：名称、类型、位置、运营状态（文字）、开放预约开关、场地数，以及编辑 / 关闭 / 重新开放 / 去设定场地。
 // 开关直接提交（不做影响检查，FE-1 裁决 A9）：提交前先把控件还原，只有服务端确认后的列表才会改变它的显示。
 import { PATHS } from '../../../router/paths'
+import { labelFor } from '../../../utils/accessibleLabel'
 import { BOOKING_SWITCH_LABEL, type VenueRowView } from '../../../utils/sysVenueDisplay'
 import AdminDataTable from '../../admin/AdminDataTable.vue'
 import UiButton from '../../ui/UiButton.vue'
@@ -65,6 +66,7 @@ function onToggle(input: { checked: boolean }, id: number): void {
       <div class="ops">
         <UiButton
           variant="secondary"
+          :aria-label="labelFor('编辑资料', row.name)"
           @click="emit('edit', row.id)"
         >
           编辑资料
@@ -72,12 +74,14 @@ function onToggle(input: { checked: boolean }, id: number): void {
         <UiButton
           :to="{ path: PATHS.sysAdminResources, query: { venueId: String(row.id) } }"
           variant="plain"
+          :aria-label="labelFor('场地与开放规则', row.name)"
         >
           场地与开放规则
         </UiButton>
         <UiButton
           v-if="row.open"
           variant="destructive"
+          :aria-label="labelFor('关闭场馆', row.name)"
           @click="emit('close', row.id)"
         >
           关闭场馆
@@ -85,6 +89,7 @@ function onToggle(input: { checked: boolean }, id: number): void {
         <UiButton
           v-else
           variant="secondary"
+          :aria-label="labelFor('重新开放', row.name)"
           @click="emit('reopen', row.id)"
         >
           重新开放

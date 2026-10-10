@@ -47,6 +47,11 @@ export interface RepairRowView {
   steps: RepairStep[]
 }
 
+// 行内按钮的可访问名称里指明“是哪一条报修”（FE-8 L11）：地点 报修人 提交时间。
+export function repairName(row: Pick<RepairRowView, 'place' | 'reporterName' | 'createdText'>): string {
+  return `${row.place} ${row.reporterName} ${row.createdText}`
+}
+
 export function buildRepairRow(report: RepairReport): RepairRowView {
   return {
     id: report.id,

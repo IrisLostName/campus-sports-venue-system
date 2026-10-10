@@ -1,7 +1,10 @@
 <script setup lang="ts">
 // 预约列表（FE-5 P2）：日期、时间、场地、预约人、状态（后端 displayStatus 的中文名）、管理员说明与操作按钮。
 // 按钮由 row.ops 决定（见 utils/adminReservationDisplay.opsFor），这里只负责渲染并发出事件。
-import { OP_LABELS, type AdminReservationRow, type ReservationOp } from '../../../utils/adminReservationDisplay'
+import { labelFor } from '../../../utils/accessibleLabel'
+import {
+  OP_LABELS, reservationName, type AdminReservationRow, type ReservationOp,
+} from '../../../utils/adminReservationDisplay'
 import UiButton from '../../ui/UiButton.vue'
 import UiStatusPill from '../../ui/UiStatusPill.vue'
 import AdminDataTable from '../AdminDataTable.vue'
@@ -46,6 +49,7 @@ const COLUMNS = [
           v-for="op in row.ops"
           :key="op"
           :variant="op === 'CANCEL' ? 'destructive' : 'secondary'"
+          :aria-label="labelFor(OP_LABELS[op], reservationName(row))"
           @click="$emit('op', row.id, op)"
         >
           {{ OP_LABELS[op] }}

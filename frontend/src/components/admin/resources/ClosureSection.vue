@@ -2,6 +2,7 @@
 // 特殊关闭（FE-5 P3）：列表 + 新增表单。场地为空 = 整馆。新增走影响检查；删除（停用）确认后直接提交。
 import type { Resource } from '../../../api/types'
 import type { ClosureForm } from '../../../composables/adminRules'
+import { labelFor } from '../../../utils/accessibleLabel'
 import { WHOLE_VENUE_TEXT } from '../../../utils/adminResourceDisplay'
 import type { ClosureRowView } from '../../../utils/adminRuleDisplay'
 import UiButton from '../../ui/UiButton.vue'
@@ -42,6 +43,7 @@ const COLUMNS = [
       <template #cell-actions="{ row }">
         <UiButton
           variant="destructive"
+          :aria-label="labelFor('删除', `${row.rangeText} ${row.scopeText}`)"
           @click="$emit('remove', row.id)"
         >
           删除
