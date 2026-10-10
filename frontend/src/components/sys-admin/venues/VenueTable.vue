@@ -41,17 +41,25 @@ function onToggle(input: { checked: boolean }, id: number): void {
     empty-title="还没有场馆"
   >
     <template #cell-booking="{ row }">
-      <label class="switch">
-        <input
-          type="checkbox"
-          role="switch"
-          :checked="row.bookingEnabled"
-          :disabled="busy"
-          :aria-label="`${BOOKING_SWITCH_LABEL}：${row.name}`"
-          @change="onToggle($event.target as HTMLInputElement, row.id)"
+      <div class="booking">
+        <label class="switch">
+          <input
+            type="checkbox"
+            role="switch"
+            :checked="row.bookingEnabled"
+            :disabled="busy"
+            :aria-label="`${BOOKING_SWITCH_LABEL}：${row.name}`"
+            @change="onToggle($event.target as HTMLInputElement, row.id)"
+          >
+          {{ row.bookingEnabled ? '已开放' : '未开放' }}
+        </label>
+        <p
+          v-if="row.bookingHint !== null"
+          class="booking-hint"
         >
-        {{ row.bookingEnabled ? '已开放' : '未开放' }}
-      </label>
+          {{ row.bookingHint }}
+        </p>
+      </div>
     </template>
     <template #cell-ops="{ row }">
       <div class="ops">
@@ -87,6 +95,17 @@ function onToggle(input: { checked: boolean }, id: number): void {
 </template>
 
 <style scoped>
+.booking {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.booking-hint {
+  color: var(--color-text-secondary);
+  font: var(--font-footnote);
+}
+
 .switch {
   display: inline-flex;
   align-items: center;
