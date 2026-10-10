@@ -51,6 +51,13 @@ defineProps<{ venue: VenueGroupView }>()
 </template>
 
 <style scoped>
+/* 面板在列里平分多出来的高度，状态格随之拉伸（FE-8 L13）。 */
+.venue {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+
 .head {
   display: flex;
   flex-wrap: wrap;
@@ -70,6 +77,8 @@ defineProps<{ venue: VenueGroupView }>()
 
 .resources {
   display: grid;
+  flex: 1;
+  grid-auto-rows: 1fr;
   grid-template-columns: repeat(auto-fill, minmax(8.5em, 1fr));
   gap: 0.6em;
   margin: 0;
@@ -81,6 +90,7 @@ defineProps<{ venue: VenueGroupView }>()
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  justify-content: space-between;
   gap: 0.3em;
   padding: 0.6em 0.8em;
   border: var(--glass-border);
