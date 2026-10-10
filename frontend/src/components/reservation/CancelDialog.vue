@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { REASON_MAX_LENGTH } from '../../utils/fieldLimits'
 import type { ReservationCard } from '../../utils/reservationDisplay'
 import UiButton from '../ui/UiButton.vue'
 import UiSheet from '../ui/UiSheet.vue'
@@ -25,6 +26,7 @@ defineEmits<{ confirm: []; dismiss: [] }>()
       label="取消原因（可选）"
       control="textarea"
       rows="3"
+      :maxlength="REASON_MAX_LENGTH"
     />
     <div class="buttons">
       <UiButton

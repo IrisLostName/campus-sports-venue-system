@@ -24,6 +24,7 @@ defineEmits<{ confirm: []; dismiss: [] }>()
   <UiDialog
     :open="open"
     :title="title"
+    :busy="busy"
     @dismiss="$emit('dismiss')"
   >
     <div class="body">

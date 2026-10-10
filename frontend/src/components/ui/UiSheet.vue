@@ -1,20 +1,33 @@
 <script setup lang="ts">
 // 底部面板（docs/17 第 6 节，用户端取消确认层）。open 为 false 时什么都不渲染。
-// 点遮罩发出 dismiss；点面板内部不会。只有进入动画（自下而上滑入并淡入），不处理 Esc。
+// 点遮罩发出 dismiss；点面板内部不会。进入动画：自下而上滑入并淡入。
+// Esc 也发出 dismiss（FE-8 L5）：只有最上层的浮层响应；busy（提交中）时 Esc 不关闭；closeOnEscape 为 false 时不响应。
 // 不使用 Teleport：浮层是 position: fixed，只要不放进带 backdrop-filter 的祖先（例如 UiGlassCard）里，就按视口定位。
 import { useId } from 'vue'
 
-withDefaults(defineProps<{
+import { useEscapeClose } from '../../composables/escapeClose'
+
+const props = withDefaults(defineProps<{
   open: boolean
   title: string
   placement?: 'bottom' | 'center'
+  busy?: boolean
+  closeOnEscape?: boolean
 }>(), {
   placement: 'bottom',
+  busy: false,
+  closeOnEscape: true,
 })
 
-defineEmits<{ dismiss: [] }>()
+const emit = defineEmits<{ dismiss: [] }>()
 
 const titleId = useId()
+
+useEscapeClose(() => props.open, () => {
+  if (props.closeOnEscape && !props.busy) {
+    emit('dismiss')
+  }
+})
 </script>
 
 <template>
@@ -26,7 +39,7 @@ const titleId = useId()
       v-if="open"
       class="backdrop"
       :class="`backdrop--${placement}`"
-      @click.self="$emit('dismiss')"
+      @click.self="emit('dismiss')"
     >
       <div
         class="sheet ui-glass ui-glass--thick"
