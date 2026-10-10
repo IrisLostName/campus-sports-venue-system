@@ -99,16 +99,19 @@ describe('N1 新建账号对话框的规则说明', () => {
     const { root } = await openSysApp('/sys-admin/admins')
     await buttonIn(content(root), '新建账号').trigger('click')
     const dialog = dialogOf(content(root))
-    const fieldOf = (label: string) => fieldByLabel(dialog, label).element.closest('.field')
+    const ruleOf = (label: string) => {
+      const describedBy = fieldByLabel(dialog, label).attributes('aria-describedby') ?? ''
+      return dialog.get(`[id="${describedBy}"]`)
+    }
 
-    expect(dialog.findAll('p.rule').map((rule) => rule.text())).toEqual(['3–32 位字母、数字或下划线', '8–64 位'])
-    expect(fieldOf('用户名')?.querySelector('p.rule')?.textContent?.trim()).toBe('3–32 位字母、数字或下划线')
-    expect(fieldOf('密码')?.querySelector('p.rule')?.textContent?.trim()).toBe('8–64 位')
+    expect(dialog.findAll('p.help').map((rule) => rule.text())).toEqual(['3–32 位字母、数字或下划线', '8–64 位'])
+    expect(ruleOf('用户名').text()).toBe('3–32 位字母、数字或下划线')
+    expect(ruleOf('密码').text()).toBe('8–64 位')
     expect(fieldByLabel(dialog, '用户名').attributes('placeholder')).toBeUndefined()
     expect(fieldByLabel(dialog, '密码').attributes('placeholder')).toBeUndefined()
     // 输入内容后说明仍在；它不是错误提示，不带 role=alert。
     await fieldByLabel(dialog, '用户名').setValue('admin_new')
-    expect(dialog.findAll('p.rule')).toHaveLength(2)
+    expect(dialog.findAll('p.help')).toHaveLength(2)
     expect(dialog.find('[role="alert"]').exists()).toBe(false)
   })
 

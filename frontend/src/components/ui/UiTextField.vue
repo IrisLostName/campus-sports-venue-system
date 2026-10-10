@@ -3,6 +3,7 @@
 // class / style 落在最外层，其余属性（type、autocomplete、rows、placeholder…）落在控件上。
 // maxlength 原样写到控件上；counter 默认关闭（不新增可见文字），打开后在控件下显示“已输入 / 上限”。
 // error 非空时显示错误文案（role=alert）并把控件标记为 aria-invalid。
+// hint 非空时在控件下显示说明文字（例如输入规则），并用 aria-describedby 关联；有错误时两者都被关联。
 import { computed, useAttrs, useId } from 'vue'
 
 defineOptions({ inheritAttrs: false })
@@ -11,11 +12,13 @@ const props = withDefaults(defineProps<{
   label: string
   control?: 'input' | 'textarea' | 'select'
   error?: string | null
+  hint?: string
   maxlength?: number
   counter?: boolean
 }>(), {
   control: 'input',
   error: null,
+  hint: undefined,
   maxlength: undefined,
   counter: false,
 })
@@ -24,11 +27,15 @@ const model = defineModel<T>({ required: true })
 
 const attrs = useAttrs()
 const errorId = useId()
+const hintId = useId()
 const rootAttrs = computed(() => ({ class: attrs.class, style: attrs.style }))
 const controlAttrs = computed(() => Object.fromEntries(
   Object.entries(attrs).filter(([name]) => name !== 'class' && name !== 'style'),
 ))
-const describedBy = computed(() => (props.error === null ? undefined : errorId))
+const describedBy = computed(() => {
+  const ids = [props.hint === undefined ? null : hintId, props.error === null ? null : errorId].filter((id) => id !== null)
+  return ids.length === 0 ? undefined : ids.join(' ')
+})
 const countText = computed(() => (
   props.counter && props.maxlength !== undefined && typeof model.value === 'string'
     ? `${model.value.length} / ${props.maxlength}`
@@ -76,6 +83,13 @@ const countText = computed(() => (
       v-if="countText !== null"
       class="count"
     >{{ countText }}</span>
+    <p
+      v-if="hint !== undefined"
+      :id="hintId"
+      class="help"
+    >
+      {{ hint }}
+    </p>
     <p
       v-if="error !== null"
       :id="errorId"
@@ -134,6 +148,11 @@ textarea.control {
   align-self: flex-end;
   color: var(--color-text-secondary);
   font: var(--font-caption);
+}
+
+.help {
+  color: var(--color-text-secondary);
+  font: var(--font-footnote);
 }
 
 .error {

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // 新建账号（FE-6 G2、G3；docs/12 第 5.1、5.9 节）：用户名 3–32 位字母数字下划线，密码 8–64 位，与注册一致。
 // 密码框 type="password"、autocomplete="new-password"，页面不显示、不回显密码。
+// 规则说明用 UiTextField 的 hint 显示在输入框下方（docs/17 第 2 节：第三级文字不得用于需要阅读的文字，所以不用占位符），并与输入框关联。
 // 角色为场馆管理员时才出现“授权场馆”，为普通用户时才出现“用户类型”。
 import type { CreateUserState } from '../../../composables/sysUsers'
 import type { Role, VenueSummary } from '../../../api/types'
@@ -27,31 +28,23 @@ defineEmits<{ patch: [change: Partial<CreateUserState>]; confirm: []; dismiss: [
     @confirm="$emit('confirm')"
     @dismiss="$emit('dismiss')"
   >
-    <div class="field">
-      <UiTextField
-        :model-value="state?.username ?? ''"
-        label="用户名"
-        autocomplete="off"
-        :maxlength="USERNAME_MAX_LENGTH"
-        @update:model-value="$emit('patch', { username: $event })"
-      />
-      <p class="rule">
-        3–32 位字母、数字或下划线
-      </p>
-    </div>
-    <div class="field">
-      <UiTextField
-        :model-value="state?.password ?? ''"
-        label="密码"
-        type="password"
-        autocomplete="new-password"
-        :maxlength="PASSWORD_MAX_LENGTH"
-        @update:model-value="$emit('patch', { password: $event })"
-      />
-      <p class="rule">
-        8–64 位
-      </p>
-    </div>
+    <UiTextField
+      :model-value="state?.username ?? ''"
+      label="用户名"
+      autocomplete="off"
+      hint="3–32 位字母、数字或下划线"
+      :maxlength="USERNAME_MAX_LENGTH"
+      @update:model-value="$emit('patch', { username: $event })"
+    />
+    <UiTextField
+      :model-value="state?.password ?? ''"
+      label="密码"
+      type="password"
+      autocomplete="new-password"
+      hint="8–64 位"
+      :maxlength="PASSWORD_MAX_LENGTH"
+      @update:model-value="$emit('patch', { password: $event })"
+    />
     <UiTextField
       :model-value="state?.displayName ?? ''"
       label="显示名"
@@ -103,18 +96,3 @@ defineEmits<{ patch: [change: Partial<CreateUserState>]; confirm: []; dismiss: [
     />
   </AdminActionDialog>
 </template>
-
-<style scoped>
-/* 规则说明放在输入框下方的可见文字里（docs/17 第 2 节：第三级文字不得用于需要阅读的文字，所以不用占位符）。 */
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-
-.rule {
-  margin: 0;
-  color: var(--color-text-secondary);
-  font: var(--font-footnote);
-}
-</style>
