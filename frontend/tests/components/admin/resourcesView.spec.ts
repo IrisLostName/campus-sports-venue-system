@@ -167,7 +167,7 @@ describe('P3 窗口、关闭、简介', () => {
     await buttonIn(editor, '保存每周窗口').trigger('click')
     await flushPromises()
 
-    expect(main.get('[role="alert"]').text()).toBe('开放规则不合法')
+    expect(main.get('[role="alert"]').text()).toBe('开放规则不合法：窗口长度必须是 90 分钟的整数倍')
     expect(main.find('[role="dialog"]').exists()).toBe(false)
   })
 
