@@ -33,6 +33,7 @@ const COLUMNS = [
     <template #cell-actions="{ row }">
       <UiButton
         v-if="row.canArchive"
+        class="archive"
         variant="secondary"
         @click="$emit('archive', row.id)"
       >
@@ -41,3 +42,10 @@ const COLUMNS = [
     </template>
   </AdminDataTable>
 </template>
+
+<style scoped>
+/* 操作列不让按钮文字竖排：窄屏时表格宁可横向滚动（FE-8 L9）。 */
+.archive {
+  white-space: nowrap;
+}
+</style>
