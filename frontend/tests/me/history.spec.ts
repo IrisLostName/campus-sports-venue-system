@@ -154,3 +154,38 @@ describe('复用 actionsFor：已完成未签退的预约在历史里可签退',
     expect(calls).toBe(1)
   })
 })
+
+describe('FE-8 L2 历史里不提供“取消”', () => {
+  // 接口在 HISTORY 里不会给出 UPCOMING 的预约；这里让它给出（返回“当前”列表），证明卡片只依据字段、不会因此出现“取消”。
+  async function historyShowing(ctx: UserContext, onCancel: () => void): Promise<MeBoard> {
+    const current = await ctx.h.api.listMyReservations({ scope: 'CURRENT' })
+    return boardFor(ctx, {
+      ...ctx.h.api,
+      listMyReservations: () => Promise.resolve(current),
+      cancelReservation: (id, request) => { onCancel(); return ctx.h.api.cancelReservation(id, request) },
+    })
+  }
+
+  it('历史里出现 UPCOMING 的预约：卡片没有任何按钮；trigger(CANCEL) 不打开确认层、不发请求', async () => {
+    const ctx = await loginAs('zhangsan', '/me')
+    let cancelCalls = 0
+    const board = await historyShowing(ctx, () => { cancelCalls += 1 })
+
+    await board.load()
+    await board.trigger('CANCEL', 1)
+
+    expect(board.cards.value[0]).toMatchObject({ id: 1, displayStatus: 'UPCOMING', statusLabel: '待使用', actions: [] })
+    expect(board.cancelTarget.value).toBeNull()
+    expect(cancelCalls).toBe(0)
+  })
+
+  it('只排除 CANCEL：同一份数据里可签到的预约仍有“签到”', async () => {
+    const ctx = await loginAs('zhangsan', '/me')
+    await ctx.travelTo(at('07:50'))
+    const board = await historyShowing(ctx, () => undefined)
+
+    await board.load()
+
+    expect(board.cards.value[0]).toMatchObject({ id: 1, displayStatus: 'CHECKIN_OPEN', actions: ['CHECK_IN'] })
+  })
+})

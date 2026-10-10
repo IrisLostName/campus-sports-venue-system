@@ -163,6 +163,31 @@ describe('M2 历史预约', () => {
   })
 })
 
+describe('FE-8 L2 历史里不提供“取消”', () => {
+  it('接口在历史里给出 UPCOMING 的预约时，卡片显示“待使用”但没有“取消预约”按钮，点不到确认层', async () => {
+    const { page, ctx } = await openPage({
+      wrap: (api) => ({ ...api, listMyReservations: () => api.listMyReservations({ scope: 'CURRENT' }) }),
+    })
+    const card = history(page).find('article')
+
+    expect(card.find('.badge').text()).toBe('待使用')
+    expect(card.findAll('button')).toHaveLength(0)
+    expect(history(page).text()).not.toContain('取消预约')
+    expect(page.find('[role="dialog"]').exists()).toBe(false)
+    expect((await ctx.h.api.getReservation(1)).status).toBe('CONFIRMED')
+  })
+
+  it('同一份数据里已进入签到窗口的预约仍有“签到”按钮（只排除取消）', async () => {
+    const { page } = await openPage({
+      wrap: (api) => ({ ...api, listMyReservations: () => api.listMyReservations({ scope: 'CURRENT' }) }),
+      prepare: async (ctx) => { await ctx.travelTo(at('07:50')) },
+    })
+
+    expect(history(page).find('article .badge').text()).toBe('可签到')
+    expect(history(page).findAll('article button').map((button) => button.text())).toEqual(['签到'])
+  })
+})
+
 describe('M3 报修', () => {
   it('场馆下拉包含全部场馆（含未开放预约的）；问题描述 maxlength=500；没有场地选择', async () => {
     const { page } = await openPage()
