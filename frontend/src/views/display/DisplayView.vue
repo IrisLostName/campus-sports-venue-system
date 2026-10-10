@@ -7,8 +7,10 @@ import DisplayNotices from '../../components/display/DisplayNotices.vue'
 import DisplayTrend from '../../components/display/DisplayTrend.vue'
 import DisplayVenueGroup from '../../components/display/DisplayVenueGroup.vue'
 import UiBanner from '../../components/ui/UiBanner.vue'
+import UiEmptyState from '../../components/ui/UiEmptyState.vue'
+import UiGlassCard from '../../components/ui/UiGlassCard.vue'
 import { useDisplayBoard } from '../../composables/displayPolling'
-import { presentBoard } from '../../utils/displayModel'
+import { NO_VENUES_DESCRIPTION, NO_VENUES_TITLE, presentBoard } from '../../utils/displayModel'
 
 const state = useDisplayBoard({ fetchSummary: () => api.getDisplaySummary() })
 const board = computed(() => presentBoard(state.value))
@@ -58,6 +60,17 @@ const board = computed(() => presentBoard(state.value))
       <DisplayMetrics :metrics="board.view.metrics" />
       <div class="body">
         <div class="venues">
+          <UiGlassCard
+            v-if="board.view.venues.length === 0"
+            tag="section"
+            class="no-venues"
+            material="thick"
+          >
+            <UiEmptyState
+              :title="NO_VENUES_TITLE"
+              :description="NO_VENUES_DESCRIPTION"
+            />
+          </UiGlassCard>
           <DisplayVenueGroup
             v-for="venue in board.view.venues"
             :key="venue.id"
