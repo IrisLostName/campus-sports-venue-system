@@ -10,11 +10,11 @@ defineProps<{ venue: VenueGroupView }>()
 <template>
   <UiGlassCard
     tag="section"
-    class="venue"
+    class="venue display-panel"
     material="thick"
   >
     <header class="head">
-      <h3 class="name">
+      <h3 class="name display-panel-title display-panel-title--inline">
         {{ venue.name }}
       </h3>
       <UiStatusPill
@@ -51,22 +51,12 @@ defineProps<{ venue: VenueGroupView }>()
 </template>
 
 <style scoped>
-.venue {
-  padding: 0.8em 1.2em 1em;
-}
-
 .head {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: 0.5em 1em;
   margin-bottom: 0.7em;
-}
-
-.name {
-  margin: 0;
-  font-size: 1.5em;
-  font-weight: 600;
 }
 
 .tag.tag {

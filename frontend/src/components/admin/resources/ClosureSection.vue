@@ -30,7 +30,7 @@ const COLUMNS = [
     class="closures"
     aria-label="特殊关闭"
   >
-    <h2 class="heading">
+    <h2 class="section-heading">
       特殊关闭
     </h2>
     <AdminDataTable
@@ -54,7 +54,7 @@ const COLUMNS = [
       tag="form"
       material="solid"
       radius="lg"
-      class="form"
+      class="stack-form"
       aria-label="新增特殊关闭"
       @submit.prevent="$emit('submit')"
     >
@@ -113,19 +113,9 @@ const COLUMNS = [
   gap: var(--space-3);
 }
 
-.heading {
-  font: var(--font-headline);
-}
-
 .sub {
   font: var(--font-callout);
   font-weight: 600;
-}
-
-.form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
 }
 
 .fields {

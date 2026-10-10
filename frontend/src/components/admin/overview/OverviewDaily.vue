@@ -14,7 +14,7 @@ const COLUMNS = [
 
 <template>
   <section aria-label="每日趋势">
-    <h2 class="heading">
+    <h2 class="section-heading section-heading--spaced">
       每日趋势
     </h2>
     <AdminDataTable
@@ -36,10 +36,6 @@ const COLUMNS = [
 </template>
 
 <style scoped>
-.heading {
-  margin-bottom: var(--space-3);
-  font: var(--font-headline);
-}
 
 .count {
   display: inline-block;

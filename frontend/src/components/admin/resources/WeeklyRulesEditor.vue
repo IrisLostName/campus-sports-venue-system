@@ -23,7 +23,7 @@ defineEmits<{ add: []; remove: [key: number]; save: [] }>()
     class="editor"
     aria-label="每周开放窗口"
   >
-    <h2 class="heading">
+    <h2 class="section-heading">
       每周开放窗口
     </h2>
     <p
@@ -92,10 +92,6 @@ defineEmits<{ add: []; remove: [key: number]; save: [] }>()
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-}
-
-.heading {
-  font: var(--font-headline);
 }
 
 .rows {

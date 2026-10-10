@@ -8,10 +8,10 @@ defineProps<{ bars: TrendBarView[] }>()
 <template>
   <UiGlassCard
     tag="section"
-    class="trend"
+    class="trend display-panel"
     material="thick"
   >
-    <h3 class="title">
+    <h3 class="title display-panel-title">
       本周预约趋势
     </h3>
     <ul class="bars">
@@ -34,16 +34,6 @@ defineProps<{ bars: TrendBarView[] }>()
 </template>
 
 <style scoped>
-.trend {
-  padding: 0.8em 1.2em 1em;
-}
-
-.title {
-  margin: 0 0 0.6em;
-  font-size: 1.5em;
-  font-weight: 600;
-}
-
 .bars {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));

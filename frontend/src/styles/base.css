@@ -99,6 +99,46 @@ a {
   font: var(--font-footnote);
 }
 
+/* 管理端与表单共用的小版式（FE-8 L12）：区块标题、纵向排列的表单、只给读屏软件看的文字。 */
+.section-heading {
+  font: var(--font-headline);
+}
+
+.section-heading--spaced {
+  margin-bottom: var(--space-3);
+}
+
+.stack-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* 运营大屏的面板（FE-8 L12）：em 取自 .display 根元素的字号，所以随屏幕宽度缩放。
+   选择器带上 main.display，使它的优先级高于 UiGlassCard 自带的内边距类，与原来各面板自己的作用域样式效果相同。 */
+main.display .display-panel {
+  padding: 0.8em 1.2em 1em;
+}
+
+.display-panel-title {
+  margin: 0 0 0.6em;
+  font-size: 1.5em;
+  font-weight: 600;
+}
+
+.display-panel-title--inline {
+  margin: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

@@ -22,7 +22,7 @@ defineEmits<{ submit: [] }>()
 <template>
   <UiGlassCard
     tag="form"
-    class="form"
+    class="stack-form"
     aria-label="提交报修"
     @submit.prevent="$emit('submit')"
   >
@@ -78,11 +78,3 @@ defineEmits<{ submit: [] }>()
     </UiButton>
   </UiGlassCard>
 </template>
-
-<style scoped>
-.form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-</style>

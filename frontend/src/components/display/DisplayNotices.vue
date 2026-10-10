@@ -8,10 +8,10 @@ defineProps<{ notices: NoticeView[] }>()
 <template>
   <UiGlassCard
     tag="section"
-    class="notices"
+    class="notices display-panel"
     material="thick"
   >
-    <h3 class="title">
+    <h3 class="title display-panel-title">
       系统提示
     </h3>
     <ul
@@ -36,16 +36,6 @@ defineProps<{ notices: NoticeView[] }>()
 </template>
 
 <style scoped>
-.notices {
-  padding: 0.8em 1.2em 1em;
-}
-
-.title {
-  margin: 0 0 0.6em;
-  font-size: 1.5em;
-  font-weight: 600;
-}
-
 .list {
   display: flex;
   flex-direction: column;
