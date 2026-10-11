@@ -23,4 +23,11 @@ class ArchitectureTest {
 
     @ArchTest
     static final ArchRule TRANSACTIONAL_METHODS_ONLY_IN_SERVICE = ArchitectureRules.TRANSACTIONAL_METHODS_ONLY_IN_SERVICE;
+
+    @ArchTest
+    static final ArchRule SERVICE_CLASSES_DIRECTLY_IN_SERVICE_PACKAGE =
+            ArchitectureRules.SERVICE_CLASSES_DIRECTLY_IN_SERVICE_PACKAGE;
+
+    @ArchTest
+    static final ArchRule NO_RESPONSE_STATUS_EXCEPTION = ArchitectureRules.NO_RESPONSE_STATUS_EXCEPTION;
 }

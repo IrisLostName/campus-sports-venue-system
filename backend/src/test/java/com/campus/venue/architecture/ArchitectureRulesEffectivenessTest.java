@@ -24,7 +24,24 @@ class ArchitectureRulesEffectivenessTest {
             ArchitectureRules.REPOSITORY_NOT_DEPEND_ON_CONTROLLER,
             ArchitectureRules.DOMAIN_NOT_DEPEND_ON_WEB,
             ArchitectureRules.TRANSACTIONAL_CLASSES_ONLY_IN_SERVICE,
-            ArchitectureRules.TRANSACTIONAL_METHODS_ONLY_IN_SERVICE);
+            ArchitectureRules.TRANSACTIONAL_METHODS_ONLY_IN_SERVICE,
+            ArchitectureRules.SERVICE_CLASSES_DIRECTLY_IN_SERVICE_PACKAGE,
+            ArchitectureRules.NO_RESPONSE_STATUS_EXCEPTION);
+
+    @Test
+    void classesInNestedServiceSubpackagesAreRejected() {
+        assertThatThrownBy(() -> ArchitectureRules.SERVICE_CLASSES_DIRECTLY_IN_SERVICE_PACKAGE.check(BAD))
+                .isInstanceOf(AssertionError.class).hasMessageContaining("BadNestedService");
+    }
+
+    @Test
+    void responseStatusExceptionAndItsSubclassesAreRejected() {
+        assertThatThrownBy(() -> ArchitectureRules.NO_RESPONSE_STATUS_EXCEPTION.check(BAD))
+                .isInstanceOf(AssertionError.class)
+                .hasMessageContaining("BadStatusThrower")
+                .hasMessageContaining("BadStatusSubclass")
+                .hasMessageContaining("BadStatusSubtypeThrower");
+    }
 
     @Test
     void controllerDependingOnRepositoryIsRejected() {
