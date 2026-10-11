@@ -1,0 +1,4 @@
+# demo profile：在结构迁移之外追加演示种子（docs/13 第 5 节）
+spring:
+  flyway:
+    locations: classpath:db/migration,classpath:db/demo
