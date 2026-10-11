@@ -1,0 +1,55 @@
+# 环境变量清单见 docs/14 第 3.1 节。只有非机密项带默认值；DB_PASSWORD 无默认值；
+# JWT_SECRET 的读取与校验属于 BE-1，这里不绑定。
+spring:
+  application:
+    name: venue-booking
+  # 本地值可放在不入库的 backend/.env
+  config:
+    import: optional:file:.env[.properties]
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/venue_booking}
+    username: ${DB_USERNAME:venue}
+    password: ${DB_PASSWORD}
+    hikari:
+      # 会话时区与 APP_TIMEZONE 一致，使 DEFAULT now() 写入的本地时间与应用一致（不依赖 JVM 默认时区）
+      connection-init-sql: "SET TIME ZONE '${APP_TIMEZONE:Asia/Shanghai}'"
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    locations: classpath:db/migration
+    clean-disabled: true
+
+server:
+  port: ${SERVER_PORT:8080}
+  error:
+    include-stacktrace: never
+    include-message: never
+
+management:
+  endpoints:
+    web:
+      # 不提供 /actuator 端点发现页（审计 N2）
+      discovery:
+        enabled: false
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
+app:
+  timezone: ${APP_TIMEZONE:Asia/Shanghai}
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  jwt:
+    expire-hours: ${JWT_EXPIRE_HOURS:8}
+  # 预约参数键只在此列出，配置绑定类与 GET /config/booking-rules 属于 BE-1
+  booking:
+    advance-days: ${BOOKING_ADVANCE_DAYS:7}
+    cancel-deadline-minutes: ${BOOKING_CANCEL_DEADLINE_MINUTES:120}
+    checkin-open-before-minutes: ${BOOKING_CHECKIN_OPEN_BEFORE_MINUTES:15}
+    checkin-close-after-minutes: ${BOOKING_CHECKIN_CLOSE_AFTER_MINUTES:15}
+    checkout-grace-minutes: ${BOOKING_CHECKOUT_GRACE_MINUTES:30}
+    max-active-per-user: ${BOOKING_MAX_ACTIVE_PER_USER:3}

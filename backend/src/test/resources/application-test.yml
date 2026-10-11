@@ -1,0 +1,9 @@
+# 测试配置：连接独立的测试库；clean-disabled=false 只出现在这里
+spring:
+  datasource:
+    url: ${TEST_DB_URL:jdbc:postgresql://localhost:5432/venue_booking_test}
+    username: ${TEST_DB_USERNAME:venue}
+    password: ${TEST_DB_PASSWORD}
+  flyway:
+    clean-disabled: false
+    locations: classpath:db/migration
