@@ -93,3 +93,14 @@ export function dateOptions(today: string, advanceDays: number): DateOption[] {
     return { value, dayText: value.slice('YYYY-'.length), weekdayText: weekday === null ? '' : `周${weekday}` }
   })
 }
+
+// 空状态文案（FE-8 L3，FE-4 N-3）。是否为空只看接口返回的数组有没有内容，不做任何推导。
+export const NO_VENUES_TITLE = '暂无场馆'
+export const NO_VENUES_DESCRIPTION = '目前还没有可以预约的场馆，请稍后再来看看。'
+export const NO_SLOTS_TITLE = '所选日期没有可预约的场地或时段'
+export const NO_SLOTS_DESCRIPTION = '换一个日期试试。'
+
+// 所选日期没有任何场地，或者场地都没有时段。
+export function hasNoSlots(groups: SlotGroup[]): boolean {
+  return groups.every((group) => group.cells.length === 0)
+}

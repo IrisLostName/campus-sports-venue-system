@@ -3,6 +3,8 @@ import { flushPromises } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 
 import { ApiError } from '../../../src/api/errors'
+import type { Reservation } from '../../../src/api/types'
+import { deferred } from '../../display/support'
 import { buttonIn, content, openAdminApp } from './support'
 
 vi.mock('../../../src/api/index', async (importOriginal) => {
@@ -92,6 +94,41 @@ describe('P2 取消', () => {
     expect(row.findAll('td').map((td) => td.text()).slice(4, 6)).toEqual(['管理员已取消', '场地检修'])
     expect(row.findAll('button')).toHaveLength(0)
     expect((await (await h.clientFor('zhangsan')).getReservation(1)).adminNote).toBe('场地检修')
+  })
+
+  it('FE-8 L5 Esc 关闭取消对话框且不发请求；提交进行中 Esc 不关闭，完成后才关闭', async () => {
+    const pending = deferred<Reservation>()
+    let cancelCalls = 0
+    const { root, h } = await openAdminApp('/venue-admin/reservations', {
+      wrap: (api) => ({
+        ...api,
+        adminCancelReservation: (...args) => {
+          cancelCalls += 1
+          return cancelCalls === 1 ? pending.promise : api.adminCancelReservation(...args)
+        },
+      }),
+    })
+    const main = content(root)
+    const press = () => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    await buttonIn(rowOf(main, '张三'), '取消').trigger('click')
+    expect(main.find('[role="dialog"]').exists()).toBe(true)
+
+    press()
+    await flushPromises()
+    expect(main.find('[role="dialog"]').exists()).toBe(false)
+    expect(cancelCalls).toBe(0)
+
+    await buttonIn(rowOf(main, '张三'), '取消').trigger('click')
+    await main.get('[role="dialog"] textarea').setValue('场地检修')
+    await buttonIn(main.get('[role="dialog"]'), '确认取消').trigger('click')
+    expect(cancelCalls).toBe(1)
+    press()
+    await flushPromises()
+    expect(main.find('[role="dialog"]').exists()).toBe(true)
+
+    pending.resolve(await (await h.clientFor('zhangsan')).getReservation(1))
+    await flushPromises()
+    expect(main.find('[role="dialog"]').exists()).toBe(false)
   })
 
   it('后端拒绝（FORBIDDEN_SCOPE）：对话框保持并显示文案', async () => {

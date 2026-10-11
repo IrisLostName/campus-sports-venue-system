@@ -112,10 +112,11 @@ const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
   font-weight: 600;
 }
 
-/* 减少透明度：选中项与底座同为实色表面，加一圈分隔线描边使其仍可区分（字重不变）。 */
+/* 减少透明度：选中项与底座同为实色表面，加一圈内嵌的分隔线使其仍可区分。
+   用内嵌阴影而不是 border：不占宽度，登录/注册两个标签的宽度保持一致（字重不变）。 */
 @media (prefers-reduced-transparency: reduce) {
   .ui-segmented--capsule .item.active {
-    border: 1px solid var(--color-separator);
+    box-shadow: var(--glass-shadow), inset 0 0 0 1px var(--color-separator);
   }
 }
 

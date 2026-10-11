@@ -6,6 +6,9 @@ import type { ErrorText } from './errorText'
 
 export const NOTICE_LIMIT = 5
 export const NO_RATE_TEXT = '—'
+// 场馆列表为空时的空状态（FE-8 L3，FE-7 N6）：只看接口返回的 venues 有没有内容。
+export const NO_VENUES_TITLE = '暂无场馆数据'
+export const NO_VENUES_DESCRIPTION = '当前没有可展示的场馆'
 
 const STATE_LABELS: Record<ResourceLiveState, string> = {
   FREE: '空闲',

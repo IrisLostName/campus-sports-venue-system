@@ -1,6 +1,6 @@
-// UI-1 UiSheet / UiDialog（docs/17 第 6 节）：打开与关闭、对话框语义、遮罩点击。
-import { mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+// UI-1 UiSheet / UiDialog（docs/17 第 6 节）：打开与关闭、对话框语义、遮罩点击；FE-8 L5 起还有 Esc 关闭；FE-8 F1 起提交中（busy）任何方式都不关闭。
+import { mount, type VueWrapper } from '@vue/test-utils'
+import { afterEach, describe, expect, it } from 'vitest'
 
 import UiDialog from '../../../src/components/ui/UiDialog.vue'
 import UiSheet from '../../../src/components/ui/UiSheet.vue'
@@ -76,5 +76,133 @@ describe('位置', () => {
     expect(dialog.text()).toContain('正文')
     await dialog.find('.backdrop').trigger('click')
     expect(dialog.emitted('dismiss')).toHaveLength(1)
+  })
+})
+
+const mounted: VueWrapper[] = []
+
+function track(wrapper: VueWrapper): VueWrapper {
+  mounted.push(wrapper)
+  return wrapper
+}
+
+function pressEscape(): void {
+  window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+}
+
+afterEach(() => {
+  while (mounted.length > 0) {
+    mounted.pop()?.unmount()
+  }
+})
+
+describe('Esc 关闭（FE-8 L5）', () => {
+  it('打开时按 Esc 发出一次 dismiss；其他按键不发出', () => {
+    const opened = track(sheet(true))
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }))
+    expect(opened.emitted('dismiss')).toBeUndefined()
+    pressEscape()
+    expect(opened.emitted('dismiss')).toHaveLength(1)
+  })
+
+  it('未打开时 Esc 不发出；打开后才响应，关闭后又不响应', async () => {
+    const wrapper = track(sheet(false))
+
+    pressEscape()
+    expect(wrapper.emitted('dismiss')).toBeUndefined()
+    await wrapper.setProps({ open: true })
+    pressEscape()
+    expect(wrapper.emitted('dismiss')).toHaveLength(1)
+    await wrapper.setProps({ open: false })
+    pressEscape()
+    expect(wrapper.emitted('dismiss')).toHaveLength(1)
+  })
+
+  it('卸载后不再响应', () => {
+    const opened = sheet(true)
+
+    opened.unmount()
+    pressEscape()
+    expect(opened.emitted('dismiss')).toBeUndefined()
+  })
+
+  it('busy（提交中）时 Esc 不关闭；不忙时关闭', async () => {
+    const dialog = track(mount(UiDialog, { props: { open: true, title: '改派', busy: true }, slots: { default: '正文' } }))
+
+    pressEscape()
+    expect(dialog.emitted('dismiss')).toBeUndefined()
+    await dialog.setProps({ busy: false })
+    pressEscape()
+    expect(dialog.emitted('dismiss')).toHaveLength(1)
+  })
+
+  it('busy（提交中）时点遮罩不发出 dismiss（UiSheet 与 UiDialog）；不忙时发出；点面板内部始终不发出', async () => {
+    const opened = track(mount(UiSheet, { props: { open: true, title: '提交中', busy: true } }))
+    const dialog = track(mount(UiDialog, { props: { open: true, title: '改派', busy: true }, slots: { default: '正文' } }))
+
+    await opened.find('.backdrop').trigger('click')
+    await dialog.find('.backdrop').trigger('click')
+    await dialog.find('.sheet').trigger('click')
+    expect(opened.emitted('dismiss')).toBeUndefined()
+    expect(dialog.emitted('dismiss')).toBeUndefined()
+
+    await opened.setProps({ busy: false })
+    await dialog.setProps({ busy: false })
+    await opened.find('.backdrop').trigger('click')
+    await dialog.find('.backdrop').trigger('click')
+    await dialog.find('.sheet').trigger('click')
+    expect(opened.emitted('dismiss')).toHaveLength(1)
+    expect(dialog.emitted('dismiss')).toHaveLength(1)
+  })
+
+  it('closeOnEscape=false：Esc 不关闭，点遮罩照常关闭', async () => {
+    const opened = track(mount(UiSheet, { props: { open: true, title: '确认', closeOnEscape: false } }))
+
+    pressEscape()
+    expect(opened.emitted('dismiss')).toBeUndefined()
+    await opened.find('.backdrop').trigger('click')
+    expect(opened.emitted('dismiss')).toHaveLength(1)
+  })
+
+  it('UiDialog 与 UiSheet 一样响应 Esc', () => {
+    const dialog = track(mount(UiDialog, { props: { open: true, title: '改派' }, slots: { default: '正文' } }))
+
+    pressEscape()
+    expect(dialog.emitted('dismiss')).toHaveLength(1)
+  })
+
+})
+
+describe('Esc 关闭：多层与取消（FE-8 L5）', () => {
+  it('两层叠放：只有最上层响应；它关闭后下一次 Esc 轮到下面一层', async () => {
+    const lower = track(sheet(true))
+    const upper = track(sheet(true))
+
+    pressEscape()
+    expect(upper.emitted('dismiss')).toHaveLength(1)
+    expect(lower.emitted('dismiss')).toBeUndefined()
+    await upper.setProps({ open: false })
+    pressEscape()
+    expect(lower.emitted('dismiss')).toHaveLength(1)
+    expect(upper.emitted('dismiss')).toHaveLength(1)
+  })
+
+  it('最上层忙碌时 Esc 也不会落到下面一层', () => {
+    const lower = track(sheet(true))
+    const upper = track(mount(UiSheet, { props: { open: true, title: '提交中', busy: true } }))
+
+    pressEscape()
+    expect(upper.emitted('dismiss')).toBeUndefined()
+    expect(lower.emitted('dismiss')).toBeUndefined()
+  })
+
+  it('已被 preventDefault 的 Esc 不处理', () => {
+    const opened = track(sheet(true))
+
+    const event = new KeyboardEvent('keydown', { key: 'Escape', cancelable: true })
+    event.preventDefault()
+    window.dispatchEvent(event)
+    expect(opened.emitted('dismiss')).toBeUndefined()
   })
 })

@@ -14,7 +14,7 @@ const COLUMNS = [
 
 <template>
   <section aria-label="分场馆统计">
-    <h2 class="heading">
+    <h2 class="section-heading section-heading--spaced">
       分场馆统计
     </h2>
     <AdminDataTable
@@ -26,10 +26,3 @@ const COLUMNS = [
     />
   </section>
 </template>
-
-<style scoped>
-.heading {
-  margin-bottom: var(--space-3);
-  font: var(--font-headline);
-}
-</style>

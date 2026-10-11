@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // 公告表（FE-5 P6）：场馆公告可归档（canArchive），系统公告只读，因此同一个组件用于两张表。
+import { labelFor } from '../../../utils/accessibleLabel'
 import type { AnnouncementRowView } from '../../../utils/announcementDisplay'
 import UiButton from '../../ui/UiButton.vue'
 import AdminDataTable from '../AdminDataTable.vue'
@@ -33,7 +34,9 @@ const COLUMNS = [
     <template #cell-actions="{ row }">
       <UiButton
         v-if="row.canArchive"
+        class="archive"
         variant="secondary"
+        :aria-label="labelFor('归档', row.title)"
         @click="$emit('archive', row.id)"
       >
         归档
@@ -41,3 +44,10 @@ const COLUMNS = [
     </template>
   </AdminDataTable>
 </template>
+
+<style scoped>
+/* 操作列不让按钮文字竖排：窄屏时表格宁可横向滚动（FE-8 L9）。 */
+.archive {
+  white-space: nowrap;
+}
+</style>

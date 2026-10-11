@@ -17,11 +17,11 @@ defineEmits<{ save: [] }>()
     tag="form"
     material="solid"
     radius="lg"
-    class="form"
+    class="stack-form"
     aria-label="场馆简介"
     @submit.prevent="$emit('save')"
   >
-    <h2 class="heading">
+    <h2 class="section-heading">
       场馆简介
     </h2>
     <UiTextField
@@ -41,15 +41,3 @@ defineEmits<{ save: [] }>()
     </div>
   </UiGlassCard>
 </template>
-
-<style scoped>
-.form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.heading {
-  font: var(--font-headline);
-}
-</style>

@@ -7,8 +7,10 @@ import DisplayNotices from '../../components/display/DisplayNotices.vue'
 import DisplayTrend from '../../components/display/DisplayTrend.vue'
 import DisplayVenueGroup from '../../components/display/DisplayVenueGroup.vue'
 import UiBanner from '../../components/ui/UiBanner.vue'
+import UiEmptyState from '../../components/ui/UiEmptyState.vue'
+import UiGlassCard from '../../components/ui/UiGlassCard.vue'
 import { useDisplayBoard } from '../../composables/displayPolling'
-import { presentBoard } from '../../utils/displayModel'
+import { NO_VENUES_DESCRIPTION, NO_VENUES_TITLE, presentBoard } from '../../utils/displayModel'
 
 const state = useDisplayBoard({ fetchSummary: () => api.getDisplaySummary() })
 const board = computed(() => presentBoard(state.value))
@@ -58,6 +60,17 @@ const board = computed(() => presentBoard(state.value))
       <DisplayMetrics :metrics="board.view.metrics" />
       <div class="body">
         <div class="venues">
+          <UiGlassCard
+            v-if="board.view.venues.length === 0"
+            tag="section"
+            class="no-venues"
+            material="thick"
+          >
+            <UiEmptyState
+              :title="NO_VENUES_TITLE"
+              :description="NO_VENUES_DESCRIPTION"
+            />
+          </UiGlassCard>
           <DisplayVenueGroup
             v-for="venue in board.view.venues"
             :key="venue.id"
@@ -115,11 +128,13 @@ const board = computed(() => presentBoard(state.value))
   font-size: 1.15em;
 }
 
+/* 主体撑满标题与指标行之后剩下的高度（FE-8 L13）：1920×1080 下下方不再大片留白，两栏等高，面板随之拉伸。 */
 .body {
   display: grid;
+  flex: 1;
   grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
   gap: 1.2em;
-  align-items: start;
+  align-items: stretch;
 }
 
 /* 窄屏（例如 iPhone 竖屏）：两栏改为上下排列，避免数字溢出与标签互相重叠（docs/17 第 9 节）。 */
@@ -135,5 +150,9 @@ const board = computed(() => presentBoard(state.value))
   flex-direction: column;
   gap: 1em;
   min-width: 0;
+}
+
+.no-venues {
+  flex: 1;
 }
 </style>

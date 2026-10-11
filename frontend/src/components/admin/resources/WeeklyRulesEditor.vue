@@ -1,8 +1,9 @@
 <script setup lang="ts">
 // 每周开放窗口编辑（FE-5 P3）：整体替换。一个星期可以有多个窗口；没有窗口的星期不开放。
 // 90 分钟整数倍、同日不重叠由接口校验，失败时页面显示 RULE_INVALID 文案。
+import { labelFor } from '../../../utils/accessibleLabel'
 import { WEEKDAY_OPTIONS } from '../../../utils/adminResourceDisplay'
-import type { WeeklyDraftRow } from '../../../utils/adminRuleDisplay'
+import { windowName, type WeeklyDraftRow } from '../../../utils/adminRuleDisplay'
 import UiButton from '../../ui/UiButton.vue'
 import UiGlassCard from '../../ui/UiGlassCard.vue'
 import UiTextField from '../../ui/UiTextField.vue'
@@ -22,7 +23,7 @@ defineEmits<{ add: []; remove: [key: number]; save: [] }>()
     class="editor"
     aria-label="每周开放窗口"
   >
-    <h2 class="heading">
+    <h2 class="section-heading">
       每周开放窗口
     </h2>
     <p
@@ -62,6 +63,7 @@ defineEmits<{ add: []; remove: [key: number]; save: [] }>()
         />
         <UiButton
           variant="plain"
+          :aria-label="labelFor('删除窗口', windowName(row))"
           @click="$emit('remove', row.key)"
         >
           删除窗口
@@ -90,10 +92,6 @@ defineEmits<{ add: []; remove: [key: number]; save: [] }>()
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-}
-
-.heading {
-  font: var(--font-headline);
 }
 
 .rows {

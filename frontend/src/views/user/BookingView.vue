@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 
 import BookingResult from '../../components/booking/BookingResult.vue'
 import ConfirmPanel from '../../components/booking/ConfirmPanel.vue'
@@ -9,13 +9,19 @@ import VenueList from '../../components/booking/VenueList.vue'
 import VenueNotices from '../../components/booking/VenueNotices.vue'
 import UiBanner from '../../components/ui/UiBanner.vue'
 import UiButton from '../../components/ui/UiButton.vue'
+import UiEmptyState from '../../components/ui/UiEmptyState.vue'
+import UiGlassCard from '../../components/ui/UiGlassCard.vue'
 import { useBookingBoard } from '../../composables/bookingBoard'
+import {
+  hasNoSlots, NO_SLOTS_DESCRIPTION, NO_SLOTS_TITLE, NO_VENUES_DESCRIPTION, NO_VENUES_TITLE,
+} from '../../utils/bookingDisplay'
 
 const board = useBookingBoard()
 const {
   step, venues, venuesPhase, venuesError, rulesError, venue, dates, date, slotsPhase, slotsError, groups,
   announcementItems, announcementError, confirmation, purpose, submitting, submitError, result,
 } = board
+const noSlots = computed(() => hasNoSlots(groups.value))
 
 onMounted(() => {
   void board.load()
@@ -49,6 +55,15 @@ onMounted(() => {
           重试
         </UiButton>
       </UiBanner>
+      <UiGlassCard
+        v-if="venuesPhase === 'ready' && venues.length === 0"
+        tag="section"
+      >
+        <UiEmptyState
+          :title="NO_VENUES_TITLE"
+          :description="NO_VENUES_DESCRIPTION"
+        />
+      </UiGlassCard>
       <VenueList
         :venues="venues"
         @select="board.selectVenue($event)"
@@ -74,7 +89,13 @@ onMounted(() => {
         tone="danger"
         role="alert"
       >
-        无法取得可预约的日期范围：{{ rulesError }}
+        <p>无法取得可预约的日期范围：{{ rulesError }}</p>
+        <UiButton
+          variant="plain"
+          @click="board.retryRules()"
+        >
+          重试
+        </UiButton>
       </UiBanner>
       <DateStrip
         :dates="dates"
@@ -109,6 +130,15 @@ onMounted(() => {
           重试
         </UiButton>
       </UiBanner>
+      <UiGlassCard
+        v-else-if="slotsPhase === 'ready' && noSlots"
+        tag="section"
+      >
+        <UiEmptyState
+          :title="NO_SLOTS_TITLE"
+          :description="NO_SLOTS_DESCRIPTION"
+        />
+      </UiGlassCard>
       <SlotGrid
         v-else
         :groups="groups"

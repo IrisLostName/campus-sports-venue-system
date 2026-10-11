@@ -2,7 +2,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { SlotStatus } from '../../src/api/types'
-import { addDays, buildSlotCell, dateOptions, isSelectable, NOT_BOOKABLE_TEXT, SLOT_STATUS_LABELS } from '../../src/utils/bookingDisplay'
+import {
+  addDays, buildSlotCell, dateOptions, hasNoSlots, isSelectable, NOT_BOOKABLE_TEXT, SLOT_STATUS_LABELS,
+} from '../../src/utils/bookingDisplay'
 import { todayShanghai } from '../../src/utils/shanghaiTime'
 
 afterEach(() => {
@@ -68,5 +70,19 @@ describe('B5 时段状态', () => {
 
   it('未开放文案', () => {
     expect(NOT_BOOKABLE_TEXT).toBe('暂未开放预约')
+  })
+})
+
+describe('FE-8 L3 hasNoSlots：只看接口返回的数组有没有内容', () => {
+  const cell = { startTime: '08:00', timeText: '08:00–09:30', status: 'AVAILABLE', label: '可预约', selectable: true, selected: false } as const
+
+  it('没有场地分组，或所有场地都没有时段：为空', () => {
+    expect(hasNoSlots([])).toBe(true)
+    expect(hasNoSlots([{ resourceId: 1, resourceName: '网球场1', cells: [] }, { resourceId: 2, resourceName: '网球场2', cells: [] }])).toBe(true)
+  })
+
+  it('只要有一个场地有一个时段（不论什么状态）就不为空', () => {
+    expect(hasNoSlots([{ resourceId: 1, resourceName: '网球场1', cells: [] }, { resourceId: 2, resourceName: '网球场2', cells: [cell] }])).toBe(false)
+    expect(hasNoSlots([{ resourceId: 1, resourceName: '网球场1', cells: [{ ...cell, status: 'PAST', selectable: false }] }])).toBe(false)
   })
 })

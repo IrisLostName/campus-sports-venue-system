@@ -10,11 +10,11 @@ defineProps<{ venue: VenueGroupView }>()
 <template>
   <UiGlassCard
     tag="section"
-    class="venue"
+    class="venue display-panel"
     material="thick"
   >
     <header class="head">
-      <h3 class="name">
+      <h3 class="name display-panel-title display-panel-title--inline">
         {{ venue.name }}
       </h3>
       <UiStatusPill
@@ -51,8 +51,11 @@ defineProps<{ venue: VenueGroupView }>()
 </template>
 
 <style scoped>
+/* 面板在列里平分多出来的高度，状态格随之拉伸（FE-8 L13）。 */
 .venue {
-  padding: 0.8em 1.2em 1em;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
 }
 
 .head {
@@ -61,12 +64,6 @@ defineProps<{ venue: VenueGroupView }>()
   align-items: baseline;
   gap: 0.5em 1em;
   margin-bottom: 0.7em;
-}
-
-.name {
-  margin: 0;
-  font-size: 1.5em;
-  font-weight: 600;
 }
 
 .tag.tag {
@@ -80,6 +77,8 @@ defineProps<{ venue: VenueGroupView }>()
 
 .resources {
   display: grid;
+  flex: 1;
+  grid-auto-rows: 1fr;
   grid-template-columns: repeat(auto-fill, minmax(8.5em, 1fr));
   gap: 0.6em;
   margin: 0;
@@ -91,6 +90,7 @@ defineProps<{ venue: VenueGroupView }>()
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  justify-content: space-between;
   gap: 0.3em;
   padding: 0.6em 0.8em;
   border: var(--glass-border);

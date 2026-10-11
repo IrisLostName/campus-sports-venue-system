@@ -29,7 +29,7 @@ onMounted(load)
     :notice="notice"
   >
     <section aria-label="场地">
-      <h2 class="heading">
+      <h2 class="section-heading section-heading--spaced">
         场地
       </h2>
       <ResourceTable
@@ -91,10 +91,3 @@ onMounted(load)
     />
   </AdminPage>
 </template>
-
-<style scoped>
-.heading {
-  margin-bottom: var(--space-3);
-  font: var(--font-headline);
-}
-</style>

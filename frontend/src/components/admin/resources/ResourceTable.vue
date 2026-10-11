@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // 场地列表（FE-5 P3）：含已停用的场地；状态按钮只依据 operationalStatus（docs/03 第 6 节状态图）。
+import { labelFor } from '../../../utils/accessibleLabel'
 import type { ResourceRowView } from '../../../utils/adminResourceDisplay'
 import type { ResourceStatus } from '../../../api/types'
 import UiButton from '../../ui/UiButton.vue'
@@ -35,6 +36,7 @@ const COLUMNS = [
       <div class="actions">
         <UiButton
           variant="plain"
+          :aria-label="labelFor('改名', row.name)"
           @click="$emit('rename', row.id)"
         >
           改名
@@ -43,6 +45,7 @@ const COLUMNS = [
           v-for="action in row.actions"
           :key="action.target"
           :variant="action.destructive ? 'destructive' : 'secondary'"
+          :aria-label="labelFor(action.label, row.name)"
           @click="$emit('status', row.id, action.target)"
         >
           {{ action.label }}

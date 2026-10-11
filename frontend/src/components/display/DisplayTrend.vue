@@ -8,10 +8,10 @@ defineProps<{ bars: TrendBarView[] }>()
 <template>
   <UiGlassCard
     tag="section"
-    class="trend"
+    class="trend display-panel"
     material="thick"
   >
-    <h3 class="title">
+    <h3 class="title display-panel-title">
       本周预约趋势
     </h3>
     <ul class="bars">
@@ -34,21 +34,19 @@ defineProps<{ bars: TrendBarView[] }>()
 </template>
 
 <style scoped>
+/* 趋势面板吃掉右栏多出来的高度，柱子随之变高（FE-8 L13）；最低仍是原来的 12em。 */
 .trend {
-  padding: 0.8em 1.2em 1em;
-}
-
-.title {
-  margin: 0 0 0.6em;
-  font-size: 1.5em;
-  font-weight: 600;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
 }
 
 .bars {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 0.6em;
-  height: 12em;
+  flex: 1;
+  min-height: 12em;
   margin: 0;
   padding: 0;
   list-style: none;

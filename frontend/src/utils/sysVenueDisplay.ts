@@ -20,6 +20,8 @@ export const VENUE_STATUS_LABELS: Record<VenueStatus, string> = {
 }
 
 export const BOOKING_SWITCH_LABEL = '对用户开放预约'
+// 开关为“已开放”而用户端仍不可预约时的说明（FE-8 L7，FE-6 复审）；只依据接口字段 userBookingEnabled 与 bookable。
+export const BOOKING_BLOCKED_HINT = '场馆已关闭，用户端不可预约'
 export const NAME_REQUIRED_TEXT = '请填写场馆名称'
 export const TYPE_REQUIRED_TEXT = '请选择场馆类型'
 export const NO_CHANGE_TEXT = '没有需要保存的修改'
@@ -42,6 +44,7 @@ export interface VenueRowView {
   statusLabel: string
   open: boolean
   bookingEnabled: boolean
+  bookingHint: string | null
   resourceCount: number
 }
 
@@ -54,6 +57,7 @@ export function buildVenueRow(venue: VenueSummary): VenueRowView {
     statusLabel: VENUE_STATUS_LABELS[venue.operationalStatus],
     open: venue.operationalStatus === 'OPEN',
     bookingEnabled: venue.userBookingEnabled,
+    bookingHint: venue.userBookingEnabled && !venue.bookable ? BOOKING_BLOCKED_HINT : null,
     resourceCount: venue.resourceCount,
   }
 }

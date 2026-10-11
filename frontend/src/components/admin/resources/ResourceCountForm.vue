@@ -18,11 +18,11 @@ defineEmits<{ submit: [] }>()
     tag="form"
     material="solid"
     radius="lg"
-    class="form"
+    class="stack-form"
     aria-label="设定场地数量"
     @submit.prevent="$emit('submit')"
   >
-    <h2 class="heading">
+    <h2 class="section-heading">
       设定场地数量
     </h2>
     <div class="fields">
@@ -72,15 +72,6 @@ defineEmits<{ submit: [] }>()
 </template>
 
 <style scoped>
-.form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.heading {
-  font: var(--font-headline);
-}
 
 .fields {
   display: flex;

@@ -20,11 +20,11 @@ defineEmits<{ publish: [] }>()
     tag="form"
     material="solid"
     radius="lg"
-    class="form"
+    class="stack-form"
     :aria-label="props.heading"
     @submit.prevent="$emit('publish')"
   >
-    <h2 class="heading">
+    <h2 class="section-heading">
       {{ props.heading }}
     </h2>
     <UiTextField
@@ -63,15 +63,3 @@ defineEmits<{ publish: [] }>()
     </div>
   </UiGlassCard>
 </template>
-
-<style scoped>
-.form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.heading {
-  font: var(--font-headline);
-}
-</style>

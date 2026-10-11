@@ -66,6 +66,11 @@ export function buildReservationRow(reservation: AdminReservation, withVenue = f
   }
 }
 
+// 行内按钮的可访问名称里指明“是哪一条预约”（FE-8 L11）：预约人 日期 时间 场地。
+export function reservationName(row: Pick<AdminReservationRow, 'userName' | 'dateText' | 'timeText' | 'place'>): string {
+  return `${row.userName} ${row.dateText} ${row.timeText} ${row.place}`
+}
+
 // 对话框里描述“是哪一条预约”。
 export function reservationSummary(reservation: AdminReservation): string {
   return `${reservation.venueName} · ${reservation.resourceName} · ${reservation.serviceDate} ${formatTimeRange(reservation)} · ${reservation.userDisplayName}`

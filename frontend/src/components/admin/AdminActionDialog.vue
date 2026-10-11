@@ -24,6 +24,7 @@ defineEmits<{ confirm: []; dismiss: [] }>()
   <UiDialog
     :open="open"
     :title="title"
+    :busy="busy"
     @dismiss="$emit('dismiss')"
   >
     <div class="body">
@@ -39,6 +40,7 @@ defineEmits<{ confirm: []; dismiss: [] }>()
     <div class="buttons">
       <UiButton
         variant="secondary"
+        :disabled="busy"
         @click="$emit('dismiss')"
       >
         取消

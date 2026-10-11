@@ -58,6 +58,57 @@ describe('错误文案', () => {
   })
 })
 
+describe('说明文字 hint（FE-8 L10，可选）', () => {
+  it('没有 hint：不渲染说明，控件也没有 aria-describedby（既有用法不变）', () => {
+    const field = mount(UiTextField, { props: { label: '姓名', modelValue: '' } })
+
+    expect(field.find('.help').exists()).toBe(false)
+    expect(field.find('input').attributes('aria-describedby')).toBeUndefined()
+  })
+
+  it('有 hint：在控件下方显示可见文字，aria-describedby 指向它，且它不是 role=alert', () => {
+    const field = mount(UiTextField, { props: { label: '用户名', modelValue: '', hint: '3–32 位字母、数字或下划线' } })
+
+    const help = field.get('p.help')
+    expect(help.text()).toBe('3–32 位字母、数字或下划线')
+    expect(help.attributes('role')).toBeUndefined()
+    expect(field.find('input').attributes('aria-describedby')).toBe(help.attributes('id'))
+    expect(field.find('input').attributes('aria-invalid')).toBeUndefined()
+  })
+
+  it('hint 和 error 同时存在：aria-describedby 同时指向两者，说明在前', () => {
+    const field = mount(UiTextField, { props: { label: '密码', modelValue: '', hint: '8–64 位', error: '密码需为 8–64 位' } })
+
+    const help = field.get('p.help')
+    const alert = field.get('[role="alert"]')
+    expect(help.attributes('id')).not.toBe(alert.attributes('id'))
+    expect(field.find('input').attributes('aria-describedby')).toBe(`${help.attributes('id')} ${alert.attributes('id')}`)
+  })
+
+  it('同一页面两个带 hint 的输入框：aria-describedby 的 id 不同，且各自指向自己的说明文字', () => {
+    const page = mount({
+      components: { UiTextField },
+      template: '<div><UiTextField label="用户名" model-value="" hint="3–32 位字母" /><UiTextField label="密码" model-value="" hint="8–64 位" /></div>',
+    })
+
+    const describedBy = page.findAll('input').map((input) => input.attributes('aria-describedby'))
+    expect(describedBy).toHaveLength(2)
+    expect(describedBy[0]).toBeTruthy()
+    expect(describedBy[0]).not.toBe(describedBy[1])
+    const textOf = (id: string | undefined) => page.findAll('p.help').find((help) => help.attributes('id') === id)?.text()
+    expect(textOf(describedBy[0])).toBe('3–32 位字母')
+    expect(textOf(describedBy[1])).toBe('8–64 位')
+  })
+
+  it('textarea 与 select 同样关联 hint', () => {
+    const area = mount(UiTextField, { props: { label: '描述', modelValue: '', control: 'textarea', hint: '最多 500 字' } })
+    const pick = mount(UiTextField, { props: { label: '场馆', modelValue: null, control: 'select', hint: '必选' } })
+
+    expect(area.find('textarea').attributes('aria-describedby')).toBe(area.get('p.help').attributes('id'))
+    expect(pick.find('select').attributes('aria-describedby')).toBe(pick.get('p.help').attributes('id'))
+  })
+})
+
 describe('字数计数（默认关闭）', () => {
   it('默认不显示，即使有 maxlength', () => {
     expect(mount(UiTextField, { props: { label: '用途', modelValue: '社团训练', maxlength: 200 } }).find('.count').exists()).toBe(false)

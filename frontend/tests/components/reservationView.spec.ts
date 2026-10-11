@@ -120,6 +120,24 @@ describe('取消确认层：打开、关闭、提交（B2）', () => {
     expect(badge(page)).toBe('待使用')
   })
 
+  it('FE-8 L5 原因输入框 maxlength=200；按 Esc 关闭确认层，预约不变，也没有发出取消请求', async () => {
+    const { page, ctx } = await openPage()
+    await buttonByText(page, '取消预约').trigger('click')
+
+    expect(page.get('[role="dialog"] textarea').attributes('maxlength')).toBe('200')
+    await page.get('[role="dialog"] textarea').setValue('临时有事')
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    await flushPromises()
+
+    expect(page.find('[role="dialog"]').exists()).toBe(false)
+    expect(badge(page)).toBe('待使用')
+    expect((await ctx.h.api.getReservation(1)).status).toBe('CONFIRMED')
+    // 重新打开时上次输入的原因已被清空。
+    await buttonByText(page, '取消预约').trigger('click')
+    expect((page.get('[role="dialog"] textarea').element as HTMLTextAreaElement).value).toBe('')
+    page.unmount()
+  })
+
   it('填写原因并确认：确认层消失，卡片变为已取消且没有按钮，原因随请求提交', async () => {
     const { page, ctx } = await openPage()
     await buttonByText(page, '取消预约').trigger('click')

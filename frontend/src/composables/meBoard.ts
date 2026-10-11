@@ -5,7 +5,7 @@ import { computed } from 'vue'
 
 import type { ApiClient } from '../api/client'
 import { api } from '../api/index'
-import { buildCard } from '../utils/reservationDisplay'
+import { buildCard, type ReservationCard } from '../utils/reservationDisplay'
 import { createReservationActions } from './reservationActions'
 import { createReservationList } from './reservationList'
 import { useSession, type ApiCaller } from './session'
@@ -15,10 +15,15 @@ export interface MeDeps {
   call: ApiCaller
 }
 
+// 历史里不提供“取消”（FE-8 L2）：历史预约不会是 UPCOMING。只从 actionsFor 的结果里排除 CANCEL，仍然只依据字段，不做时间运算。
+function historyCard(card: ReservationCard): ReservationCard {
+  return { ...card, actions: card.actions.filter((action) => action !== 'CANCEL') }
+}
+
 export function createMeBoard(deps: MeDeps) {
   const list = createReservationList(deps, 'HISTORY')
   // 历史卡片不显示签到与取消说明，所以不需要 BookingRules（传 null 则说明文案为空）。
-  const cards = computed(() => list.items.value.map((item) => buildCard(item, null)))
+  const cards = computed(() => list.items.value.map((item) => historyCard(buildCard(item, null))))
   const actions = createReservationActions(deps, {
     items: list.items, cards, replace: list.replace, refresh: list.refresh,
   })

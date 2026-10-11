@@ -7,9 +7,17 @@ export interface ErrorText {
   message: string
 }
 
+// RULE_INVALID 的 details.reason 说明具体违反了哪条开放规则：存在且非空时原样接在通用文案后面（FE-8 L8）。
+function reasonOf(error: ApiError): string | null {
+  const reason: unknown = error.details?.reason
+  return error.code === 'RULE_INVALID' && typeof reason === 'string' && reason.trim() !== '' ? reason : null
+}
+
 export function describeError(error: unknown): ErrorText {
   if (error instanceof ApiError) {
-    return { code: error.code, message: messageFor(error.code, error.message) }
+    const message = messageFor(error.code, error.message)
+    const reason = reasonOf(error)
+    return { code: error.code, message: reason === null ? message : `${message}：${reason}` }
   }
   return { code: 'INTERNAL_ERROR', message: messageFor('INTERNAL_ERROR') }
 }

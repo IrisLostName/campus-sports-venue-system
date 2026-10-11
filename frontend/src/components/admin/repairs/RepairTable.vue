@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // 报修表（FE-5 P7）：提交时间、场地、报修人、问题描述、状态、处理结果与当前状态允许的下一步按钮。
-import type { RepairRowView, RepairTarget } from '../../../utils/adminRepairDisplay'
+import { labelFor } from '../../../utils/accessibleLabel'
+import { repairName, type RepairRowView, type RepairTarget } from '../../../utils/adminRepairDisplay'
 import UiButton from '../../ui/UiButton.vue'
 import UiStatusPill from '../../ui/UiStatusPill.vue'
 import AdminDataTable from '../AdminDataTable.vue'
@@ -40,6 +41,7 @@ const COLUMNS = [
           :key="step.target"
           variant="secondary"
           :disabled="busy"
+          :aria-label="labelFor(step.label, repairName(row))"
           @click="$emit('step', row.id, step.target)"
         >
           {{ step.label }}

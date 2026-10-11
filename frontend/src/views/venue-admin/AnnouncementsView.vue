@@ -42,7 +42,7 @@ onMounted(load)
       @update:model-value="setStatus($event as AnnouncementStatus | '')"
     />
     <section aria-label="场馆公告">
-      <h2 class="heading">
+      <h2 class="section-heading section-heading--spaced">
         场馆公告
       </h2>
       <AnnouncementTable
@@ -60,7 +60,7 @@ onMounted(load)
       />
     </section>
     <section aria-label="系统公告">
-      <h2 class="heading">
+      <h2 class="section-heading section-heading--spaced">
         系统公告（只读）
       </h2>
       <AnnouncementTable
@@ -89,10 +89,3 @@ onMounted(load)
     </AdminActionDialog>
   </AdminPage>
 </template>
-
-<style scoped>
-.heading {
-  margin-bottom: var(--space-3);
-  font: var(--font-headline);
-}
-</style>

@@ -37,7 +37,7 @@ describe('P3 每周开放窗口', () => {
     }
     await page.rules.saveWeekly()
 
-    expect(page.error.value).toBe('开放规则不合法')
+    expect(page.error.value).toBe('开放规则不合法：窗口长度必须是 90 分钟的整数倍')
     expect(page.flow.dialog.value).toBeNull()
   })
 
@@ -144,7 +144,7 @@ describe('P3 特殊关闭（单场地与删除）', () => {
     Object.assign(page.rules.closureForm, { startDate: '2026-10-15', endDate: '2026-10-14' })
     await page.rules.submitClosure()
 
-    expect(page.error.value).toBe('开放规则不合法')
+    expect(page.error.value).toBe('开放规则不合法：结束日期不能早于开始日期')
     expect(page.flow.dialog.value).toBeNull()
   })
 

@@ -86,6 +86,30 @@ describe('AdminActionDialog', () => {
     const busy = mount(AdminActionDialog, { props: { open: true, title: 't', confirmLabel: '好', busy: true } })
     expect(buttonIn(busy, '好').attributes('disabled')).toBeDefined()
   })
+
+  it('FE-8 F1 busy（提交中）时“取消”按钮不可用且不发出 dismiss；不忙时可用并发出', async () => {
+    const dialog = mount(AdminActionDialog, { props: { open: true, title: 't', confirmLabel: '好', busy: true } })
+
+    expect(buttonIn(dialog, '取消').attributes('disabled')).toBeDefined()
+    await buttonIn(dialog, '取消').trigger('click')
+    expect(dialog.emitted('dismiss')).toBeUndefined()
+    await dialog.setProps({ busy: false })
+    expect(buttonIn(dialog, '取消').attributes('disabled')).toBeUndefined()
+    await buttonIn(dialog, '取消').trigger('click')
+    expect(dialog.emitted('dismiss')).toHaveLength(1)
+  })
+
+  it('FE-8 L5 Esc 关闭对话框；busy（提交中）时 Esc 不关闭', async () => {
+    const dialog = mount(AdminActionDialog, { props: { open: true, title: 't', confirmLabel: '好', busy: true } })
+    const press = () => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+
+    press()
+    expect(dialog.emitted('dismiss')).toBeUndefined()
+    await dialog.setProps({ busy: false })
+    press()
+    expect(dialog.emitted('dismiss')).toHaveLength(1)
+    dialog.unmount()
+  })
 })
 
 describe('AdminPage', () => {

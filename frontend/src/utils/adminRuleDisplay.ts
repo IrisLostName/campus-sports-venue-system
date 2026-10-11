@@ -2,7 +2,7 @@
 import type { Closure, WeeklyWindow } from '../api/typesSection5'
 import type { WeeklyWindowInput } from '../api/requests'
 import type { Resource } from '../api/types'
-import { WHOLE_VENUE_TEXT } from './adminResourceDisplay'
+import { weekdayLabel, WHOLE_VENUE_TEXT } from './adminResourceDisplay'
 
 // 编辑中的一行：weekday 是 select 的值（'1'–'7'），时间是 <input type="time"> 的 HH:mm。key 只用于列表渲染。
 export interface WeeklyDraftRow {
@@ -10,6 +10,11 @@ export interface WeeklyDraftRow {
   weekday: string
   openTime: string
   closeTime: string
+}
+
+// 删除按钮的可访问名称里指明“是哪个窗口”（FE-8 L11）：星期 开放时间–关闭时间，没填的时间写“未填”。
+export function windowName(row: Pick<WeeklyDraftRow, 'weekday' | 'openTime' | 'closeTime'>): string {
+  return `${weekdayLabel(Number(row.weekday))} ${row.openTime === '' ? '未填' : row.openTime}–${row.closeTime === '' ? '未填' : row.closeTime}`
 }
 
 export const WEEKLY_INCOMPLETE_TEXT = '请填写每个窗口的开放时间和关闭时间'
