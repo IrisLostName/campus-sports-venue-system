@@ -3,16 +3,19 @@ package com.campus.venue.security;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 import com.campus.venue.common.error.ErrorCode;
 import com.campus.venue.support.AbstractApiTest;
 import com.campus.venue.support.MutableClock;
+import com.campus.venue.support.TestUsers;
 import com.campus.venue.support.TokenForgery;
 import com.campus.venue.user.domain.Role;
 import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
@@ -46,6 +49,23 @@ class SecurityBoundaryTest extends AbstractApiTest {
 
             assertThat(result.getResponse().getStatus()).as(authorization).isEqualTo(200);
             assertThat(json(result).get("status").asText()).isEqualTo("UP");
+        }
+    }
+
+    @Test
+    void loginAndRegisterIgnoreTheAuthorizationHeader() throws Exception {
+        int index = 0;
+        for (String authorization : badAuthorizations()) {
+            MvcResult login = mockMvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"username\":\"zhangsan\",\"password\":\"" + TestUsers.PASSWORD + "\"}")
+                    .header(HttpHeaders.AUTHORIZATION, authorization)).andReturn();
+            assertThat(login.getResponse().getStatus()).as(authorization).isEqualTo(200);
+
+            MvcResult register = mockMvc.perform(post("/api/v1/auth/register").contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"username\":\"public_" + index++ + "\",\"password\":\"Passw0rd!\","
+                            + "\"displayName\":\"公开\"}")
+                    .header(HttpHeaders.AUTHORIZATION, authorization)).andReturn();
+            assertThat(register.getResponse().getStatus()).as(authorization).isEqualTo(201);
         }
     }
 
