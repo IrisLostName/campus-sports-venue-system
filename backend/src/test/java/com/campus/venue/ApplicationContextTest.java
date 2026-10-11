@@ -84,6 +84,22 @@ class ApplicationContextTest {
     }
 
     @Test
+    void actuatorDiscoveryPageIsNotExposed() throws Exception {
+        MvcResult result = mockMvc.perform(get("/actuator")).andReturn();
+
+        assertThat(result.getResponse().getStatus()).isEqualTo(404);
+        JsonNode body = objectMapper.readTree(result.getResponse().getContentAsString());
+        assertThat(body.get("code").asText()).isEqualTo("NOT_FOUND");
+        assertThat(body.get("message").asText()).isEqualTo("资源不存在");
+
+        MvcResult health = mockMvc.perform(get("/actuator/health")).andReturn();
+
+        assertThat(health.getResponse().getStatus()).isEqualTo(200);
+        assertThat(objectMapper.readTree(health.getResponse().getContentAsString()).get("status").asText())
+                .isEqualTo("UP");
+    }
+
+    @Test
     void unknownBusinessPathReturnsNotFoundErrorBody() throws Exception {
         MvcResult result = mockMvc.perform(get("/api/v1/does-not-exist")).andReturn();
 

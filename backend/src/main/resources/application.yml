@@ -30,6 +30,9 @@ server:
 management:
   endpoints:
     web:
+      # 不提供 /actuator 端点发现页（审计 N2）
+      discovery:
+        enabled: false
       exposure:
         include: health
   endpoint:
