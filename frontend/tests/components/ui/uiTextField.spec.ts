@@ -85,6 +85,21 @@ describe('说明文字 hint（FE-8 L10，可选）', () => {
     expect(field.find('input').attributes('aria-describedby')).toBe(`${help.attributes('id')} ${alert.attributes('id')}`)
   })
 
+  it('同一页面两个带 hint 的输入框：aria-describedby 的 id 不同，且各自指向自己的说明文字', () => {
+    const page = mount({
+      components: { UiTextField },
+      template: '<div><UiTextField label="用户名" model-value="" hint="3–32 位字母" /><UiTextField label="密码" model-value="" hint="8–64 位" /></div>',
+    })
+
+    const describedBy = page.findAll('input').map((input) => input.attributes('aria-describedby'))
+    expect(describedBy).toHaveLength(2)
+    expect(describedBy[0]).toBeTruthy()
+    expect(describedBy[0]).not.toBe(describedBy[1])
+    const textOf = (id: string | undefined) => page.findAll('p.help').find((help) => help.attributes('id') === id)?.text()
+    expect(textOf(describedBy[0])).toBe('3–32 位字母')
+    expect(textOf(describedBy[1])).toBe('8–64 位')
+  })
+
   it('textarea 与 select 同样关联 hint', () => {
     const area = mount(UiTextField, { props: { label: '描述', modelValue: '', control: 'textarea', hint: '最多 500 字' } })
     const pick = mount(UiTextField, { props: { label: '场馆', modelValue: null, control: 'select', hint: '必选' } })
