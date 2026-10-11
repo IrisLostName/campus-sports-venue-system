@@ -53,6 +53,17 @@ class SecurityBoundaryTest extends AbstractApiTest {
     }
 
     @Test
+    void bookingRulesIgnoreTheAuthorizationHeader() throws Exception {
+        for (String authorization : badAuthorizations()) {
+            MvcResult result = mockMvc.perform(get("/api/v1/config/booking-rules")
+                    .header(HttpHeaders.AUTHORIZATION, authorization)).andReturn();
+
+            assertThat(result.getResponse().getStatus()).as(authorization).isEqualTo(200);
+            assertThat(json(result).get("slotMinutes").asInt()).isEqualTo(90);
+        }
+    }
+
+    @Test
     void loginAndRegisterIgnoreTheAuthorizationHeader() throws Exception {
         int index = 0;
         for (String authorization : badAuthorizations()) {
