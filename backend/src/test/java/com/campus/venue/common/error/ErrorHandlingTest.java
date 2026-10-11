@@ -6,18 +6,26 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 
 import com.campus.probe.ProbeController;
 import com.campus.probe.ValidatedProbeController;
+import com.campus.venue.security.TokenService;
+import com.campus.venue.support.DatabaseCleaner;
 import com.campus.venue.support.IntegrationTest;
+import com.campus.venue.support.TestUsers;
+import com.campus.venue.user.domain.Role;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.List;
+import javax.sql.DataSource;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -32,6 +40,24 @@ class ErrorHandlingTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private TokenService tokenService;
+
+    @Autowired
+    private JdbcTemplate jdbc;
+
+    @Autowired
+    private DataSource dataSource;
+
+    /** BE-1 起非公开路径都需登录：每个用例前清库、造一个测试用户并携带其有效令牌（BE-1 裁决第 11 节第 2 条）。 */
+    private String bearer;
+
+    @BeforeEach
+    void authenticate() {
+        DatabaseCleaner.truncateAll(dataSource);
+        bearer = TestUsers.bearer(tokenService, TestUsers.insert(jdbc, "probe_user", Role.USER), Role.USER);
+    }
 
     private JsonNode errorOf(MvcResult result, int status, ErrorCode code) throws Exception {
         assertThat(result.getResponse().getStatus()).isEqualTo(status);
@@ -51,7 +77,7 @@ class ErrorHandlingTest {
     @ParameterizedTest
     @EnumSource(ErrorCode.class)
     void everyBusinessExceptionMapsToItsCodeStatusAndDefaultMessage(ErrorCode code) throws Exception {
-        MvcResult result = mockMvc.perform(get("/probe/business").param("code", code.name())).andReturn();
+        MvcResult result = mockMvc.perform(get("/probe/business").header(HttpHeaders.AUTHORIZATION, bearer).param("code", code.name())).andReturn();
 
         JsonNode body = errorOf(result, code.getStatus().value(), code);
         assertThat(keysOf(body)).containsExactly("code", "message");
@@ -59,7 +85,7 @@ class ErrorHandlingTest {
 
     @Test
     void businessExceptionDetailsAreReturnedWhenPresent() throws Exception {
-        MvcResult result = mockMvc.perform(get("/probe/business")
+        MvcResult result = mockMvc.perform(get("/probe/business").header(HttpHeaders.AUTHORIZATION, bearer)
                 .param("code", "DATE_OUT_OF_RANGE").param("detail", "7")).andReturn();
 
         JsonNode body = errorOf(result, 400, ErrorCode.DATE_OUT_OF_RANGE);
@@ -69,7 +95,7 @@ class ErrorHandlingTest {
 
     @Test
     void invalidRequestBodyReturnsFieldReasons() throws Exception {
-        MvcResult result = mockMvc.perform(post("/probe/body")
+        MvcResult result = mockMvc.perform(post("/probe/body").header(HttpHeaders.AUTHORIZATION, bearer)
                 .contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"\",\"age\":0}")).andReturn();
 
         JsonNode fields = errorOf(result, 400, ErrorCode.VALIDATION_ERROR).get("details").get("fields");
@@ -80,7 +106,7 @@ class ErrorHandlingTest {
 
     @Test
     void unparseableBodyReturnsValidationErrorWithoutDetails() throws Exception {
-        MvcResult result = mockMvc.perform(post("/probe/body")
+        MvcResult result = mockMvc.perform(post("/probe/body").header(HttpHeaders.AUTHORIZATION, bearer)
                 .contentType(MediaType.APPLICATION_JSON).content("{")).andReturn();
 
         assertThat(keysOf(errorOf(result, 400, ErrorCode.VALIDATION_ERROR))).containsExactly("code", "message");
@@ -88,7 +114,7 @@ class ErrorHandlingTest {
 
     @Test
     void parameterTypeMismatchNamesTheParameter() throws Exception {
-        MvcResult result = mockMvc.perform(get("/probe/count").param("count", "abc")).andReturn();
+        MvcResult result = mockMvc.perform(get("/probe/count").header(HttpHeaders.AUTHORIZATION, bearer).param("count", "abc")).andReturn();
 
         JsonNode fields = errorOf(result, 400, ErrorCode.VALIDATION_ERROR).get("details").get("fields");
         assertThat(fields.get("count").asText()).isEqualTo("类型不符");
@@ -96,7 +122,7 @@ class ErrorHandlingTest {
 
     @Test
     void missingRequiredParameterNamesTheParameter() throws Exception {
-        MvcResult result = mockMvc.perform(get("/probe/count")).andReturn();
+        MvcResult result = mockMvc.perform(get("/probe/count").header(HttpHeaders.AUTHORIZATION, bearer)).andReturn();
 
         JsonNode fields = errorOf(result, 400, ErrorCode.VALIDATION_ERROR).get("details").get("fields");
         assertThat(fields.get("count").asText()).isEqualTo("缺少必填参数");
@@ -104,7 +130,7 @@ class ErrorHandlingTest {
 
     @Test
     void builtInMethodParameterValidationReturnsFieldReasons() throws Exception {
-        MvcResult result = mockMvc.perform(get("/probe/min").param("size", "0")).andReturn();
+        MvcResult result = mockMvc.perform(get("/probe/min").header(HttpHeaders.AUTHORIZATION, bearer).param("size", "0")).andReturn();
 
         JsonNode fields = errorOf(result, 400, ErrorCode.VALIDATION_ERROR).get("details").get("fields");
         assertThat(fields.get("size").asText()).isNotBlank();
@@ -112,7 +138,7 @@ class ErrorHandlingTest {
 
     @Test
     void validatedControllerConstraintViolationReturnsFieldReasons() throws Exception {
-        MvcResult result = mockMvc.perform(get("/probe/validated").param("page", "0")).andReturn();
+        MvcResult result = mockMvc.perform(get("/probe/validated").header(HttpHeaders.AUTHORIZATION, bearer).param("page", "0")).andReturn();
 
         JsonNode fields = errorOf(result, 400, ErrorCode.VALIDATION_ERROR).get("details").get("fields");
         assertThat(fields.get("page").asText()).isNotBlank();
@@ -120,21 +146,21 @@ class ErrorHandlingTest {
 
     @Test
     void unknownPathReturnsNotFoundErrorBody() throws Exception {
-        MvcResult result = mockMvc.perform(get("/api/v1/does-not-exist")).andReturn();
+        MvcResult result = mockMvc.perform(get("/api/v1/does-not-exist").header(HttpHeaders.AUTHORIZATION, bearer)).andReturn();
 
         assertThat(keysOf(errorOf(result, 404, ErrorCode.NOT_FOUND))).containsExactly("code", "message");
     }
 
     @Test
     void unsupportedMethodMapsToNotFound() throws Exception {
-        MvcResult result = mockMvc.perform(post("/probe/get-only")).andReturn();
+        MvcResult result = mockMvc.perform(post("/probe/get-only").header(HttpHeaders.AUTHORIZATION, bearer)).andReturn();
 
         assertThat(keysOf(errorOf(result, 404, ErrorCode.NOT_FOUND))).containsExactly("code", "message");
     }
 
     @Test
     void unsupportedMediaTypeMapsToValidationError() throws Exception {
-        MvcResult result = mockMvc.perform(post("/probe/json-only")
+        MvcResult result = mockMvc.perform(post("/probe/json-only").header(HttpHeaders.AUTHORIZATION, bearer)
                 .contentType(MediaType.TEXT_PLAIN).content("x")).andReturn();
 
         assertThat(keysOf(errorOf(result, 400, ErrorCode.VALIDATION_ERROR))).containsExactly("code", "message");
@@ -142,14 +168,14 @@ class ErrorHandlingTest {
 
     @Test
     void notAcceptableMapsToValidationError() throws Exception {
-        MvcResult result = mockMvc.perform(get("/probe/xml-only").accept(MediaType.APPLICATION_JSON)).andReturn();
+        MvcResult result = mockMvc.perform(get("/probe/xml-only").header(HttpHeaders.AUTHORIZATION, bearer).accept(MediaType.APPLICATION_JSON)).andReturn();
 
         assertThat(keysOf(errorOf(result, 400, ErrorCode.VALIDATION_ERROR))).containsExactly("code", "message");
     }
 
     @Test
     void unexpectedExceptionReturnsInternalErrorWithoutLeakingDetails() throws Exception {
-        MvcResult result = mockMvc.perform(get("/probe/boom")).andReturn();
+        MvcResult result = mockMvc.perform(get("/probe/boom").header(HttpHeaders.AUTHORIZATION, bearer)).andReturn();
 
         JsonNode body = errorOf(result, 500, ErrorCode.INTERNAL_ERROR);
         assertThat(keysOf(body)).containsExactly("code", "message");
@@ -158,5 +184,14 @@ class ErrorHandlingTest {
                 .doesNotContain("IllegalStateException")
                 .doesNotContain("stackTrace")
                 .doesNotContain("at com.campus");
+    }
+
+    /** BE-1 起探针路径不是公开接口：不带令牌得到 AUTH_REQUIRED，而不是执行探针。 */
+    @Test
+    void probeWithoutTokenRequiresAuthentication() throws Exception {
+        MvcResult result = mockMvc.perform(get("/probe/boom")).andReturn();
+
+        JsonNode body = errorOf(result, 401, ErrorCode.AUTH_REQUIRED);
+        assertThat(keysOf(body)).containsExactly("code", "message");
     }
 }

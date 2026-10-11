@@ -1,5 +1,5 @@
 # 环境变量清单见 docs/14 第 3.1 节。只有非机密项带默认值；DB_PASSWORD 无默认值；
-# JWT_SECRET 的读取与校验属于 BE-1，这里不绑定。
+# JWT_SECRET 的空默认值不可用：缺失与过短都在启动时由 JwtProperties 校验失败（BE-1 J1）。
 spring:
   application:
     name: venue-booking
@@ -44,8 +44,9 @@ app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
   jwt:
+    secret: ${JWT_SECRET:}
     expire-hours: ${JWT_EXPIRE_HOURS:8}
-  # 预约参数键只在此列出，配置绑定类与 GET /config/booking-rules 属于 BE-1
+  # 预约参数（docs/03 第 4.3 节），由 BookingProperties 绑定并校验
   booking:
     advance-days: ${BOOKING_ADVANCE_DAYS:7}
     cancel-deadline-minutes: ${BOOKING_CANCEL_DEADLINE_MINUTES:120}

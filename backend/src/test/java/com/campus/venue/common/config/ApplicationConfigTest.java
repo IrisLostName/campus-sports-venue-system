@@ -21,14 +21,17 @@ class ApplicationConfigTest {
         return factory.getObject();
     }
 
+    /** BE-1 裁决第 12 节：机密没有可用默认值；JWT_SECRET 只以空默认值绑定到 app.jwt.secret。 */
     @Test
-    void secretsHaveNoDefaultAndJwtSecretIsNotBoundYet() throws Exception {
+    void secretsHaveNoUsableDefault() throws Exception {
         Properties props = load();
         String raw = Files.readString(YAML, StandardCharsets.UTF_8);
 
         assertThat(props.getProperty("spring.datasource.password")).isEqualTo("${DB_PASSWORD}");
-        assertThat(raw).doesNotContain("${JWT_SECRET");
-        assertThat(props.stringPropertyNames()).noneMatch(name -> name.toLowerCase().contains("secret"));
+        assertThat(props.stringPropertyNames()).filteredOn(name -> name.toLowerCase().contains("secret"))
+                .containsExactly("app.jwt.secret");
+        assertThat(props.getProperty("app.jwt.secret")).isEqualTo("${JWT_SECRET:}");
+        assertThat(raw).containsOnlyOnce("${JWT_SECRET");
     }
 
     @Test

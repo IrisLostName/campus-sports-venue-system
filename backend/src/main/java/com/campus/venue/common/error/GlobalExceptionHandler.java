@@ -23,6 +23,8 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 
 /**
  * 全局异常处理：把所有异常统一转换为 ErrorBody（BE-0 裁决 R3、R4）。
@@ -111,6 +113,18 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({HttpMediaTypeNotSupportedException.class, HttpMediaTypeNotAcceptableException.class})
     public ResponseEntity<ErrorBody> handleMediaType(Exception ex) {
         return respond(ErrorCode.VALIDATION_ERROR, null);
+    }
+
+    /** 方法级角色注解拒绝（P2）：进入 MVC 异常处理，不能落入 500 兜底。 */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorBody> handleAccessDenied(AccessDeniedException ex) {
+        return respond(ErrorCode.FORBIDDEN, null);
+    }
+
+    /** 认证异常（P2）。 */
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ErrorBody> handleAuthentication(AuthenticationException ex) {
+        return respond(ErrorCode.AUTH_REQUIRED, null);
     }
 
     /** 兜底：服务端记录堆栈，响应不含堆栈与异常原文。 */
