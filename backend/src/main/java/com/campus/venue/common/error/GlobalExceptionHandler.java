@@ -1,0 +1,136 @@
+package com.campus.venue.common.error;
+
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSourceResolvable;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindException;
+import org.springframework.validation.FieldError;
+import org.springframework.web.HttpMediaTypeNotAcceptableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.bind.ServletRequestBindingException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+
+/**
+ * 全局异常处理：把所有异常统一转换为 ErrorBody（BE-0 裁决 R3、R4）。
+ * 405 映射为 NOT_FOUND、415 与 406 映射为 VALIDATION_ERROR，均为 API-SYNC 观察项。
+ */
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    private static final Logger LOG = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+    private static final String FIELDS = "fields";
+
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ErrorBody> handleBusiness(BusinessException ex) {
+        return respond(ex.getErrorCode(), ex.getDetails());
+    }
+
+    /** 请求体校验失败（含 MethodArgumentNotValidException）。 */
+    @ExceptionHandler(BindException.class)
+    public ResponseEntity<ErrorBody> handleBind(BindException ex) {
+        Map<String, Object> fields = new LinkedHashMap<>();
+        ex.getBindingResult().getFieldErrors().forEach(error -> putFirst(fields, error));
+        ex.getBindingResult().getGlobalErrors()
+                .forEach(error -> fields.putIfAbsent(error.getObjectName(), error.getDefaultMessage()));
+        return respond(ErrorCode.VALIDATION_ERROR, Map.of(FIELDS, fields));
+    }
+
+    /** 方法参数校验失败（Spring 6.1 的内置方法校验）。 */
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public ResponseEntity<ErrorBody> handleMethodValidation(HandlerMethodValidationException ex) {
+        Map<String, Object> fields = new LinkedHashMap<>();
+        ex.getParameterValidationResults().forEach(result -> {
+            String name = result.getMethodParameter().getParameterName();
+            String key = name == null ? "arg" + result.getMethodParameter().getParameterIndex() : name;
+            result.getResolvableErrors().stream().findFirst()
+                    .ifPresent(error -> fields.putIfAbsent(key, message(error)));
+        });
+        return respond(ErrorCode.VALIDATION_ERROR, Map.of(FIELDS, fields));
+    }
+
+    /** 类上带 @Validated 时，方法参数校验以 ConstraintViolationException 抛出。 */
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ErrorBody> handleConstraintViolation(ConstraintViolationException ex) {
+        Map<String, Object> fields = new LinkedHashMap<>();
+        for (ConstraintViolation<?> violation : ex.getConstraintViolations()) {
+            String path = violation.getPropertyPath().toString();
+            fields.putIfAbsent(path.substring(path.lastIndexOf('.') + 1), violation.getMessage());
+        }
+        return respond(ErrorCode.VALIDATION_ERROR, Map.of(FIELDS, fields));
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorBody> handleUnreadable(HttpMessageNotReadableException ex) {
+        return respond(ErrorCode.VALIDATION_ERROR, null);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorBody> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        return respond(ErrorCode.VALIDATION_ERROR, Map.of(FIELDS, Map.of(ex.getName(), "类型不符")));
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ErrorBody> handleMissingParameter(MissingServletRequestParameterException ex) {
+        return respond(ErrorCode.VALIDATION_ERROR,
+                Map.of(FIELDS, Map.of(ex.getParameterName(), "缺少必填参数")));
+    }
+
+    /** 其他请求绑定失败（缺少请求头、路径变量等）。 */
+    @ExceptionHandler(ServletRequestBindingException.class)
+    public ResponseEntity<ErrorBody> handleBinding(ServletRequestBindingException ex) {
+        return respond(ErrorCode.VALIDATION_ERROR, null);
+    }
+
+    /** 不存在的路径：返回 ErrorBody，而不是框架默认页。 */
+    @ExceptionHandler({NoResourceFoundException.class, NoHandlerFoundException.class})
+    public ResponseEntity<ErrorBody> handleNotFound(Exception ex) {
+        return respond(ErrorCode.NOT_FOUND, null);
+    }
+
+    /** 405：docs/12 未规定，按 R4 映射为 NOT_FOUND。 */
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ErrorBody> handleMethodNotSupported(HttpRequestMethodNotSupportedException ex) {
+        return respond(ErrorCode.NOT_FOUND, null);
+    }
+
+    /** 415 与 406：docs/12 未规定，映射为 VALIDATION_ERROR。 */
+    @ExceptionHandler({HttpMediaTypeNotSupportedException.class, HttpMediaTypeNotAcceptableException.class})
+    public ResponseEntity<ErrorBody> handleMediaType(Exception ex) {
+        return respond(ErrorCode.VALIDATION_ERROR, null);
+    }
+
+    /** 兜底：服务端记录堆栈，响应不含堆栈与异常原文。 */
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorBody> handleUnexpected(Exception ex) {
+        LOG.error("未预期的异常", ex);
+        return respond(ErrorCode.INTERNAL_ERROR, null);
+    }
+
+    private static void putFirst(Map<String, Object> fields, FieldError error) {
+        fields.putIfAbsent(error.getField(), error.getDefaultMessage());
+    }
+
+    private static String message(MessageSourceResolvable error) {
+        return error.getDefaultMessage();
+    }
+
+    private static ResponseEntity<ErrorBody> respond(ErrorCode code, Map<String, Object> details) {
+        return ResponseEntity.status(code.getStatus())
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(ErrorBody.of(code, details));
+    }
+}
