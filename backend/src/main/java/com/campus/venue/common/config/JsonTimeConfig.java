@@ -18,7 +18,7 @@ import org.springframework.context.annotation.Configuration;
 /**
  * JSON 时间格式（docs/12 第 1 节）：日期 yyyy-MM-dd、时间 HH:mm、
  * 时间戳 yyyy-MM-dd'T'HH:mm:ss（不带偏移，秒为 0 时也输出秒）。
- * Jackson 默认会省略整点时间戳的秒，所以必须显式指定格式。
+ * 显式格式用于去掉小数秒（Clock 与 PostgreSQL TIMESTAMP 都带微秒）。
  */
 @Configuration(proxyBeanMethods = false)
 public class JsonTimeConfig {
