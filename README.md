@@ -14,7 +14,7 @@
 
 ## 前端：本地运行
 
-需要 Node.js 22.12 及以上（`frontend/package.json` 的 `engines`）和 pnpm。在 `frontend/` 目录下：
+需要 Node.js 22.12 及以上的 22.x、24.x，或 26 及以上（不支持 23 和 25；见 `frontend/package.json` 的 `engines`），以及 pnpm。在 `frontend/` 目录下：
 
 ```bash
 pnpm install
