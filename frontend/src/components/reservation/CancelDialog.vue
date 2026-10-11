@@ -16,6 +16,7 @@ defineEmits<{ confirm: []; dismiss: [] }>()
   <UiSheet
     open
     title="确认取消预约？"
+    :busy="busy"
     @dismiss="$emit('dismiss')"
   >
     <p class="what">

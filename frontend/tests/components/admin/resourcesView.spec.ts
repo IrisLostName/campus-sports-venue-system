@@ -2,6 +2,8 @@
 import { flushPromises } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 
+import type { ImpactChangeResponse, Resource } from '../../../src/api/types'
+import { deferred } from '../../display/support'
 import { buttonIn, content, fieldByLabel, openAdminApp } from './support'
 
 vi.mock('../../../src/api/index', async (importOriginal) => {
@@ -115,6 +117,37 @@ describe('P3 改名与数量', () => {
     await buttonIn(dialog, '保存').trigger('click')
     await flushPromises()
 
+    expect(main.get('[role="status"]').text()).toBe('场地已改名')
+    expect(main.get('section[aria-label="场地"]').findAll('tbody tr').map((row) => row.findAll('td')[0]?.text())).toContain('训练场')
+  })
+
+  it('FE-8 F1 改名提交中：点遮罩与“取消”都不关闭对话框；请求完成后才关闭并更新列表', async () => {
+    const gate = deferred<void>()
+    const { root } = await openAdminApp('/venue-admin/resources', {
+      wrap: (api) => ({
+        ...api,
+        adminUpdateResource: async (...args): Promise<ImpactChangeResponse<Resource>> => {
+          await gate.promise
+          return api.adminUpdateResource(...args)
+        },
+      }),
+    })
+    const main = content(root)
+    await buttonIn(rowOf(main, '网球场3'), '改名').trigger('click')
+    await main.get('[role="dialog"] input').setValue('训练场')
+    await buttonIn(main.get('[role="dialog"]'), '保存').trigger('click')
+    await flushPromises()
+
+    await main.get('.backdrop').trigger('click')
+    expect(buttonIn(main.get('[role="dialog"]'), '取消').attributes('disabled')).toBeDefined()
+    await buttonIn(main.get('[role="dialog"]'), '取消').trigger('click')
+    await flushPromises()
+    expect(main.find('[role="dialog"]').exists()).toBe(true)
+    expect((main.get('[role="dialog"] input').element as HTMLInputElement).value).toBe('训练场')
+
+    gate.resolve()
+    await flushPromises()
+    expect(main.find('[role="dialog"]').exists()).toBe(false)
     expect(main.get('[role="status"]').text()).toBe('场地已改名')
     expect(main.get('section[aria-label="场地"]').findAll('tbody tr').map((row) => row.findAll('td')[0]?.text())).toContain('训练场')
   })

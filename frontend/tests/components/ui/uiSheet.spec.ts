@@ -1,4 +1,4 @@
-// UI-1 UiSheet / UiDialog（docs/17 第 6 节）：打开与关闭、对话框语义、遮罩点击；FE-8 L5 起还有 Esc 关闭。
+// UI-1 UiSheet / UiDialog（docs/17 第 6 节）：打开与关闭、对话框语义、遮罩点击；FE-8 L5 起还有 Esc 关闭；FE-8 F1 起提交中（busy）任何方式都不关闭。
 import { mount, type VueWrapper } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 
@@ -134,6 +134,25 @@ describe('Esc 关闭（FE-8 L5）', () => {
     expect(dialog.emitted('dismiss')).toBeUndefined()
     await dialog.setProps({ busy: false })
     pressEscape()
+    expect(dialog.emitted('dismiss')).toHaveLength(1)
+  })
+
+  it('busy（提交中）时点遮罩不发出 dismiss（UiSheet 与 UiDialog）；不忙时发出；点面板内部始终不发出', async () => {
+    const opened = track(mount(UiSheet, { props: { open: true, title: '提交中', busy: true } }))
+    const dialog = track(mount(UiDialog, { props: { open: true, title: '改派', busy: true }, slots: { default: '正文' } }))
+
+    await opened.find('.backdrop').trigger('click')
+    await dialog.find('.backdrop').trigger('click')
+    await dialog.find('.sheet').trigger('click')
+    expect(opened.emitted('dismiss')).toBeUndefined()
+    expect(dialog.emitted('dismiss')).toBeUndefined()
+
+    await opened.setProps({ busy: false })
+    await dialog.setProps({ busy: false })
+    await opened.find('.backdrop').trigger('click')
+    await dialog.find('.backdrop').trigger('click')
+    await dialog.find('.sheet').trigger('click')
+    expect(opened.emitted('dismiss')).toHaveLength(1)
     expect(dialog.emitted('dismiss')).toHaveLength(1)
   })
 
