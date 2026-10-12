@@ -7,3 +7,7 @@ spring:
   flyway:
     clean-disabled: false
     locations: classpath:db/migration
+app:
+  jwt:
+    # 仅测试用的假密钥，不是任何环境的真实机密
+    secret: test-only-jwt-secret-not-for-any-real-use
