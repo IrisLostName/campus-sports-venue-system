@@ -2,8 +2,10 @@ package com.campus.venue.reservation.controller;
 
 import com.campus.venue.common.ApiPaths;
 import com.campus.venue.common.dto.PageView;
+import com.campus.venue.reservation.dto.CancelReservationRequest;
 import com.campus.venue.reservation.dto.CreateReservationRequest;
 import com.campus.venue.reservation.dto.ReservationView;
+import com.campus.venue.reservation.service.ReservationCancelService;
 import com.campus.venue.reservation.service.ReservationQueryService;
 import com.campus.venue.reservation.service.ReservationQueryService.Scope;
 import com.campus.venue.reservation.service.ReservationService;
@@ -34,10 +36,13 @@ public class ReservationController {
 
     private final ReservationService reservationService;
     private final ReservationQueryService queryService;
+    private final ReservationCancelService cancelService;
 
-    public ReservationController(ReservationService reservationService, ReservationQueryService queryService) {
+    public ReservationController(ReservationService reservationService, ReservationQueryService queryService,
+            ReservationCancelService cancelService) {
         this.reservationService = reservationService;
         this.queryService = queryService;
+        this.cancelService = cancelService;
     }
 
     @PostMapping
@@ -64,5 +69,13 @@ public class ReservationController {
     @GetMapping("/{id}")
     public ReservationView get(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable long id) {
         return queryService.get(user, id);
+    }
+
+    /** 请求体可缺省；reason ≤ 200，空白视为未填。 */
+    @PostMapping("/{id}/cancel")
+    @PreAuthorize("hasRole('USER')")
+    public ReservationView cancel(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable long id,
+            @Valid @RequestBody(required = false) CancelReservationRequest request) {
+        return cancelService.cancel(user, id, request);
     }
 }
