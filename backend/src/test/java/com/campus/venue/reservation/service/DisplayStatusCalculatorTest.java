@@ -105,4 +105,49 @@ class DisplayStatusCalculatorTest {
         assertThat(custom.of(reservation, null, START.plusMinutes(10).plusSeconds(1)))
                 .isEqualTo(DisplayStatus.NO_SHOW);
     }
+
+    /** BE-3 E1：有效状态与展示状态同一组判定点；未签到在关闭时刻正好仍为 CONFIRMED，晚 1 秒为 NO_SHOW。 */
+    @Test
+    void effectiveStatusBecomesNoShowOnlyAfterTheCheckInWindowCloses() {
+        Reservation reservation = reservation(ReservationStatus.CONFIRMED);
+        LocalDateTime closes = START.plusMinutes(defaults.checkinCloseAfterMinutes());
+
+        assertThat(calculator.effectiveStatus(reservation, null, closes)).isEqualTo(ReservationStatus.CONFIRMED);
+        assertThat(calculator.effectiveStatus(reservation, null, closes.plusSeconds(1)))
+                .isEqualTo(ReservationStatus.NO_SHOW);
+        assertThat(calculator.effectiveStatus(reservation, usage(START, null), closes.plusSeconds(1)))
+                .isEqualTo(ReservationStatus.CONFIRMED);
+    }
+
+    @Test
+    void effectiveStatusBecomesCompletedExactlyAtTheEndWhenCheckedIn() {
+        Reservation reservation = reservation(ReservationStatus.CONFIRMED);
+        UsageRecord checkedIn = usage(START, null);
+
+        assertThat(calculator.effectiveStatus(reservation, checkedIn, END.minusSeconds(1)))
+                .isEqualTo(ReservationStatus.CONFIRMED);
+        assertThat(calculator.effectiveStatus(reservation, checkedIn, END)).isEqualTo(ReservationStatus.COMPLETED);
+    }
+
+    @Test
+    void effectiveStatusLeavesStoredTerminalStatusesUnchanged() {
+        LocalDateTime late = END.plusDays(1);
+
+        for (ReservationStatus status : new ReservationStatus[] {ReservationStatus.CANCELLED,
+                ReservationStatus.ADMIN_CANCELLED, ReservationStatus.NO_SHOW, ReservationStatus.COMPLETED}) {
+            assertThat(calculator.effectiveStatus(reservation(status), null, late)).isEqualTo(status);
+            assertThat(calculator.effectiveStatus(reservation(status), usage(START, null), late)).isEqualTo(status);
+        }
+    }
+
+    @Test
+    void displayStatusAgreesWithEffectiveStatusAfterTheDecisionPoints() {
+        Reservation reservation = reservation(ReservationStatus.CONFIRMED);
+        LocalDateTime afterClose = START.plusMinutes(defaults.checkinCloseAfterMinutes()).plusSeconds(1);
+
+        assertThat(calculator.of(reservation, null, afterClose).name())
+                .isEqualTo(calculator.effectiveStatus(reservation, null, afterClose).name());
+        assertThat(calculator.of(reservation, usage(START, null), END).name())
+                .isEqualTo(calculator.effectiveStatus(reservation, usage(START, null), END).name());
+    }
 }
