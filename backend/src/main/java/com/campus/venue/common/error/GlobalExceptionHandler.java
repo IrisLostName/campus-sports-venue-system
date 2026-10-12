@@ -26,6 +26,7 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.web.firewall.RequestRejectedException;
 
 /**
  * 全局异常处理：把所有异常统一转换为 ErrorBody（BE-0 裁决 R3、R4）。
@@ -133,6 +134,15 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErrorBody> handleAccessDenied(AccessDeniedException ex) {
         return respond(ErrorCode.FORBIDDEN, null);
+    }
+
+    /**
+     * StrictHttpFirewall 对参数名的检查是惰性的：首次读取参数表（如 U+0000 参数检查拦截器）时才抛出。
+     * 与过滤器阶段的防火墙拒绝一致（BE-1 裁决第 11 节第 5 条）：400 VALIDATION_ERROR，不带 details。
+     */
+    @ExceptionHandler(RequestRejectedException.class)
+    public ResponseEntity<ErrorBody> handleRequestRejected(RequestRejectedException ex) {
+        return respond(ErrorCode.VALIDATION_ERROR, null);
     }
 
     /** 认证异常（P2）。 */
