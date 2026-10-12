@@ -6,11 +6,16 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import com.campus.venue.common.error.ErrorCode;
 import com.campus.venue.support.AbstractApiTest;
 import com.campus.venue.support.MutableClock;
+import com.campus.venue.support.TokenForgery;
 import com.campus.venue.user.domain.Role;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
+import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.test.web.servlet.MvcResult;
 
 /** A3、V2：GET /auth/me 返回当前用户；venueIds 仅 VENUE_ADMIN 返回当前有效授权（升序），其他角色为 null。 */
@@ -18,6 +23,9 @@ class MeTest extends AbstractApiTest {
 
     private static final String ME = "/api/v1/auth/me";
     private static final LocalDate TODAY = MutableClock.START.toLocalDate();
+
+    @Value("${app.jwt.secret}")
+    private String secret;
 
     private MvcResult me(String authorization) throws Exception {
         return mockMvc.perform(get(ME).header(HttpHeaders.AUTHORIZATION, authorization)).andReturn();
@@ -107,5 +115,16 @@ class MeTest extends AbstractApiTest {
     @Test
     void withoutTokenIsAuthRequired() throws Exception {
         assertError(mockMvc.perform(get(ME)).andReturn(), ErrorCode.AUTH_REQUIRED);
+    }
+
+    /** N4：载荷有效、用服务端同一密钥签名，但算法是 HS384 或 HS512 → AUTH_REQUIRED（只接受 HS256）。 */
+    @ParameterizedTest(name = "{0}")
+    @EnumSource(value = MacAlgorithm.class, names = {"HS384", "HS512"})
+    void sameSecretWithOtherHmacAlgorithmIsAuthRequired(MacAlgorithm algorithm) throws Exception {
+        long id = user("zhangsan", Role.USER);
+        String token = bearer(id, Role.USER).substring("Bearer ".length());
+        assertThat(me("Bearer " + token).getResponse().getStatus()).isEqualTo(200);
+
+        assertError(me("Bearer " + TokenForgery.resignedWith(token, algorithm, secret)), ErrorCode.AUTH_REQUIRED);
     }
 }
