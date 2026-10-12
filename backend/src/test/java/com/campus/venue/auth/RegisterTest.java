@@ -15,6 +15,7 @@ import java.util.Map;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -150,6 +151,32 @@ class RegisterTest extends AbstractApiTest {
 
         assertThat(error.get("details").get("fields").has(field)).as(field).isTrue();
         assertThat(jdbc.queryForObject("select count(*) from app_user", Integer.class)).isZero();
+    }
+
+    /** F1：任一字符串字段含 U+0000 → VALIDATION_ERROR 并指明字段，不是 500，也不插入任何行。 */
+    @ParameterizedTest(name = "{0}")
+    @ValueSource(strings = {"username", "displayName", "phone"})
+    void nulCharacterIsValidationErrorNamingTheField(String field) throws Exception {
+        Map<String, Object> body = validBody();
+        body.put(field, "ab\u0000cd");
+
+        JsonNode error = assertError(register(body), ErrorCode.VALIDATION_ERROR);
+
+        assertThat(error.get("details").get("fields").get(field).asText()).isEqualTo("不能包含 U+0000 字符");
+        assertThat(jdbc.queryForObject("select count(*) from app_user", Integer.class)).isZero();
+    }
+
+    /** F1 只拒绝 U+0000：换行与制表符原样反序列化并保存。 */
+    @Test
+    void newlinesAndTabsAreKeptUnchanged() throws Exception {
+        Map<String, Object> body = validBody();
+        body.put("displayName", "第一行\n第二行\t末尾");
+
+        MvcResult result = register(body);
+
+        assertThat(result.getResponse().getStatus()).isEqualTo(201);
+        assertThat(json(result).get("user").get("displayName").asText()).isEqualTo("第一行\n第二行\t末尾");
+        assertThat(row("new_user").get("display_name")).isEqualTo("第一行\n第二行\t末尾");
     }
 
     /** 边界值：用户名 3 与 32 位、口令 8 与 64 位、显示名 50 字、电话 20 位、72 字节口令都可注册。 */

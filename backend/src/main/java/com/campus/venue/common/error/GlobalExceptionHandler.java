@@ -77,6 +77,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorBody> handleUnreadable(HttpMessageNotReadableException ex) {
+        // 字符串含 U+0000（F1）时指明字段；其他无法解析的请求体不带 details
+        if (ex.getCause() instanceof NulCharacterException nul && !nul.fieldPath().isEmpty()) {
+            return respond(ErrorCode.VALIDATION_ERROR,
+                    Map.of(FIELDS, Map.of(nul.fieldPath(), "不能包含 U+0000 字符")));
+        }
         return respond(ErrorCode.VALIDATION_ERROR, null);
     }
 

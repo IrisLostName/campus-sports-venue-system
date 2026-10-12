@@ -121,6 +121,24 @@ class LoginTest extends AbstractApiTest {
         assertThat(error.get("details").get("fields").has(field)).isTrue();
     }
 
+    static List<Arguments> nulBodies() {
+        return List.of(
+                Arguments.of("username", "zhang\u0000san", TestUsers.PASSWORD),
+                Arguments.of("password", "zhangsan", TestUsers.PASSWORD + "\u0000"));
+    }
+
+    /** F1：含 U+0000 的字段在反序列化时被拒绝 → VALIDATION_ERROR 并指明字段，不是 500。 */
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("nulBodies")
+    void nulCharacterIsValidationErrorNamingTheField(String field, String username, String password)
+            throws Exception {
+        user("zhangsan", Role.USER);
+
+        JsonNode error = assertError(login(username, password), ErrorCode.VALIDATION_ERROR);
+
+        assertThat(error.get("details").get("fields").has(field)).isTrue();
+    }
+
     /** 边界：32 位用户名与 64 位口令通过校验，进入口令比对。 */
     @Test
     void boundaryLengthsPassValidation() throws Exception {
