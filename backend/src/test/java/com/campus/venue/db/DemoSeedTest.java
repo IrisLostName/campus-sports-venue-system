@@ -17,7 +17,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 /**
- * T3、M2：在测试库上追加执行 db/demo，断言种子数据的数量、关键值与 id；
+ * T3、M2（ACC-M3-01）：在测试库上追加执行 db/demo，断言种子数据的数量、关键值与 id；
  * 用 BCrypt 校验哈希与演示口令匹配；结束后清库恢复为只有 db/migration 的状态。
  */
 @IntegrationTest

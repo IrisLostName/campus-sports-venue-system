@@ -21,7 +21,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.web.servlet.MvcResult;
 
-/** A1：注册的成功响应、强制角色、原值保存、时间戳取 Clock、各字段校验与 USERNAME_TAKEN。 */
+/** A1（ACC-M3-02）：注册的成功响应、强制角色、原值保存、时间戳取 Clock、各字段校验与 USERNAME_TAKEN。 */
 class RegisterTest extends AbstractApiTest {
 
     private static final String REGISTER = "/api/v1/auth/register";

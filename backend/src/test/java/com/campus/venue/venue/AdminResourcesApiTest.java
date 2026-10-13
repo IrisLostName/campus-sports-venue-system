@@ -66,6 +66,7 @@ class AdminResourcesApiTest extends AbstractApiTest {
         assertThat(json(resources(badminton, sysAdmin, Role.SYS_ADMIN))).hasSize(1);
     }
 
+    /** ACC-M3-07：场馆管理员访问未授权场馆返回 FORBIDDEN_SCOPE。 */
     @Test
     void venueOutsideTheScopeIsForbiddenScope() throws Exception {
         JsonNode body = assertError(resources(badminton, tennisAdmin, Role.VENUE_ADMIN), ErrorCode.FORBIDDEN_SCOPE);

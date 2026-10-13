@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.test.web.servlet.MvcResult;
 
-/** J4、J5、P3：需登录接口的认证结果与错误码；每次请求按令牌中的用户 id 查库。 */
+/** J4、J5、P3（ACC-M3-02）：需登录接口的认证结果与错误码；每次请求按令牌中的用户 id 查库。 */
 class AuthenticationFilterTest extends AbstractApiTest {
 
     private static final String PRINCIPAL = "/api/v1/probe/principal";

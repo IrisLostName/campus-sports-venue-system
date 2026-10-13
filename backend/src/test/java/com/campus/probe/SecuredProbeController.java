@@ -10,8 +10,10 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -41,6 +43,13 @@ public class SecuredProbeController {
     @PostMapping("/api/v1/probe/sys-admin")
     public String sysAdminWithBody(@Valid @RequestBody NameBody body) {
         return body.name();
+    }
+
+    /** 供 U+0000 参数检查（BE-3 G4）：字符串型路径变量与查询参数，角色注解在格式检查之后。 */
+    @PreAuthorize("hasRole('SYS_ADMIN')")
+    @GetMapping("/api/v1/probe/echo/{name}")
+    public String echo(@PathVariable String name, @RequestParam(required = false) String q) {
+        return name + q;
     }
 
     @GetMapping("/api/v1/probe/principal")

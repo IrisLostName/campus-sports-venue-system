@@ -140,8 +140,19 @@ public class SlotService {
                 .toList();
     }
 
-    /** 可预约日期为 [今天, 今天 + advanceDays)。 */
-    private void requireWithinAdvance(LocalDate date, LocalDate today) {
+    /**
+     * 创建预约第 5 步（BE-3 C2，复用 D1、D2）：start 是该场馆当天 ACTIVE 每周窗口派生出的时段开始时刻，
+     * 且当天没有覆盖该场地的 ACTIVE 关闭（整馆或本场地）。场馆、场地状态由第 2、3 步检查，不在这里。
+     * 与 mock 的 stepDerivedSlot（isDerivedSlot、isClosedByRule）一致。事务由调用方提供。
+     */
+    public boolean isOpenSlot(Venue venue, Resource resource, LocalDate date, LocalTime start) {
+        boolean derived = SlotDerivation.slice(reader.weeklyFor(venue.getId(), date)).stream()
+                .anyMatch(slot -> slot.start().equals(start));
+        return derived && !SlotDerivation.closureScope(reader.closuresCovering(venue.getId(), date)).closes(resource);
+    }
+
+    /** 可预约日期为 [今天, 今天 + advanceDays)，否则 DATE_OUT_OF_RANGE（用户端时段与创建预约第 4 步共用）。 */
+    public void requireWithinAdvance(LocalDate date, LocalDate today) {
         if (date.isBefore(today) || !date.isBefore(today.plusDays(properties.advanceDays()))) {
             throw new BusinessException(ErrorCode.DATE_OUT_OF_RANGE, Map.of("advanceDays", properties.advanceDays()));
         }

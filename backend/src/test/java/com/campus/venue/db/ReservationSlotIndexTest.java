@@ -20,7 +20,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
- * 迁移/索引测试：uq_reservation_active_slot 存在、唯一、带 status 条件；
+ * ACC-M3-01 迁移/索引测试：uq_reservation_active_slot 存在、唯一、带 status 条件；
  * 在库层验证同一场地同一日期同一时段的第二条有效预约触发 23505，已取消的不占用。
  */
 @IntegrationTest

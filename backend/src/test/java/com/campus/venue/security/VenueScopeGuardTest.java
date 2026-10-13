@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
- * V1：授权范围校验每次查库。撤销、有效期外、未授权场馆 → FORBIDDEN_SCOPE（details.venueId）；
+ * V1（ACC-M3-07）：授权范围校验每次查库。撤销、有效期外、未授权场馆 → FORBIDDEN_SCOPE（details.venueId）；
  * USER → FORBIDDEN；SYS_ADMIN 通过。“今天”取可调时钟（2026-10-12）。
  */
 class VenueScopeGuardTest extends AbstractApiTest {
@@ -94,7 +94,7 @@ class VenueScopeGuardTest extends AbstractApiTest {
         assertScopeDenied(pool);
     }
 
-    /** 撤销后下一次调用即失败（同一个组件实例，证明没有缓存）；重新启用后又通过。 */
+    /** ACC-M3-07 撤销授权即时生效：撤销后下一次调用即失败（同一个组件实例，证明没有缓存）；重新启用后又通过。 */
     @Test
     void revocationTakesEffectOnTheNextCall() {
         long scope = grant(admin.id(), tennis, "ACTIVE", null, null);

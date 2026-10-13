@@ -25,7 +25,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.web.servlet.MvcResult;
 
-/** A2：登录校验（与前端 mock 一致）、INVALID_CREDENTIALS 不区分两种失败、先验口令后看状态、72 字节口令。 */
+/** A2（ACC-M3-02）：登录校验（与前端 mock 一致）、INVALID_CREDENTIALS 不区分两种失败、先验口令后看状态、72 字节口令。 */
 class LoginTest extends AbstractApiTest {
 
     private static final String LOGIN = "/api/v1/auth/login";

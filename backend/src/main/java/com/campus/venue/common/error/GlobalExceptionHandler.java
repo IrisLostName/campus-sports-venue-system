@@ -1,5 +1,6 @@
 package com.campus.venue.common.error;
 
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import java.util.LinkedHashMap;
@@ -25,6 +26,7 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.web.firewall.RequestRejectedException;
 
 /**
  * 全局异常处理：把所有异常统一转换为 ErrorBody（BE-0 裁决 R3、R4）。
@@ -35,6 +37,7 @@ public class GlobalExceptionHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(GlobalExceptionHandler.class);
     private static final String FIELDS = "fields";
+    private static final String TYPE_MISMATCH = "类型不符";
 
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ErrorBody> handleBusiness(BusinessException ex) {
@@ -75,19 +78,26 @@ public class GlobalExceptionHandler {
         return respond(ErrorCode.VALIDATION_ERROR, Map.of(FIELDS, fields));
     }
 
+    /**
+     * 请求体无法转换（BE-3 裁决第 12 节，在 BE-1 F1 的 U+0000 处理上推广）：Jackson 能定位到字段的格式/类型错误
+     * （MismatchedInputException 及其子类且带路径）在 details.fields 中指明字段，U+0000 文案不变；
+     * 无法定位字段的（JSON 语法错误、空请求体、裸值请求体）不带 details。
+     */
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorBody> handleUnreadable(HttpMessageNotReadableException ex) {
-        // 字符串含 U+0000（F1）时指明字段；其他无法解析的请求体不带 details
-        if (ex.getCause() instanceof NulCharacterException nul && !nul.fieldPath().isEmpty()) {
-            return respond(ErrorCode.VALIDATION_ERROR,
-                    Map.of(FIELDS, Map.of(nul.fieldPath(), "不能包含 U+0000 字符")));
+        if (ex.getCause() instanceof MismatchedInputException mismatch) {
+            String path = JsonFieldPath.of(mismatch);
+            if (!path.isEmpty()) {
+                String reason = mismatch instanceof NulCharacterException ? "不能包含 U+0000 字符" : TYPE_MISMATCH;
+                return respond(ErrorCode.VALIDATION_ERROR, Map.of(FIELDS, Map.of(path, reason)));
+            }
         }
         return respond(ErrorCode.VALIDATION_ERROR, null);
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorBody> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
-        return respond(ErrorCode.VALIDATION_ERROR, Map.of(FIELDS, Map.of(ex.getName(), "类型不符")));
+        return respond(ErrorCode.VALIDATION_ERROR, Map.of(FIELDS, Map.of(ex.getName(), TYPE_MISMATCH)));
     }
 
     @ExceptionHandler(MissingServletRequestParameterException.class)
@@ -124,6 +134,15 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErrorBody> handleAccessDenied(AccessDeniedException ex) {
         return respond(ErrorCode.FORBIDDEN, null);
+    }
+
+    /**
+     * StrictHttpFirewall 对参数名的检查是惰性的：首次读取参数表（如 U+0000 参数检查拦截器）时才抛出。
+     * 与过滤器阶段的防火墙拒绝一致（BE-1 裁决第 11 节第 5 条）：400 VALIDATION_ERROR，不带 details。
+     */
+    @ExceptionHandler(RequestRejectedException.class)
+    public ResponseEntity<ErrorBody> handleRequestRejected(RequestRejectedException ex) {
+        return respond(ErrorCode.VALIDATION_ERROR, null);
     }
 
     /** 认证异常（P2）。 */

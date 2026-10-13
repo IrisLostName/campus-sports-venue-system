@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-/** M1：约束、外键（无级联）与索引的名称和数量与 docs/13 一致，没有多余的对象。 */
+/** M1（ACC-M3-01）：约束、外键（无级联）与索引的名称和数量与 docs/13 一致，没有多余的对象。 */
 @IntegrationTest
 class MigrationConstraintTest {
 
