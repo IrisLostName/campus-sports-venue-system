@@ -141,7 +141,7 @@ public class VenueService {
                 resourceCount);
     }
 
-    private static ResourceView toView(Resource resource) {
+    static ResourceView toView(Resource resource) {
         return new ResourceView(resource.getId(), resource.getVenueId(), resource.getName(),
                 resource.getResourceType(), resource.getSortOrder(), resource.getOperationalStatus());
     }
