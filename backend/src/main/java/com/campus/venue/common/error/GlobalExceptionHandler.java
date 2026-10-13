@@ -47,19 +47,21 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 请求体校验失败（含 MethodArgumentNotValidException）。类级约束 CancelReasonRequired 不通过 → REASON_REQUIRED
-     * （它在分组顺序中排在字段格式之后，出现时已没有字段格式错误；BE-2b 裁决 I2）。
+     * 请求体校验失败（含 MethodArgumentNotValidException）。只有类级约束 CancelReasonRequired 不通过、且没有任何字段错误时
+     * → REASON_REQUIRED（BE-2b 裁决 I2：字段格式先于 REASON_REQUIRED）。分组顺序只约束本对象上的约束，
+     * 级联校验的元素（如 windows[i]）在其后另行校验，所以这里还要判断字段错误。
      */
     @ExceptionHandler(BindException.class)
     public ResponseEntity<ErrorBody> handleBind(BindException ex) {
-        boolean reasonMissing = ex.getBindingResult().getGlobalErrors().stream()
-                .anyMatch(error -> REASON_REQUIRED_CONSTRAINT.equals(error.getCode()));
+        boolean reasonMissing = !ex.getBindingResult().hasFieldErrors() && ex.getBindingResult().getGlobalErrors()
+                .stream().anyMatch(error -> REASON_REQUIRED_CONSTRAINT.equals(error.getCode()));
         if (reasonMissing) {
             return respond(ErrorCode.REASON_REQUIRED, null);
         }
         Map<String, Object> fields = new LinkedHashMap<>();
         ex.getBindingResult().getFieldErrors().forEach(error -> putFirst(fields, error));
-        ex.getBindingResult().getGlobalErrors()
+        ex.getBindingResult().getGlobalErrors().stream()
+                .filter(error -> !REASON_REQUIRED_CONSTRAINT.equals(error.getCode()))
                 .forEach(error -> fields.putIfAbsent(error.getObjectName(), error.getDefaultMessage()));
         return respond(ErrorCode.VALIDATION_ERROR, Map.of(FIELDS, fields));
     }

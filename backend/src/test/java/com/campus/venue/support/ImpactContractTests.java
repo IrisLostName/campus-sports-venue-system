@@ -179,7 +179,9 @@ public abstract class ImpactContractTests extends ImpactApiTestBase {
         MvcResult result = changeAsSys(merge(invalidField(), body("onExistingReservations", "CANCEL")));
 
         JsonNode error = assertError(result, ErrorCode.VALIDATION_ERROR);
-        assertThat(error.get("details").get("fields").size()).isPositive();
+        JsonNode fields = error.get("details").get("fields");
+        assertThat(fields.size()).isPositive();
+        fields.fieldNames().forEachRemaining(name -> assertThat(name).doesNotEndWith("Request"));
         assertNothingWritten();
     }
 

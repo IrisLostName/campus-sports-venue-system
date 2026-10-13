@@ -49,11 +49,11 @@ public class AvailabilityRuleService {
         return new AvailabilityRules(weekly, closures);
     }
 
-    private static WeeklyWindow toWeekly(AvailabilityRule rule) {
+    static WeeklyWindow toWeekly(AvailabilityRule rule) {
         return new WeeklyWindow(rule.getId(), rule.getWeekday(), rule.getOpenTime(), rule.getCloseTime());
     }
 
-    private static Closure toClosure(AvailabilityRule rule) {
+    static Closure toClosure(AvailabilityRule rule) {
         return new Closure(rule.getId(), rule.getVenueId(), rule.getResourceId(), rule.getStartDate(),
                 rule.getEndDate(), rule.getReason());
     }

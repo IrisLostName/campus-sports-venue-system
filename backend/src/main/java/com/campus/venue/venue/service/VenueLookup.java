@@ -2,6 +2,8 @@ package com.campus.venue.venue.service;
 
 import com.campus.venue.common.error.BusinessException;
 import com.campus.venue.common.error.ErrorCode;
+import com.campus.venue.security.AuthenticatedUser;
+import com.campus.venue.security.VenueScopeGuard;
 import com.campus.venue.venue.domain.Venue;
 import com.campus.venue.venue.repository.VenueRepository;
 import org.springframework.stereotype.Component;
@@ -14,9 +16,11 @@ import org.springframework.stereotype.Component;
 public class VenueLookup {
 
     private final VenueRepository venues;
+    private final VenueScopeGuard venueScopeGuard;
 
-    public VenueLookup(VenueRepository venues) {
+    public VenueLookup(VenueRepository venues, VenueScopeGuard venueScopeGuard) {
         this.venues = venues;
+        this.venueScopeGuard = venueScopeGuard;
     }
 
     public Venue require(long venueId) {
@@ -29,5 +33,12 @@ public class VenueLookup {
      */
     public Venue lockForUpdate(long venueId) {
         return venues.lockById(venueId).orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+    }
+
+    /** 锁定场馆行（NOT_FOUND）后检查授权范围（FORBIDDEN_SCOPE），即 G1 的“对象不存在 → 授权范围”。 */
+    public Venue lockForAdmin(AuthenticatedUser user, long venueId) {
+        Venue venue = lockForUpdate(venueId);
+        venueScopeGuard.requireVenueAccess(user, venue.getId());
+        return venue;
     }
 }
