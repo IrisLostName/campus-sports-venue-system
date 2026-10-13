@@ -42,6 +42,28 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     List<Reservation> findUnfinished(@Param("userId") Long userId, @Param("status") ReservationStatus status,
             @Param("today") LocalDate today, @Param("nowTime") LocalTime nowTime);
 
+    /**
+     * 影响检查的候选（BE-2b 裁决 I3）：这些场地上库中 CONFIRMED、服务日期在 [from, to]、结束时刻晚于现在
+     * （today + nowTime）的预约，按 id 升序。是否已越过判定点由调用方用 DisplayStatusCalculator 判断（BE-3 E1）。
+     */
+    @Query(UNFINISHED_CONFIRMED_IN_RESOURCES)
+    List<Reservation> findUnfinishedConfirmed(@Param("resourceIds") Collection<Long> resourceIds,
+            @Param("from") LocalDate from, @Param("to") LocalDate to, @Param("today") LocalDate today,
+            @Param("nowTime") LocalTime nowTime);
+
+    /** 同 findUnfinishedConfirmed，并按 id 升序锁定（SELECT … FOR UPDATE；与清扫的加锁次序一致，BE-2b 裁决 G8）。 */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query(UNFINISHED_CONFIRMED_IN_RESOURCES)
+    List<Reservation> lockUnfinishedConfirmed(@Param("resourceIds") Collection<Long> resourceIds,
+            @Param("from") LocalDate from, @Param("to") LocalDate to, @Param("today") LocalDate today,
+            @Param("nowTime") LocalTime nowTime);
+
+    String UNFINISHED_CONFIRMED_IN_RESOURCES = "select r from Reservation r"
+            + " where r.status = com.campus.venue.reservation.domain.ReservationStatus.CONFIRMED"
+            + " and r.resourceId in :resourceIds and r.serviceDate >= :from and r.serviceDate <= :to"
+            + " and (r.serviceDate > :today or (r.serviceDate = :today and r.endTime > :nowTime))"
+            + " order by r.id asc";
+
     /** 本页查询不计数，总数由 countByUserId 给出（DatabasePaging）。 */
     List<Reservation> findByUserId(Long userId, Pageable pageable);
 

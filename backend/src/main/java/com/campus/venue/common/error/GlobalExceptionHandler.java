@@ -1,5 +1,6 @@
 package com.campus.venue.common.error;
 
+import com.campus.venue.common.validation.CancelReasonRequired;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
@@ -38,15 +39,24 @@ public class GlobalExceptionHandler {
     private static final Logger LOG = LoggerFactory.getLogger(GlobalExceptionHandler.class);
     private static final String FIELDS = "fields";
     private static final String TYPE_MISMATCH = "类型不符";
+    private static final String REASON_REQUIRED_CONSTRAINT = CancelReasonRequired.class.getSimpleName();
 
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ErrorBody> handleBusiness(BusinessException ex) {
         return respond(ex.getErrorCode(), ex.getDetails());
     }
 
-    /** 请求体校验失败（含 MethodArgumentNotValidException）。 */
+    /**
+     * 请求体校验失败（含 MethodArgumentNotValidException）。类级约束 CancelReasonRequired 不通过 → REASON_REQUIRED
+     * （它在分组顺序中排在字段格式之后，出现时已没有字段格式错误；BE-2b 裁决 I2）。
+     */
     @ExceptionHandler(BindException.class)
     public ResponseEntity<ErrorBody> handleBind(BindException ex) {
+        boolean reasonMissing = ex.getBindingResult().getGlobalErrors().stream()
+                .anyMatch(error -> REASON_REQUIRED_CONSTRAINT.equals(error.getCode()));
+        if (reasonMissing) {
+            return respond(ErrorCode.REASON_REQUIRED, null);
+        }
         Map<String, Object> fields = new LinkedHashMap<>();
         ex.getBindingResult().getFieldErrors().forEach(error -> putFirst(fields, error));
         ex.getBindingResult().getGlobalErrors()
