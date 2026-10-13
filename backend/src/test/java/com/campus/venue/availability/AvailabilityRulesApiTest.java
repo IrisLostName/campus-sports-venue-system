@@ -83,6 +83,7 @@ class AvailabilityRulesApiTest extends AbstractApiTest {
         assertThat(body.get("closures")).isEmpty();
     }
 
+    /** ACC-M3-07：场馆管理员访问未授权场馆返回 FORBIDDEN_SCOPE。 */
     @Test
     void venueOutsideTheScopeIsForbiddenScope() throws Exception {
         long badminton = fixtures.venue("羽毛球馆", false, "OPEN");

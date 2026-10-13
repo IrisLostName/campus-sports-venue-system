@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-/** M1：V1__init_schema.sql 的表与列逐一对应 docs/13 第 3 节（类型、可空、默认值、标识列）。 */
+/** M1（ACC-M3-01）：V1__init_schema.sql 的表与列逐一对应 docs/13 第 3 节（类型、可空、默认值、标识列）。 */
 @IntegrationTest
 class MigrationSchemaTest {
 

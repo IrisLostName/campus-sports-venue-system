@@ -15,7 +15,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 /**
- * P1、P2、V2：角色由方法级注解检查；阶段顺序为 认证 → 格式（VALIDATION_ERROR）→ 角色（FORBIDDEN）；
+ * P1、P2、V2（ACC-M3-02）：角色由方法级注解检查；阶段顺序为 认证 → 格式（VALIDATION_ERROR）→ 角色（FORBIDDEN）；
  * 方法级拒绝与认证异常经 MVC 异常处理映射为 ErrorBody；当前用户只取自安全上下文。
  */
 class RoleAndPhaseOrderTest extends AbstractApiTest {

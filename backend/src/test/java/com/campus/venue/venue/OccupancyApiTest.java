@@ -180,6 +180,7 @@ class OccupancyApiTest extends AbstractApiTest {
         assertError(occupancy(999, TODAY.toString(), tennisAdmin, Role.VENUE_ADMIN), ErrorCode.NOT_FOUND);
     }
 
+    /** ACC-M3-07：场馆管理员访问未授权场馆返回 FORBIDDEN_SCOPE。 */
     @Test
     void venueOutsideTheScopeIsForbiddenScope() throws Exception {
         long badminton = fixtures.venue("羽毛球馆", false, "OPEN");

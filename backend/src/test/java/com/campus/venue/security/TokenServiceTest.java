@@ -22,7 +22,7 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 
-/** J2、J3、J5：令牌内容、有效期、过期边界（容差 0、now >= exp 即过期）与签名校验；时钟可调，不依赖 JVM 时区。 */
+/** J2、J3、J5（ACC-M3-02）：令牌内容、有效期、过期边界（容差 0、now >= exp 即过期）与签名校验；时钟可调，不依赖 JVM 时区。 */
 class TokenServiceTest {
 
     private static final String SECRET = "unit-test-only-secret-0123456789abcdef";
