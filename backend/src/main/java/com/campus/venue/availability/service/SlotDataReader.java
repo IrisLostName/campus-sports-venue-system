@@ -4,8 +4,6 @@ import com.campus.venue.availability.domain.AvailabilityRule;
 import com.campus.venue.availability.domain.AvailabilityRuleStatus;
 import com.campus.venue.availability.domain.AvailabilityRuleType;
 import com.campus.venue.availability.repository.AvailabilityRuleRepository;
-import com.campus.venue.common.error.BusinessException;
-import com.campus.venue.common.error.ErrorCode;
 import com.campus.venue.reservation.domain.Reservation;
 import com.campus.venue.reservation.domain.ReservationStatus;
 import com.campus.venue.reservation.domain.UsageRecord;
@@ -14,9 +12,7 @@ import com.campus.venue.reservation.repository.UsageRecordRepository;
 import com.campus.venue.user.domain.AppUser;
 import com.campus.venue.user.repository.AppUserRepository;
 import com.campus.venue.venue.domain.Resource;
-import com.campus.venue.venue.domain.Venue;
 import com.campus.venue.venue.repository.ResourceRepository;
-import com.campus.venue.venue.repository.VenueRepository;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
@@ -36,26 +32,19 @@ public class SlotDataReader {
     static final List<ReservationStatus> INACTIVE =
             List.of(ReservationStatus.CANCELLED, ReservationStatus.ADMIN_CANCELLED);
 
-    private final VenueRepository venues;
     private final ResourceRepository resources;
     private final AvailabilityRuleRepository rules;
     private final ReservationRepository reservations;
     private final UsageRecordRepository usageRecords;
     private final AppUserRepository users;
 
-    public SlotDataReader(VenueRepository venues, ResourceRepository resources, AvailabilityRuleRepository rules,
+    public SlotDataReader(ResourceRepository resources, AvailabilityRuleRepository rules,
             ReservationRepository reservations, UsageRecordRepository usageRecords, AppUserRepository users) {
-        this.venues = venues;
         this.resources = resources;
         this.rules = rules;
         this.reservations = reservations;
         this.usageRecords = usageRecords;
         this.users = users;
-    }
-
-    /** 场馆；不存在 → NOT_FOUND。 */
-    Venue requireVenue(long venueId) {
-        return venues.findById(venueId).orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
     }
 
     /** 场馆的全部场地，按 sortOrder、再按 id 排序。 */
