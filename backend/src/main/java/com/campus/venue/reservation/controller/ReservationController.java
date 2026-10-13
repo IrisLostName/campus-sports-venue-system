@@ -9,6 +9,7 @@ import com.campus.venue.reservation.service.ReservationCancelService;
 import com.campus.venue.reservation.service.ReservationQueryService;
 import com.campus.venue.reservation.service.ReservationQueryService.Scope;
 import com.campus.venue.reservation.service.ReservationService;
+import com.campus.venue.reservation.service.ReservationUsageService;
 import com.campus.venue.security.AuthenticatedUser;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -28,7 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * 用户端预约（docs/12 第 5.3 节）。角色用方法级注解，使请求体与参数校验先于角色检查（BE-1 P1：认证 → 格式 → 角色）；
- * 业务顺序在 service 中裁决。签到、签退归 BE-4。
+ * 业务顺序在 service 中裁决。
  */
 @RestController
 @RequestMapping(ApiPaths.BASE + "/reservations")
@@ -37,12 +38,14 @@ public class ReservationController {
     private final ReservationService reservationService;
     private final ReservationQueryService queryService;
     private final ReservationCancelService cancelService;
+    private final ReservationUsageService usageService;
 
     public ReservationController(ReservationService reservationService, ReservationQueryService queryService,
-            ReservationCancelService cancelService) {
+            ReservationCancelService cancelService, ReservationUsageService usageService) {
         this.reservationService = reservationService;
         this.queryService = queryService;
         this.cancelService = cancelService;
+        this.usageService = usageService;
     }
 
     @PostMapping
@@ -77,5 +80,19 @@ public class ReservationController {
     public ReservationView cancel(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable long id,
             @Valid @RequestBody(required = false) CancelReservationRequest request) {
         return cancelService.cancel(user, id, request);
+    }
+
+    /** 无请求体（带了也忽略，BE-4 I1）。 */
+    @PostMapping("/{id}/check-in")
+    @PreAuthorize("hasRole('USER')")
+    public ReservationView checkIn(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable long id) {
+        return usageService.checkIn(user, id);
+    }
+
+    /** 无请求体（带了也忽略，BE-4 O1）。 */
+    @PostMapping("/{id}/check-out")
+    @PreAuthorize("hasRole('USER')")
+    public ReservationView checkOut(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable long id) {
+        return usageService.checkOut(user, id);
     }
 }
