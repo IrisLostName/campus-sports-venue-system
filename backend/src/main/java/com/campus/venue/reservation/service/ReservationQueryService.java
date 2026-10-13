@@ -1,5 +1,6 @@
 package com.campus.venue.reservation.service;
 
+import com.campus.venue.common.dto.DatabasePaging;
 import com.campus.venue.common.dto.PageView;
 import com.campus.venue.common.error.BusinessException;
 import com.campus.venue.common.error.ErrorCode;
@@ -13,8 +14,6 @@ import com.campus.venue.venue.repository.ResourceRepository;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -64,16 +63,16 @@ public class ReservationQueryService {
                     : held.subList((int) from, (int) Math.min(held.size(), from + pageSize));
             return new PageView<>(mapper.toViews(slice, now), page, pageSize, held.size());
         }
-        PageRequest request = PageRequest.of(page - 1, pageSize, NEWEST_FIRST);
-        Page<Reservation> result;
-        if (scope == Scope.ALL) {
-            result = reservations.findByUserId(user.id(), request);
-        } else {
-            List<Long> heldIds = heldReservations.of(user.id(), now).stream().map(Reservation::getId).toList();
-            result = heldIds.isEmpty() ? reservations.findByUserId(user.id(), request)
-                    : reservations.findByUserIdAndIdNotIn(user.id(), heldIds, request);
+        List<Long> heldIds = scope == Scope.ALL ? List.of()
+                : heldReservations.of(user.id(), now).stream().map(Reservation::getId).toList();
+        if (heldIds.isEmpty()) {
+            return DatabasePaging.page(page, pageSize, NEWEST_FIRST, () -> reservations.countByUserId(user.id()),
+                    request -> reservations.findByUserId(user.id(), request), slice -> mapper.toViews(slice, now));
         }
-        return new PageView<>(mapper.toViews(result.getContent(), now), page, pageSize, result.getTotalElements());
+        return DatabasePaging.page(page, pageSize, NEWEST_FIRST,
+                () -> reservations.countByUserIdAndIdNotIn(user.id(), heldIds),
+                request -> reservations.findByUserIdAndIdNotIn(user.id(), heldIds, request),
+                slice -> mapper.toViews(slice, now));
     }
 
     /**

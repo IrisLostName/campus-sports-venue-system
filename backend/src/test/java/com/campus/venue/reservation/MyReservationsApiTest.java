@@ -132,6 +132,24 @@ class MyReservationsApiTest extends ReservationApiTestBase {
         assertThat(beyond.get("total").asLong()).isEqualTo(3);
     }
 
+    /** BE-3 审计 F1：偏移超出 int 的超大页码返回 200 空页、total 照实，不得 500。 */
+    @Test
+    void hugePageNumberOfAllIsAnEmptyPageWithTheRealTotal() throws Exception {
+        JsonNode body = page("scope", "ALL", "page", "2147483647", "pageSize", "100");
+        assertThat(body.get("items")).isEmpty();
+        assertThat(body.get("total").asLong()).isEqualTo(7);
+        assertThat(body.get("page").asInt()).isEqualTo(Integer.MAX_VALUE);
+        assertThat(body.get("pageSize").asInt()).isEqualTo(100);
+    }
+
+    @Test
+    void hugePageNumberOfHistoryIsAnEmptyPageWithTheRealTotal() throws Exception {
+        JsonNode body = page("scope", "HISTORY", "page", "2147483647", "pageSize", "100");
+        assertThat(body.get("items")).isEmpty();
+        assertThat(body.get("total").asLong()).isEqualTo(4);
+        assertThat(body.get("page").asInt()).isEqualTo(Integer.MAX_VALUE);
+    }
+
     @Test
     void userWithoutReservationsGetsAnEmptyPage() throws Exception {
         JsonNode body = json(mine(user("wangwu", Role.USER), Role.USER));

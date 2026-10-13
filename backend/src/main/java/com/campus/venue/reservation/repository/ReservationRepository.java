@@ -8,7 +8,6 @@ import java.time.LocalTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -41,7 +40,12 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     List<Reservation> findUnfinished(@Param("userId") Long userId, @Param("status") ReservationStatus status,
             @Param("today") LocalDate today, @Param("nowTime") LocalTime nowTime);
 
-    Page<Reservation> findByUserId(Long userId, Pageable pageable);
+    /** 本页查询不计数，总数由 countByUserId 给出（DatabasePaging）。 */
+    List<Reservation> findByUserId(Long userId, Pageable pageable);
 
-    Page<Reservation> findByUserIdAndIdNotIn(Long userId, Collection<Long> excludedIds, Pageable pageable);
+    long countByUserId(Long userId);
+
+    List<Reservation> findByUserIdAndIdNotIn(Long userId, Collection<Long> excludedIds, Pageable pageable);
+
+    long countByUserIdAndIdNotIn(Long userId, Collection<Long> excludedIds);
 }
