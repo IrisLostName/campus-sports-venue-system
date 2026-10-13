@@ -54,3 +54,6 @@ app:
     checkin-close-after-minutes: ${BOOKING_CHECKIN_CLOSE_AFTER_MINUTES:15}
     checkout-grace-minutes: ${BOOKING_CHECKOUT_GRACE_MINUTES:30}
     max-active-per-user: ${BOOKING_MAX_ACTIVE_PER_USER:3}
+  # 每分钟的预约清扫（docs/10 第 8 节），缺省开启
+  sweep:
+    enabled: true

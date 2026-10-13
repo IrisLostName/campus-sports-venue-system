@@ -15,7 +15,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MvcResult;
 
 /**
- * T4：POST /reservations/{id}/cancel（docs/10 第 3 节，BE-3 X1、X2）。认证 → 格式 → 角色 USER → NOT_FOUND → NOT_OWNER
+ * ACC-M3-05、T4：POST /reservations/{id}/cancel（docs/10 第 3 节，BE-3 X1、X2）。认证 → 格式 → 角色 USER → NOT_FOUND → NOT_OWNER
  * → INVALID_STATE（有效状态）→ ALREADY_CHECKED_IN → CANCEL_DEADLINE_PASSED（距开始正好 cancelDeadlineMinutes 允许）。
  */
 class ReservationCancelApiTest extends ReservationApiTestBase {

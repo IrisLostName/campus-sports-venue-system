@@ -4,6 +4,7 @@ import com.campus.venue.reservation.domain.Reservation;
 import com.campus.venue.reservation.domain.ReservationStatus;
 import jakarta.persistence.LockModeType;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Collection;
 import java.util.List;
@@ -11,6 +12,7 @@ import java.util.Optional;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -25,7 +27,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     boolean existsByResourceIdAndServiceDateAndStartTimeAndStatusNotIn(Long resourceId, LocalDate serviceDate,
             LocalTime startTime, Collection<ReservationStatus> excluded);
 
-    /** 取消时锁定预约行（SELECT … FOR UPDATE），避免与并发的取消、签到交错（BE-3 裁决第 12 节第 4 条）。 */
+    /** 取消、签到、签退时锁定预约行（SELECT … FOR UPDATE），避免与并发的取消、签到、清扫交错（BE-3 第 12 节、BE-4 I3）。 */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select r from Reservation r where r.id = :id")
     Optional<Reservation> findByIdForUpdate(@Param("id") Long id);
@@ -48,4 +50,26 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     List<Reservation> findByUserIdAndIdNotIn(Long userId, Collection<Long> excludedIds, Pageable pageable);
 
     long countByUserIdAndIdNotIn(Long userId, Collection<Long> excludedIds);
+
+    /**
+     * 清扫候选（BE-4 W2）：库中 CONFIRMED 且已开始（服务日期早于 today，或等于 today 且开始时间不晚于 nowTime）、
+     * id 大于 afterId 的预约，按 id 升序取一批并锁定（SELECT … FOR UPDATE），与签到、取消的行锁互斥。
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select r from Reservation r where r.status = com.campus.venue.reservation.domain.ReservationStatus.CONFIRMED"
+            + " and r.id > :afterId"
+            + " and (r.serviceDate < :today or (r.serviceDate = :today and r.startTime <= :nowTime))"
+            + " order by r.id asc")
+    List<Reservation> lockStartedConfirmed(@Param("afterId") long afterId, @Param("today") LocalDate today,
+            @Param("nowTime") LocalTime nowTime, Pageable batch);
+
+    /**
+     * 清扫落库（BE-4 W1、W2）：把 ids 中库里仍为 CONFIRMED 的预约置为 target、updated_at 置为 at；
+     * 已被别处改掉（取消、已落库）的不再覆盖。返回实际更新的行数。
+     */
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("update Reservation r set r.status = :target, r.updatedAt = :at where r.id in :ids"
+            + " and r.status = com.campus.venue.reservation.domain.ReservationStatus.CONFIRMED")
+    int settleIfConfirmed(@Param("ids") Collection<Long> ids, @Param("target") ReservationStatus target,
+            @Param("at") LocalDateTime at);
 }
