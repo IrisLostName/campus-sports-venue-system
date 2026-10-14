@@ -5,6 +5,7 @@ import com.campus.venue.availability.domain.AvailabilityRuleStatus;
 import com.campus.venue.availability.domain.AvailabilityRuleType;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -21,6 +22,12 @@ public interface AvailabilityRuleRepository extends JpaRepository<AvailabilityRu
             + " and r.status = :status and r.startDate <= :date and r.endDate >= :date")
     List<AvailabilityRule> findCovering(@Param("venueId") Long venueId, @Param("ruleType") AvailabilityRuleType ruleType,
             @Param("status") AvailabilityRuleStatus status, @Param("date") LocalDate date);
+
+    /** 规则所属场馆的 id（只取这一列；BE-2b 删除关闭时先据此锁定场馆行，再读取规则）。 */
+    @Query("select r.venueId from AvailabilityRule r where r.id = :id and r.ruleType = :ruleType"
+            + " and r.status = :status")
+    Optional<Long> findVenueIdOf(@Param("id") Long id, @Param("ruleType") AvailabilityRuleType ruleType,
+            @Param("status") AvailabilityRuleStatus status);
 
     /** 每周窗口列表，按星期、开始时间排序（与 mock activeWeekly 一致）。 */
     List<AvailabilityRule> findByVenueIdAndRuleTypeAndStatusOrderByWeekdayAscOpenTimeAsc(Long venueId,

@@ -16,6 +16,7 @@ import com.campus.venue.venue.domain.Resource;
 import com.campus.venue.venue.domain.ResourceStatus;
 import com.campus.venue.venue.domain.Venue;
 import com.campus.venue.venue.domain.VenueStatus;
+import com.campus.venue.venue.service.VenueLookup;
 import com.campus.venue.venue.dto.Occupancy;
 import com.campus.venue.venue.dto.OccupancyReservation;
 import com.campus.venue.venue.dto.OccupancyResource;
@@ -43,14 +44,16 @@ import org.springframework.transaction.annotation.Transactional;
 public class SlotService {
 
     private final SlotDataReader reader;
+    private final VenueLookup venueLookup;
     private final VenueScopeGuard venueScopeGuard;
     private final DisplayStatusCalculator displayStatusCalculator;
     private final BookingProperties properties;
     private final Clock clock;
 
-    public SlotService(SlotDataReader reader, VenueScopeGuard venueScopeGuard,
+    public SlotService(SlotDataReader reader, VenueLookup venueLookup, VenueScopeGuard venueScopeGuard,
             DisplayStatusCalculator displayStatusCalculator, BookingProperties properties, Clock clock) {
         this.reader = reader;
+        this.venueLookup = venueLookup;
         this.venueScopeGuard = venueScopeGuard;
         this.displayStatusCalculator = displayStatusCalculator;
         this.properties = properties;
@@ -71,7 +74,7 @@ public class SlotService {
      */
     @Transactional(readOnly = true)
     public VenueSlots userSlots(AuthenticatedUser user, long venueId, LocalDate date) {
-        Venue venue = reader.requireVenue(venueId);
+        Venue venue = venueLookup.require(venueId);
         if (venue.getOperationalStatus() != VenueStatus.OPEN || !venue.isUserBookingEnabled()) {
             throw new BusinessException(ErrorCode.VENUE_NOT_BOOKABLE);
         }
@@ -95,7 +98,7 @@ public class SlotService {
      */
     @Transactional(readOnly = true)
     public Occupancy occupancy(AuthenticatedUser user, long venueId, LocalDate date) {
-        Venue venue = reader.requireVenue(venueId);
+        Venue venue = venueLookup.require(venueId);
         venueScopeGuard.requireVenueAccess(user, venue.getId());
         LocalDateTime now = LocalDateTime.now(clock);
         List<Resource> all = reader.resourcesOf(venue.getId());

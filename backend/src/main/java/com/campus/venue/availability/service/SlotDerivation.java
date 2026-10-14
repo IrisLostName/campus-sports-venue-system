@@ -50,14 +50,21 @@ final class SlotDerivation {
     static List<SlotTime> slice(List<AvailabilityRule> weekly) {
         List<SlotTime> slots = new ArrayList<>();
         for (AvailabilityRule window : weekly) {
-            long minutes = Duration.between(window.getOpenTime(), window.getCloseTime()).toMinutes();
-            long count = Math.max(minutes, 0) / BookingRulesService.SLOT_MINUTES;
-            for (int k = 0; k < count; k++) {
-                LocalTime start = window.getOpenTime().plusMinutes((long) BookingRulesService.SLOT_MINUTES * k);
-                slots.add(new SlotTime(start, start.plusMinutes(BookingRulesService.SLOT_MINUTES)));
-            }
+            slots.addAll(sliceWindow(window.getOpenTime(), window.getCloseTime()));
         }
         slots.sort(Comparator.comparing(SlotTime::start));
+        return slots;
+    }
+
+    /** 一个窗口 [open, close) 从 open 起每 90 分钟切一段（与 mock sliceWindow 一致）；BE-2b 周窗口的影响范围复用它。 */
+    static List<SlotTime> sliceWindow(LocalTime open, LocalTime close) {
+        List<SlotTime> slots = new ArrayList<>();
+        long minutes = Duration.between(open, close).toMinutes();
+        long count = Math.max(minutes, 0) / BookingRulesService.SLOT_MINUTES;
+        for (int k = 0; k < count; k++) {
+            LocalTime start = open.plusMinutes((long) BookingRulesService.SLOT_MINUTES * k);
+            slots.add(new SlotTime(start, start.plusMinutes(BookingRulesService.SLOT_MINUTES)));
+        }
         return slots;
     }
 

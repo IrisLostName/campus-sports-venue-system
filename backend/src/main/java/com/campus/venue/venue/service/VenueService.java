@@ -2,6 +2,7 @@ package com.campus.venue.venue.service;
 
 import com.campus.venue.common.error.BusinessException;
 import com.campus.venue.common.error.ErrorCode;
+import com.campus.venue.common.error.UniqueViolations;
 import com.campus.venue.security.AuthenticatedUser;
 import com.campus.venue.security.VenueScopeGuard;
 import com.campus.venue.user.domain.Role;
@@ -22,7 +23,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,17 +34,18 @@ public class VenueService {
     static final String NAME_CONSTRAINT = "uq_venue_name";
     /** 与 mock adminCreateVenue 的文案一致。 */
     static final String NAME_TAKEN_MESSAGE = "场馆名已存在";
-    private static final String UNIQUE_VIOLATION = "23505";
 
     private final VenueRepository venues;
     private final ResourceRepository resources;
+    private final VenueLookup venueLookup;
     private final VenueScopeGuard venueScopeGuard;
     private final Clock clock;
 
-    public VenueService(VenueRepository venues, ResourceRepository resources, VenueScopeGuard venueScopeGuard,
-            Clock clock) {
+    public VenueService(VenueRepository venues, ResourceRepository resources, VenueLookup venueLookup,
+            VenueScopeGuard venueScopeGuard, Clock clock) {
         this.venues = venues;
         this.resources = resources;
+        this.venueLookup = venueLookup;
         this.venueScopeGuard = venueScopeGuard;
         this.clock = clock;
     }
@@ -90,7 +91,7 @@ public class VenueService {
     /** A5：场馆不存在 → NOT_FOUND → 授权范围；返回全部场地（含 DISABLED），按 sortOrder、再按 id 排序。 */
     @Transactional(readOnly = true)
     public List<ResourceView> listResources(AuthenticatedUser user, long venueId) {
-        Venue venue = venues.findById(venueId).orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+        Venue venue = venueLookup.require(venueId);
         venueScopeGuard.requireVenueAccess(user, venue.getId());
         return resources.findByVenueIdOrderBySortOrderAscIdAsc(venue.getId()).stream()
                 .map(VenueService::toView)
@@ -123,20 +124,14 @@ public class VenueService {
         return value == null || value.isBlank() ? null : value;
     }
 
-    private static BusinessException nameTaken() {
+    static BusinessException nameTaken() {
         return new BusinessException(ErrorCode.VALIDATION_ERROR,
                 Map.of("fields", Map.of("name", NAME_TAKEN_MESSAGE)));
     }
 
     /** 只有 SQLState 23505 且约束名为 uq_venue_name 才算场馆重名，其他约束错误照常抛出。 */
     static boolean isNameConflict(DataIntegrityViolationException ex) {
-        for (Throwable cause = ex; cause != null; cause = cause.getCause()) {
-            if (cause instanceof ConstraintViolationException violation) {
-                return UNIQUE_VIOLATION.equals(violation.getSQLState())
-                        && NAME_CONSTRAINT.equals(violation.getConstraintName());
-            }
-        }
-        return false;
+        return UniqueViolations.isViolationOf(ex, NAME_CONSTRAINT);
     }
 
     static VenueSummary toSummary(Venue venue, long resourceCount) {
@@ -146,7 +141,7 @@ public class VenueService {
                 resourceCount);
     }
 
-    private static ResourceView toView(Resource resource) {
+    static ResourceView toView(Resource resource) {
         return new ResourceView(resource.getId(), resource.getVenueId(), resource.getName(),
                 resource.getResourceType(), resource.getSortOrder(), resource.getOperationalStatus());
     }

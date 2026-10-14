@@ -6,6 +6,7 @@ import com.campus.venue.auth.dto.RegisterRequest;
 import com.campus.venue.auth.dto.UserProfile;
 import com.campus.venue.common.error.BusinessException;
 import com.campus.venue.common.error.ErrorCode;
+import com.campus.venue.common.error.UniqueViolations;
 import com.campus.venue.security.IssuedToken;
 import com.campus.venue.security.TokenService;
 import com.campus.venue.security.VenueScopeGuard;
@@ -19,7 +20,6 @@ import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
-import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -32,7 +32,6 @@ public class AuthService {
     /** BCrypt 只处理前 72 字节。 */
     static final int BCRYPT_MAX_BYTES = 72;
     static final String USERNAME_CONSTRAINT = "uq_app_user_username";
-    private static final String UNIQUE_VIOLATION = "23505";
 
     private final AppUserRepository users;
     private final PasswordEncoder passwordEncoder;
@@ -124,12 +123,6 @@ public class AuthService {
 
     /** 只有 SQLState 23505 且约束名为 uq_app_user_username 才算用户名冲突，其他约束错误照常抛出。 */
     static boolean isUsernameConflict(DataIntegrityViolationException ex) {
-        for (Throwable cause = ex; cause != null; cause = cause.getCause()) {
-            if (cause instanceof ConstraintViolationException violation) {
-                return UNIQUE_VIOLATION.equals(violation.getSQLState())
-                        && USERNAME_CONSTRAINT.equals(violation.getConstraintName());
-            }
-        }
-        return false;
+        return UniqueViolations.isViolationOf(ex, USERNAME_CONSTRAINT);
     }
 }

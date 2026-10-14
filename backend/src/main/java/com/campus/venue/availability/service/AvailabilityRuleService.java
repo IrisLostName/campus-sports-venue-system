@@ -10,6 +10,7 @@ import com.campus.venue.availability.repository.AvailabilityRuleRepository;
 import com.campus.venue.security.AuthenticatedUser;
 import com.campus.venue.security.VenueScopeGuard;
 import com.campus.venue.venue.domain.Venue;
+import com.campus.venue.venue.service.VenueLookup;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,13 +19,13 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class AvailabilityRuleService {
 
-    private final SlotDataReader reader;
+    private final VenueLookup venueLookup;
     private final AvailabilityRuleRepository rules;
     private final VenueScopeGuard venueScopeGuard;
 
-    public AvailabilityRuleService(SlotDataReader reader, AvailabilityRuleRepository rules,
+    public AvailabilityRuleService(VenueLookup venueLookup, AvailabilityRuleRepository rules,
             VenueScopeGuard venueScopeGuard) {
-        this.reader = reader;
+        this.venueLookup = venueLookup;
         this.rules = rules;
         this.venueScopeGuard = venueScopeGuard;
     }
@@ -35,7 +36,7 @@ public class AvailabilityRuleService {
      */
     @Transactional(readOnly = true)
     public AvailabilityRules activeRules(AuthenticatedUser user, long venueId) {
-        Venue venue = reader.requireVenue(venueId);
+        Venue venue = venueLookup.require(venueId);
         venueScopeGuard.requireVenueAccess(user, venue.getId());
         List<WeeklyWindow> weekly = rules.findByVenueIdAndRuleTypeAndStatusOrderByWeekdayAscOpenTimeAsc(venue.getId(),
                 AvailabilityRuleType.WEEKLY, AvailabilityRuleStatus.ACTIVE).stream()
@@ -48,11 +49,11 @@ public class AvailabilityRuleService {
         return new AvailabilityRules(weekly, closures);
     }
 
-    private static WeeklyWindow toWeekly(AvailabilityRule rule) {
+    static WeeklyWindow toWeekly(AvailabilityRule rule) {
         return new WeeklyWindow(rule.getId(), rule.getWeekday(), rule.getOpenTime(), rule.getCloseTime());
     }
 
-    private static Closure toClosure(AvailabilityRule rule) {
+    static Closure toClosure(AvailabilityRule rule) {
         return new Closure(rule.getId(), rule.getVenueId(), rule.getResourceId(), rule.getStartDate(),
                 rule.getEndDate(), rule.getReason());
     }

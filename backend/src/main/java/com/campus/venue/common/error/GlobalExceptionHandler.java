@@ -1,5 +1,6 @@
 package com.campus.venue.common.error;
 
+import com.campus.venue.common.validation.CancelReasonRequired;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
@@ -38,18 +39,29 @@ public class GlobalExceptionHandler {
     private static final Logger LOG = LoggerFactory.getLogger(GlobalExceptionHandler.class);
     private static final String FIELDS = "fields";
     private static final String TYPE_MISMATCH = "类型不符";
+    private static final String REASON_REQUIRED_CONSTRAINT = CancelReasonRequired.class.getSimpleName();
 
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ErrorBody> handleBusiness(BusinessException ex) {
         return respond(ex.getErrorCode(), ex.getDetails());
     }
 
-    /** 请求体校验失败（含 MethodArgumentNotValidException）。 */
+    /**
+     * 请求体校验失败（含 MethodArgumentNotValidException）。只有类级约束 CancelReasonRequired 不通过、且没有任何字段错误时
+     * → REASON_REQUIRED（BE-2b 裁决 I2：字段格式先于 REASON_REQUIRED）。分组顺序只约束本对象上的约束，
+     * 级联校验的元素（如 windows[i]）在其后另行校验，所以这里还要判断字段错误。
+     */
     @ExceptionHandler(BindException.class)
     public ResponseEntity<ErrorBody> handleBind(BindException ex) {
+        boolean reasonMissing = !ex.getBindingResult().hasFieldErrors() && ex.getBindingResult().getGlobalErrors()
+                .stream().anyMatch(error -> REASON_REQUIRED_CONSTRAINT.equals(error.getCode()));
+        if (reasonMissing) {
+            return respond(ErrorCode.REASON_REQUIRED, null);
+        }
         Map<String, Object> fields = new LinkedHashMap<>();
         ex.getBindingResult().getFieldErrors().forEach(error -> putFirst(fields, error));
-        ex.getBindingResult().getGlobalErrors()
+        ex.getBindingResult().getGlobalErrors().stream()
+                .filter(error -> !REASON_REQUIRED_CONSTRAINT.equals(error.getCode()))
                 .forEach(error -> fields.putIfAbsent(error.getObjectName(), error.getDefaultMessage()));
         return respond(ErrorCode.VALIDATION_ERROR, Map.of(FIELDS, fields));
     }
