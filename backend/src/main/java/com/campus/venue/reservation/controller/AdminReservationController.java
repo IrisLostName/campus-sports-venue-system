@@ -6,6 +6,7 @@ import com.campus.venue.reservation.domain.ReservationStatus;
 import com.campus.venue.reservation.dto.AdminCancelRequest;
 import com.campus.venue.reservation.dto.AdminReservationView;
 import com.campus.venue.reservation.dto.AdminReservationsQuery;
+import com.campus.venue.reservation.dto.ReassignResourceRequest;
 import com.campus.venue.reservation.dto.ReservationView;
 import com.campus.venue.reservation.service.AdminReservationQueryService;
 import com.campus.venue.reservation.service.AdminReservationQueryService.Query;
@@ -54,5 +55,13 @@ public class AdminReservationController {
     public ReservationView cancel(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable long id,
             @Valid @RequestBody AdminCancelRequest request) {
         return adminReservationService.cancel(user, id, request);
+    }
+
+    /** A3：请求 {resourceId, serviceDate, startTime, reason}；目标场地限原预约所在场馆，不受 advanceDays 与 userBookingEnabled 限制。 */
+    @PostMapping("/{id}/reassign-resource")
+    @PreAuthorize("hasAnyRole('VENUE_ADMIN', 'SYS_ADMIN')")
+    public ReservationView reassignResource(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable long id,
+            @Valid @RequestBody ReassignResourceRequest request) {
+        return adminReservationService.reassignResource(user, id, request);
     }
 }

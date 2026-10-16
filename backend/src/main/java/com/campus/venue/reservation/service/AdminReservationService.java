@@ -2,16 +2,22 @@ package com.campus.venue.reservation.service;
 
 import com.campus.venue.audit.domain.LogAction;
 import com.campus.venue.audit.service.OperationLogWriter;
+import com.campus.venue.common.error.BusinessException;
+import com.campus.venue.common.error.ErrorCode;
+import com.campus.venue.common.error.UniqueViolations;
 import com.campus.venue.reservation.domain.Reservation;
 import com.campus.venue.reservation.domain.ReservationStatus;
 import com.campus.venue.reservation.dto.AdminCancelRequest;
+import com.campus.venue.reservation.dto.ReassignResourceRequest;
 import com.campus.venue.reservation.dto.ReservationView;
 import com.campus.venue.reservation.repository.ReservationRepository;
+import com.campus.venue.reservation.service.AdminOverrideGuard.Managed;
 import com.campus.venue.security.AuthenticatedUser;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,14 +31,17 @@ import org.springframework.transaction.annotation.Transactional;
 public class AdminReservationService {
 
     private final AdminOverrideGuard guard;
+    private final ReassignTargetChecks targetChecks;
     private final ReservationRepository reservations;
     private final ReservationViewMapper mapper;
     private final OperationLogWriter logWriter;
     private final Clock clock;
 
-    public AdminReservationService(AdminOverrideGuard guard, ReservationRepository reservations,
-            ReservationViewMapper mapper, OperationLogWriter logWriter, Clock clock) {
+    public AdminReservationService(AdminOverrideGuard guard, ReassignTargetChecks targetChecks,
+            ReservationRepository reservations, ReservationViewMapper mapper, OperationLogWriter logWriter,
+            Clock clock) {
         this.guard = guard;
+        this.targetChecks = targetChecks;
         this.reservations = reservations;
         this.mapper = mapper;
         this.logWriter = logWriter;
@@ -53,6 +62,35 @@ public class AdminReservationService {
         reservation.setUpdatedAt(timestamp);
         reservations.saveAndFlush(reservation);
         return logged(user, reservation, before, LogAction.RESERVATION_CANCEL, request.reason(), now);
+    }
+
+    /**
+     * A3：前置检查（含 ALREADY_CHECKED_IN）→ 目标检查 → 原行更新 resource_id、service_date、start_time、
+     * end_time（= 开始 + 90 分钟）、admin_note，状态仍为 CONFIRMED。改派到原时段不算冲突。
+     */
+    @Transactional
+    public ReservationView reassignResource(AuthenticatedUser user, long id, ReassignResourceRequest request) {
+        LocalDateTime now = LocalDateTime.now(clock);
+        Managed managed = guard.lockReassignable(user, id, now);
+        Reservation reservation = managed.reservation();
+        targetChecks.resourceTarget(reservation, managed.venueId(), request, now);
+        ReservationView before = mapper.toView(reservation, now);
+        reservation.setResourceId(request.resourceId());
+        reservation.setServiceDate(request.serviceDate());
+        reservation.setStartTime(request.startTime());
+        reservation.setEndTime(request.startTime().plusMinutes(BookingRulesService.SLOT_MINUTES));
+        reservation.setAdminNote(request.reason());
+        reservation.setUpdatedAt(timestamp(now));
+        try {
+            reservations.saveAndFlush(reservation);
+        } catch (DataIntegrityViolationException ex) {
+            // 并发改派或预约抢到同一时段：只有部分唯一索引的 23505 才是 SLOT_TAKEN，其他约束错误原样抛出
+            if (UniqueViolations.isViolationOf(ex, ReservationService.ACTIVE_SLOT_CONSTRAINT)) {
+                throw new BusinessException(ErrorCode.SLOT_TAKEN);
+            }
+            throw ex;
+        }
+        return logged(user, reservation, before, LogAction.RESERVATION_REASSIGN_RESOURCE, request.reason(), now);
     }
 
     /** 写日志并返回变更后的 Reservation；venue_id 为执行后预约所属场馆（BE-5 C4）。 */

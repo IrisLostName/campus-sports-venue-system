@@ -27,6 +27,10 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long>,
     boolean existsByResourceIdAndServiceDateAndStartTimeAndStatusNotIn(Long resourceId, LocalDate serviceDate,
             LocalTime startTime, Collection<ReservationStatus> excluded);
 
+    /** 资源改派的占用检查（BE-5 A3）：该时段是否已有除 exceptId 之外、状态不在 excluded 中的预约（排除预约自身）。 */
+    boolean existsByResourceIdAndServiceDateAndStartTimeAndStatusNotInAndIdNot(Long resourceId,
+            LocalDate serviceDate, LocalTime startTime, Collection<ReservationStatus> excluded, Long exceptId);
+
     /** 取消、签到、签退时锁定预约行（SELECT … FOR UPDATE），避免与并发的取消、签到、清扫交错（BE-3 第 12 节、BE-4 I3）。 */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select r from Reservation r where r.id = :id")
