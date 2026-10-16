@@ -9,6 +9,7 @@ import java.sql.Timestamp;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -95,6 +96,7 @@ public abstract class ImpactContractTests extends ImpactApiTestBase {
     }
 
     @Test
+    @DisplayName("ACC-M3-06 KEEP：执行变更、保留受影响预约，并写一行日志（前后快照含受影响预约 id）")
     void keepAppliesChangeLeavesReservationAndLogsAffectedIds() throws Exception {
         MvcResult result = changeAsSys(body("onExistingReservations", "KEEP", "reason", "保留说明"));
 
@@ -115,6 +117,7 @@ public abstract class ImpactContractTests extends ImpactApiTestBase {
     }
 
     @Test
+    @DisplayName("ACC-M3-06 CANCEL：受影响预约置 ADMIN_CANCELLED（admin_note 为原因），并写一行日志")
     void cancelAdminCancelsAffectedReservationsAndLogs() throws Exception {
         MvcResult result = changeAsSys(body("onExistingReservations", "CANCEL", "reason", "场地维修"));
 
