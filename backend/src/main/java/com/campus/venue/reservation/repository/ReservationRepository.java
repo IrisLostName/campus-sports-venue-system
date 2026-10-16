@@ -16,8 +16,8 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-/** 预约读写（docs/13 第 3.5 节）。 */
-public interface ReservationRepository extends JpaRepository<Reservation, Long> {
+/** 预约读写（docs/13 第 3.5 节）；管理端列表的动态查询见 AdminReservationSearch（BE-5）。 */
+public interface ReservationRepository extends JpaRepository<Reservation, Long>, AdminReservationSearch {
 
     /** 一组场地某日状态不在 excluded 中的预约（调用方传入 CANCELLED、ADMIN_CANCELLED 得到有效预约）。 */
     List<Reservation> findByResourceIdInAndServiceDateAndStatusNotIn(Collection<Long> resourceIds,

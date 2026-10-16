@@ -170,8 +170,9 @@ public class GlobalExceptionHandler {
         return respond(ErrorCode.INTERNAL_ERROR, null);
     }
 
+    /** 查询参数绑定到对象时的类型转换失败（BE-5 管理端预约列表）与其他参数的类型不符文案一致。 */
     private static void putFirst(Map<String, Object> fields, FieldError error) {
-        fields.putIfAbsent(error.getField(), error.getDefaultMessage());
+        fields.putIfAbsent(error.getField(), error.isBindingFailure() ? TYPE_MISMATCH : error.getDefaultMessage());
     }
 
     private static String message(MessageSourceResolvable error) {
