@@ -34,7 +34,7 @@ class AdminOverridePhaseOrderTest extends AdminReservationApiTestBase {
     }
 
     static Stream<String> endpoints() {
-        return Stream.of(CANCEL, REASSIGN_RESOURCE);
+        return Stream.of(CANCEL, REASSIGN_RESOURCE, REASSIGN_USER);
     }
 
     /** 该接口的合法请求体（原因由参数给出，null 表示不带 reason 键）。 */

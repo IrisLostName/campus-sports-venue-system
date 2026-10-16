@@ -9,10 +9,12 @@ import com.campus.venue.reservation.domain.Reservation;
 import com.campus.venue.reservation.domain.ReservationStatus;
 import com.campus.venue.reservation.dto.AdminCancelRequest;
 import com.campus.venue.reservation.dto.ReassignResourceRequest;
+import com.campus.venue.reservation.dto.ReassignUserRequest;
 import com.campus.venue.reservation.dto.ReservationView;
 import com.campus.venue.reservation.repository.ReservationRepository;
 import com.campus.venue.reservation.service.AdminOverrideGuard.Managed;
 import com.campus.venue.security.AuthenticatedUser;
+import com.campus.venue.user.domain.AppUser;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -91,6 +93,23 @@ public class AdminReservationService {
             throw ex;
         }
         return logged(user, reservation, before, LogAction.RESERVATION_REASSIGN_RESOURCE, request.reason(), now);
+    }
+
+    /**
+     * A4：前置检查（含 ALREADY_CHECKED_IN）→ 目标用户检查 → 原行更新 user_id、admin_note，状态仍为 CONFIRMED。
+     * 不校验目标用户的持有上限；改派给原预约人本人也允许（与 mock 一致）。
+     */
+    @Transactional
+    public ReservationView reassignUser(AuthenticatedUser user, long id, ReassignUserRequest request) {
+        LocalDateTime now = LocalDateTime.now(clock);
+        Reservation reservation = guard.lockReassignable(user, id, now).reservation();
+        AppUser target = targetChecks.userTarget(request.userId());
+        ReservationView before = mapper.toView(reservation, now);
+        reservation.setUserId(target.getId());
+        reservation.setAdminNote(request.reason());
+        reservation.setUpdatedAt(timestamp(now));
+        reservations.saveAndFlush(reservation);
+        return logged(user, reservation, before, LogAction.RESERVATION_REASSIGN_USER, request.reason(), now);
     }
 
     /** 写日志并返回变更后的 Reservation；venue_id 为执行后预约所属场馆（BE-5 C4）。 */

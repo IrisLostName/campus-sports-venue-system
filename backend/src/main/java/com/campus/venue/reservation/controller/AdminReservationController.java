@@ -7,6 +7,7 @@ import com.campus.venue.reservation.dto.AdminCancelRequest;
 import com.campus.venue.reservation.dto.AdminReservationView;
 import com.campus.venue.reservation.dto.AdminReservationsQuery;
 import com.campus.venue.reservation.dto.ReassignResourceRequest;
+import com.campus.venue.reservation.dto.ReassignUserRequest;
 import com.campus.venue.reservation.dto.ReservationView;
 import com.campus.venue.reservation.service.AdminReservationQueryService;
 import com.campus.venue.reservation.service.AdminReservationQueryService.Query;
@@ -63,5 +64,13 @@ public class AdminReservationController {
     public ReservationView reassignResource(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable long id,
             @Valid @RequestBody ReassignResourceRequest request) {
         return adminReservationService.reassignResource(user, id, request);
+    }
+
+    /** A4：请求 {userId, reason}；目标用户须为 ACTIVE 的 USER，不校验其持有上限。 */
+    @PostMapping("/{id}/reassign-user")
+    @PreAuthorize("hasAnyRole('VENUE_ADMIN', 'SYS_ADMIN')")
+    public ReservationView reassignUser(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable long id,
+            @Valid @RequestBody ReassignUserRequest request) {
+        return adminReservationService.reassignUser(user, id, request);
     }
 }
