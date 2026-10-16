@@ -24,6 +24,7 @@ final class ResourceCountPlanner {
     static final int NAME_MAX = 50;
     static final String REQUIRED_WHEN_EMPTY = "场馆没有场地时必须提供";
     static final String NAME_TOO_LONG = "生成的场地名超过 " + NAME_MAX + " 个字符";
+    static final String SORT_ORDER_EXHAUSTED = "排序值已达上限，无法追加场地";
     private static final Pattern TRAILING_DIGITS = Pattern.compile("[0-9]+$");
     private static final Pattern ALL_DIGITS = Pattern.compile("[0-9]+");
 
@@ -86,7 +87,13 @@ final class ResourceCountPlanner {
                 throw new BusinessException(ErrorCode.VALIDATION_ERROR,
                         Map.of("fields", Map.of("namePrefix", NAME_TOO_LONG)));
             }
-            created.add(new NewResource(name, Math.addExact(top, i + 1), defaults.resourceType()));
+            // 新场地的 sortOrder 按 long 计算，超出 int 范围时报字段错误而不是溢出（BE-2b 第 10 节、BE-5 K1）
+            long sortOrder = (long) top + i + 1;
+            if (sortOrder > Integer.MAX_VALUE) {
+                throw new BusinessException(ErrorCode.VALIDATION_ERROR,
+                        Map.of("fields", Map.of("count", SORT_ORDER_EXHAUSTED)));
+            }
+            created.add(new NewResource(name, (int) sortOrder, defaults.resourceType()));
         }
         return created;
     }
