@@ -69,6 +69,8 @@ public class AdminOverrideGuard {
         venueScopeGuard.requireVenueAccess(user, venueId);
         UsageRecord usage = usageRecords.findByReservationId(id).orElse(null);
         ReservationStatus effective = calculator.effectiveStatus(reservation, usage, now);
+        // “结束时刻不晚于现在”为防御性判断：库中 CONFIRMED 且已结束的预约，有效状态必为 NO_SHOW（无签到）或
+        // COMPLETED（有签到），已被前一个条件挡住，此处不可达；保留以与 mock 的 manageableReservation 一致（BE-5 裁决 Q9）
         LocalDateTime end = LocalDateTime.of(reservation.getServiceDate(), reservation.getEndTime());
         if (effective != ReservationStatus.CONFIRMED || !end.isAfter(now)) {
             throw new BusinessException(ErrorCode.INVALID_STATE, Map.of("status", effective.name()));
