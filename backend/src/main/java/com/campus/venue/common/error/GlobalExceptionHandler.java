@@ -1,11 +1,13 @@
 package com.campus.venue.common.error;
 
 import com.campus.venue.common.validation.CancelReasonRequired;
+import com.campus.venue.common.validation.ReasonRequired;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSourceResolvable;
@@ -39,7 +41,9 @@ public class GlobalExceptionHandler {
     private static final Logger LOG = LoggerFactory.getLogger(GlobalExceptionHandler.class);
     private static final String FIELDS = "fields";
     private static final String TYPE_MISMATCH = "类型不符";
-    private static final String REASON_REQUIRED_CONSTRAINT = CancelReasonRequired.class.getSimpleName();
+    /** 违反时转换为 REASON_REQUIRED 的类级约束：BE-2b 的影响检查 CANCEL、BE-5 的管理员覆盖。 */
+    private static final Set<String> REASON_REQUIRED_CONSTRAINTS =
+            Set.of(CancelReasonRequired.class.getSimpleName(), ReasonRequired.class.getSimpleName());
 
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ErrorBody> handleBusiness(BusinessException ex) {
@@ -47,21 +51,22 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 请求体校验失败（含 MethodArgumentNotValidException）。只有类级约束 CancelReasonRequired 不通过、且没有任何字段错误时
+     * 请求体校验失败（含 MethodArgumentNotValidException）。只有类级约束 CancelReasonRequired / ReasonRequired 不通过、
+     * 且没有任何字段错误时
      * → REASON_REQUIRED（BE-2b 裁决 I2：字段格式先于 REASON_REQUIRED）。分组顺序只约束本对象上的约束，
      * 级联校验的元素（如 windows[i]）在其后另行校验，所以这里还要判断字段错误。
      */
     @ExceptionHandler(BindException.class)
     public ResponseEntity<ErrorBody> handleBind(BindException ex) {
         boolean reasonMissing = !ex.getBindingResult().hasFieldErrors() && ex.getBindingResult().getGlobalErrors()
-                .stream().anyMatch(error -> REASON_REQUIRED_CONSTRAINT.equals(error.getCode()));
+                .stream().anyMatch(error -> REASON_REQUIRED_CONSTRAINTS.contains(error.getCode()));
         if (reasonMissing) {
             return respond(ErrorCode.REASON_REQUIRED, null);
         }
         Map<String, Object> fields = new LinkedHashMap<>();
         ex.getBindingResult().getFieldErrors().forEach(error -> putFirst(fields, error));
         ex.getBindingResult().getGlobalErrors().stream()
-                .filter(error -> !REASON_REQUIRED_CONSTRAINT.equals(error.getCode()))
+                .filter(error -> !REASON_REQUIRED_CONSTRAINTS.contains(error.getCode()))
                 .forEach(error -> fields.putIfAbsent(error.getObjectName(), error.getDefaultMessage()));
         return respond(ErrorCode.VALIDATION_ERROR, Map.of(FIELDS, fields));
     }
