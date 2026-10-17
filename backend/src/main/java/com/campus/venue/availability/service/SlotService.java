@@ -154,6 +154,18 @@ public class SlotService {
         return derived && !SlotDerivation.closureScope(reader.closuresCovering(venue.getId(), date)).closes(resource);
     }
 
+    /**
+     * 资源改派的目标时段（docs/12 第 5.7 节，BE-5 A3，复用 D1、D2）：start 是该场馆当天 ACTIVE 每周窗口派生出的时段，
+     * 场馆与场地均为 OPEN，且当天没有覆盖该场地的 ACTIVE 关闭。不看 advanceDays 与 userBookingEnabled。
+     * 与 mock 的 checkResourceTarget（isDerivedSlot、isUnavailable、isClosedByRule）一致。事务由调用方提供。
+     */
+    public boolean isAssignableSlot(Venue venue, Resource resource, LocalDate date, LocalTime start) {
+        boolean derived = SlotDerivation.slice(reader.weeklyFor(venue.getId(), date)).stream()
+                .anyMatch(slot -> slot.start().equals(start));
+        ClosureScope closures = SlotDerivation.closureScope(reader.closuresCovering(venue.getId(), date));
+        return derived && !SlotDerivation.unavailable(venue, resource, closures);
+    }
+
     /** 可预约日期为 [今天, 今天 + advanceDays)，否则 DATE_OUT_OF_RANGE（用户端时段与创建预约第 4 步共用）。 */
     public void requireWithinAdvance(LocalDate date, LocalDate today) {
         if (date.isBefore(today) || !date.isBefore(today.plusDays(properties.advanceDays()))) {

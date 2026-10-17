@@ -16,8 +16,8 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-/** 预约读写（docs/13 第 3.5 节）。 */
-public interface ReservationRepository extends JpaRepository<Reservation, Long> {
+/** 预约读写（docs/13 第 3.5 节）；管理端列表的动态查询见 AdminReservationSearch（BE-5）。 */
+public interface ReservationRepository extends JpaRepository<Reservation, Long>, AdminReservationSearch {
 
     /** 一组场地某日状态不在 excluded 中的预约（调用方传入 CANCELLED、ADMIN_CANCELLED 得到有效预约）。 */
     List<Reservation> findByResourceIdInAndServiceDateAndStatusNotIn(Collection<Long> resourceIds,
@@ -26,6 +26,10 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     /** 第 8 步前置检查：该时段是否已有状态不在 excluded 中的预约。 */
     boolean existsByResourceIdAndServiceDateAndStartTimeAndStatusNotIn(Long resourceId, LocalDate serviceDate,
             LocalTime startTime, Collection<ReservationStatus> excluded);
+
+    /** 资源改派的占用检查（BE-5 A3）：该时段是否已有除 exceptId 之外、状态不在 excluded 中的预约（排除预约自身）。 */
+    boolean existsByResourceIdAndServiceDateAndStartTimeAndStatusNotInAndIdNot(Long resourceId,
+            LocalDate serviceDate, LocalTime startTime, Collection<ReservationStatus> excluded, Long exceptId);
 
     /** 取消、签到、签退时锁定预约行（SELECT … FOR UPDATE），避免与并发的取消、签到、清扫交错（BE-3 第 12 节、BE-4 I3）。 */
     @Lock(LockModeType.PESSIMISTIC_WRITE)

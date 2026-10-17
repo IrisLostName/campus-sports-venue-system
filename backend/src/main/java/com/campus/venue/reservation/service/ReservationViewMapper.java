@@ -2,6 +2,7 @@ package com.campus.venue.reservation.service;
 
 import com.campus.venue.reservation.domain.Reservation;
 import com.campus.venue.reservation.domain.UsageRecord;
+import com.campus.venue.reservation.dto.AdminReservationView;
 import com.campus.venue.reservation.dto.ReservationView;
 import com.campus.venue.reservation.repository.UsageRecordRepository;
 import com.campus.venue.user.domain.AppUser;
@@ -55,14 +56,33 @@ public class ReservationViewMapper {
         if (list.isEmpty()) {
             return List.of();
         }
+        Related related = related(list);
+        return list.stream().map(reservation -> view(reservation, related, now)).toList();
+    }
+
+    /**
+     * 管理端 AdminReservation（docs/12 第 5.7 节，BE-5 A1）：Reservation 加预约人的 userUsername、userPhone，
+     * 与 mock 的 toAdminReservation 一致；关联数据与 toViews 同样批量读取。
+     */
+    public List<AdminReservationView> toAdminViews(List<Reservation> list, LocalDateTime now) {
+        if (list.isEmpty()) {
+            return List.of();
+        }
+        Related related = related(list);
+        return list.stream().map(reservation -> {
+            AppUser user = related.users().get(reservation.getUserId());
+            return new AdminReservationView(view(reservation, related, now), user.getUsername(), user.getPhone());
+        }).toList();
+    }
+
+    private Related related(List<Reservation> list) {
         Map<Long, Resource> resourceMap = byId(resources.findAllById(distinct(list, Reservation::getResourceId)),
                 Resource::getId);
         Map<Long, Venue> venueMap = byId(venues.findAllById(resourceMap.values().stream()
                 .map(Resource::getVenueId).distinct().toList()), Venue::getId);
         Map<Long, AppUser> userMap = byId(users.findAllById(distinct(list, Reservation::getUserId)), AppUser::getId);
         Map<Long, UsageRecord> usage = usageRecords.mapByReservationId(distinct(list, Reservation::getId));
-        Related related = new Related(resourceMap, venueMap, userMap, usage);
-        return list.stream().map(reservation -> view(reservation, related, now)).toList();
+        return new Related(resourceMap, venueMap, userMap, usage);
     }
 
     private ReservationView view(Reservation reservation, Related related, LocalDateTime now) {
