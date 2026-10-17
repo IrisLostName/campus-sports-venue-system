@@ -142,6 +142,16 @@ class VenueScopeReplaceApiTest extends AdminUserApiTestBase {
     }
 
     @Test
+    @DisplayName("C1 阶段顺序：目标不是 VENUE_ADMIN 且含不存在场馆 → INVALID_STATE 先于 VALIDATION_ERROR，不写授权与日志")
+    void targetRoleIsCheckedBeforeVenueExistence() throws Exception {
+        JsonNode error = assertError(replace(zhangsan, List.of(999999)), ErrorCode.INVALID_STATE);
+
+        assertThat(error.get("details").get("status").asText()).isEqualTo("USER");
+        assertThat(scopeRows(zhangsan)).isEmpty();
+        assertThat(logCount()).isZero();
+    }
+
+    @Test
     @DisplayName("U4 格式：venueIds 必填（null 亦然）、元素须为正整数；非数字元素为 venueIds[0]“类型不符”；先于角色")
     void replaceValidation() throws Exception {
         JsonNode missing = assertError(asSys(HttpMethod.PUT, SCOPE, body(), tennisAdmin), ErrorCode.VALIDATION_ERROR);

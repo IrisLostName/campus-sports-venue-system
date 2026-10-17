@@ -175,4 +175,18 @@ class RepairAdminApiTest extends RepairApiTestBase {
         assertThat(repairRow(other).get("status")).isEqualTo("SUBMITTED");
         assertThat(logCount()).isZero();
     }
+
+    @Test
+    @DisplayName("C1 阶段顺序：VA 处理范围外已 RESOLVED 的报修 → FORBIDDEN_SCOPE 先于 INVALID_STATE，不改不写日志")
+    void scopeIsCheckedBeforeTheTransition() throws Exception {
+        long other = repair(zhangsan, badminton, null, "RESOLVED", "原结果", NOW.minusDays(1));
+
+        JsonNode error = assertError(asTennisAdmin(HttpMethod.PATCH, UPDATE, body("status", "IN_PROGRESS"), other),
+                ErrorCode.FORBIDDEN_SCOPE);
+
+        assertThat(error.get("details").get("venueId").asLong()).isEqualTo(badminton);
+        assertThat(repairRow(other).get("status")).isEqualTo("RESOLVED");
+        assertThat(repairRow(other).get("result_note")).isEqualTo("原结果");
+        assertThat(logCount()).isZero();
+    }
 }
