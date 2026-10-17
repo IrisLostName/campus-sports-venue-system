@@ -6,19 +6,14 @@ import com.campus.venue.auth.dto.RegisterRequest;
 import com.campus.venue.auth.dto.UserProfile;
 import com.campus.venue.common.error.BusinessException;
 import com.campus.venue.common.error.ErrorCode;
-import com.campus.venue.common.error.UniqueViolations;
 import com.campus.venue.security.IssuedToken;
 import com.campus.venue.security.TokenService;
 import com.campus.venue.security.VenueScopeGuard;
 import com.campus.venue.user.domain.AccountStatus;
 import com.campus.venue.user.domain.AppUser;
 import com.campus.venue.user.domain.Role;
-import com.campus.venue.user.domain.UserType;
 import com.campus.venue.user.repository.AppUserRepository;
 import java.nio.charset.StandardCharsets;
-import java.time.Clock;
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -31,41 +26,30 @@ public class AuthService {
 
     /** BCrypt 只处理前 72 字节。 */
     static final int BCRYPT_MAX_BYTES = 72;
-    static final String USERNAME_CONSTRAINT = "uq_app_user_username";
 
     private final AppUserRepository users;
     private final PasswordEncoder passwordEncoder;
     private final TokenService tokenService;
     private final VenueScopeGuard venueScopeGuard;
-    private final Clock clock;
+    private final AccountCreator accountCreator;
 
     public AuthService(AppUserRepository users, PasswordEncoder passwordEncoder, TokenService tokenService,
-            VenueScopeGuard venueScopeGuard, Clock clock) {
+            VenueScopeGuard venueScopeGuard, AccountCreator accountCreator) {
         this.users = users;
         this.passwordEncoder = passwordEncoder;
         this.tokenService = tokenService;
         this.venueScopeGuard = venueScopeGuard;
-        this.clock = clock;
+        this.accountCreator = accountCreator;
     }
 
     /**
      * 自助注册：角色强制 USER、状态 ACTIVE；username、displayName 按原值保存；空白 phone 存 NULL；
-     * 时间戳取 Clock（K2）。用户名已存在或并发插入撞唯一约束 → USERNAME_TAKEN。
+     * 时间戳取 Clock（K2）。用户名已存在或并发插入撞唯一约束 → USERNAME_TAKEN。落库与冲突翻译见 AccountCreator。
      */
     @Transactional
     public LoginResponse register(RegisterRequest request) {
-        if (users.existsByUsername(request.username())) {
-            throw new BusinessException(ErrorCode.USERNAME_TAKEN);
-        }
-        AppUser user = newUser(request);
-        try {
-            users.saveAndFlush(user);
-        } catch (DataIntegrityViolationException ex) {
-            if (isUsernameConflict(ex)) {
-                throw new BusinessException(ErrorCode.USERNAME_TAKEN);
-            }
-            throw ex;
-        }
+        AppUser user = accountCreator.create(new AccountCreator.NewAccount(request.username(), request.password(),
+                request.displayName(), Role.USER, request.userType(), request.phone()));
         return loginResponse(user);
     }
 
@@ -94,21 +78,6 @@ public class AuthService {
         return profile(user);
     }
 
-    private AppUser newUser(RegisterRequest request) {
-        LocalDateTime now = LocalDateTime.now(clock).truncatedTo(ChronoUnit.MICROS);
-        AppUser user = new AppUser();
-        user.setUsername(request.username());
-        user.setPasswordHash(passwordEncoder.encode(request.password()));
-        user.setDisplayName(request.displayName());
-        user.setRole(Role.USER);
-        user.setUserType(request.userType() == null ? UserType.STUDENT : UserType.valueOf(request.userType()));
-        user.setPhone(request.phone() == null || request.phone().isBlank() ? null : request.phone());
-        user.setStatus(AccountStatus.ACTIVE);
-        user.setCreatedAt(now);
-        user.setUpdatedAt(now);
-        return user;
-    }
-
     private LoginResponse loginResponse(AppUser user) {
         IssuedToken token = tokenService.issue(user.getId(), user.getRole());
         return new LoginResponse(token.token(), token.expiresAt(), profile(user));
@@ -121,8 +90,8 @@ public class AuthService {
         return UserProfileMapper.toProfile(user, venueIds);
     }
 
-    /** 只有 SQLState 23505 且约束名为 uq_app_user_username 才算用户名冲突，其他约束错误照常抛出。 */
+    /** 用户名唯一冲突的识别；实现只在 AccountCreator 一处。 */
     static boolean isUsernameConflict(DataIntegrityViolationException ex) {
-        return UniqueViolations.isViolationOf(ex, USERNAME_CONSTRAINT);
+        return AccountCreator.isUsernameConflict(ex);
     }
 }

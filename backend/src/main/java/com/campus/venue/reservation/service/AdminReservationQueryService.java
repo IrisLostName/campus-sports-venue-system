@@ -1,5 +1,6 @@
 package com.campus.venue.reservation.service;
 
+import com.campus.venue.common.LikePattern;
 import com.campus.venue.common.dto.DatabasePaging;
 import com.campus.venue.common.dto.PageView;
 import com.campus.venue.reservation.domain.Reservation;
@@ -74,7 +75,7 @@ public class AdminReservationQueryService {
         }
         LocalDateTime now = LocalDateTime.now(clock);
         AdminReservationFilter scope = new AdminReservationFilter(venueIds, query.dateFrom(), query.dateTo(), null,
-                likePattern(query.keyword()));
+                LikePattern.contains(query.keyword()));
         AdminReservationFilter filter = query.status() == null ? scope
                 : scope.withStatus(statusCondition(scope, query.status(), now));
         return DatabasePaging.page(query.page(), query.pageSize(), NEWEST_FIRST,
@@ -127,17 +128,6 @@ public class AdminReservationQueryService {
             }
         }
         return overdue;
-    }
-
-    /**
-     * keyword 去掉首尾空白后按字面包含匹配（mock 的 matchesKeyword）：反斜杠、%、_ 转义，转义符为反斜杠；空白视为未填。
-     */
-    static String likePattern(String keyword) {
-        if (keyword == null || keyword.isBlank()) {
-            return null;
-        }
-        String escaped = keyword.trim().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
-        return "%" + escaped + "%";
     }
 
     private static List<Long> concat(List<Long> first, List<Long> second) {

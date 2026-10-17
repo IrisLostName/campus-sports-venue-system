@@ -1,11 +1,15 @@
 package com.campus.venue.security;
 
+import com.campus.venue.audit.domain.AdminVenueScope;
 import com.campus.venue.audit.domain.VenueScopeStatus;
 import com.campus.venue.audit.repository.AdminVenueScopeRepository;
 import com.campus.venue.common.error.BusinessException;
 import com.campus.venue.common.error.ErrorCode;
 import java.time.Clock;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.springframework.stereotype.Component;
@@ -43,6 +47,22 @@ public class VenueScopeGuard {
     /** 场馆管理员当前有效授权的场馆 id，升序。 */
     public List<Long> effectiveVenueIds(long adminId) {
         return scopes.findEffectiveVenueIds(adminId, VenueScopeStatus.ACTIVE, today());
+    }
+
+    /**
+     * 多个场馆管理员当前有效授权的场馆 id（各自升序，BE-6 U1）：一次查询；没有有效授权的管理员映射为空列表。
+     * 空集合不发查询。
+     */
+    public Map<Long, List<Long>> effectiveVenueIdsByAdmin(Collection<Long> adminIds) {
+        Map<Long, List<Long>> result = new HashMap<>();
+        adminIds.forEach(id -> result.put(id, new ArrayList<>()));
+        if (adminIds.isEmpty()) {
+            return result;
+        }
+        for (AdminVenueScope scope : scopes.findEffectiveScopes(adminIds, VenueScopeStatus.ACTIVE, today())) {
+            result.get(scope.getAdminId()).add(scope.getVenueId());
+        }
+        return result;
     }
 
     private LocalDate today() {

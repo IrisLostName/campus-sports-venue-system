@@ -6,6 +6,9 @@ import com.campus.venue.security.AuthenticatedUser;
 import com.campus.venue.security.VenueScopeGuard;
 import com.campus.venue.venue.domain.Venue;
 import com.campus.venue.venue.repository.VenueRepository;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 import org.springframework.stereotype.Component;
 
 /**
@@ -25,6 +28,12 @@ public class VenueLookup {
 
     public Venue require(long venueId) {
         return venues.findById(venueId).orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+    }
+
+    /** 给定的场馆 id 是否全部存在（重复 id 只算一次；一次查询，空集合不发查询）。BE-6 U2、U4。 */
+    public boolean allExist(Collection<Long> venueIds) {
+        Set<Long> distinct = new HashSet<>(venueIds);
+        return distinct.isEmpty() || venues.findAllById(distinct).size() == distinct.size();
     }
 
     /**
