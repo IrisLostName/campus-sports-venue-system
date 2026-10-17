@@ -2,6 +2,7 @@ package com.campus.venue.venue.repository;
 
 import com.campus.venue.venue.domain.Resource;
 import com.campus.venue.venue.domain.ResourceStatus;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,6 +14,9 @@ public interface ResourceRepository extends JpaRepository<Resource, Long> {
 
     /** 某场馆的全部场地，按 sortOrder、再按 id 排序（与 mock resourcesOfVenue 一致）。 */
     List<Resource> findByVenueIdOrderBySortOrderAscIdAsc(Long venueId);
+
+    /** 若干场馆的全部场地（含 DISABLED），按场馆 id、sortOrder、id 排序（BE-7 统计与大屏 D4，一次查询）。 */
+    List<Resource> findByVenueIdInOrderByVenueIdAscSortOrderAscIdAsc(Collection<Long> venueIds);
 
     /** 场地所属场馆的 id（只取这一列，不把场地实体放进持久化上下文；BE-2b 先据此锁定场馆行，再读取场地）。 */
     @Query("select r.venueId from Resource r where r.id = :id")
