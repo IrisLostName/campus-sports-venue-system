@@ -3,14 +3,12 @@ package com.campus.venue.reservation.service;
 import com.campus.venue.common.LikePattern;
 import com.campus.venue.common.dto.DatabasePaging;
 import com.campus.venue.common.dto.PageView;
-import com.campus.venue.reservation.domain.Reservation;
 import com.campus.venue.reservation.domain.ReservationStatus;
-import com.campus.venue.reservation.domain.UsageRecord;
 import com.campus.venue.reservation.dto.AdminReservationView;
 import com.campus.venue.reservation.repository.AdminReservationFilter;
 import com.campus.venue.reservation.repository.AdminReservationFilter.StatusCondition;
 import com.campus.venue.reservation.repository.ReservationRepository;
-import com.campus.venue.reservation.repository.UsageRecordRepository;
+import com.campus.venue.reservation.service.OverdueReservations.Overdue;
 import com.campus.venue.security.AuthenticatedUser;
 import com.campus.venue.security.VenueScopeGuard;
 import com.campus.venue.user.domain.Role;
@@ -20,7 +18,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,7 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
  * <p>status 按有效状态过滤（BE-3 E1）。越过判定点的判定只在 DisplayStatusCalculator 一处实现，所以不在 SQL 里复写
  * “开始 + checkInCloseAfter”“结束时刻”这些判定点：库中状态与有效状态只可能在“库中 CONFIRMED 且已开始”的记录上不同，
  * 先在同样的场馆与日期范围内取出这些候选，用 DisplayStatusCalculator 判定后得到将计为 NO_SHOW / COMPLETED 的 id，
- * 再交给 SQL 做集合运算。清扫每分钟落库，正常运行时候选集很小。
+ * 再交给 SQL 做集合运算。清扫每分钟落库，正常运行时候选集很小。候选与判定见 OverdueReservations（BE-7 与统计共用）。
  */
 @Service
 public class AdminReservationQueryService {
@@ -42,18 +39,15 @@ public class AdminReservationQueryService {
     private static final Sort NEWEST_FIRST = Sort.by(Sort.Direction.DESC, "serviceDate", "startTime", "id");
 
     private final ReservationRepository reservations;
-    private final UsageRecordRepository usageRecords;
-    private final DisplayStatusCalculator calculator;
+    private final OverdueReservations overdueReservations;
     private final ReservationViewMapper mapper;
     private final VenueScopeGuard venueScopeGuard;
     private final Clock clock;
 
-    public AdminReservationQueryService(ReservationRepository reservations, UsageRecordRepository usageRecords,
-            DisplayStatusCalculator calculator, ReservationViewMapper mapper, VenueScopeGuard venueScopeGuard,
-            Clock clock) {
+    public AdminReservationQueryService(ReservationRepository reservations, OverdueReservations overdueReservations,
+            ReservationViewMapper mapper, VenueScopeGuard venueScopeGuard, Clock clock) {
         this.reservations = reservations;
-        this.usageRecords = usageRecords;
-        this.calculator = calculator;
+        this.overdueReservations = overdueReservations;
         this.mapper = mapper;
         this.venueScopeGuard = venueScopeGuard;
         this.clock = clock;
@@ -101,33 +95,12 @@ public class AdminReservationQueryService {
         if (status == ReservationStatus.CANCELLED || status == ReservationStatus.ADMIN_CANCELLED) {
             return new StatusCondition(status, List.of(), List.of());
         }
-        Overdue overdue = overdue(scope, now);
+        Overdue overdue = overdueReservations.find(scope, now);
         return switch (status) {
             case NO_SHOW -> new StatusCondition(status, overdue.noShow(), List.of());
             case COMPLETED -> new StatusCondition(status, overdue.completed(), List.of());
             default -> new StatusCondition(status, List.of(), concat(overdue.noShow(), overdue.completed()));
         };
-    }
-
-    /** 库中 CONFIRMED、但有效状态已是 NO_SHOW / COMPLETED（清扫尚未落库）的预约 id。 */
-    private record Overdue(List<Long> noShow, List<Long> completed) {
-    }
-
-    private Overdue overdue(AdminReservationFilter scope, LocalDateTime now) {
-        List<Reservation> started = reservations.findStartedConfirmedForAdmin(scope, now.toLocalDate(),
-                now.toLocalTime());
-        Map<Long, UsageRecord> usage = usageRecords.mapByReservationId(
-                started.stream().map(Reservation::getId).toList());
-        Overdue overdue = new Overdue(new ArrayList<>(), new ArrayList<>());
-        for (Reservation reservation : started) {
-            ReservationStatus effective = calculator.effectiveStatus(reservation, usage.get(reservation.getId()), now);
-            if (effective == ReservationStatus.NO_SHOW) {
-                overdue.noShow().add(reservation.getId());
-            } else if (effective == ReservationStatus.COMPLETED) {
-                overdue.completed().add(reservation.getId());
-            }
-        }
-        return overdue;
     }
 
     private static List<Long> concat(List<Long> first, List<Long> second) {
