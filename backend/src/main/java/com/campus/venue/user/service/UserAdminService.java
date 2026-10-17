@@ -94,6 +94,27 @@ public class UserAdminService {
         return after;
     }
 
+    /**
+     * U4：锁定目标用户行（使同一管理员的整体替换与 PATCH 串行）→ NOT_FOUND → 目标不是 VENUE_ADMIN →
+     * INVALID_STATE {status: 目标角色} → 有不存在的场馆 → VALIDATION_ERROR fields.venueIds → 整体替换
+     * （算法见 VenueScopeReplacer）。每次调用都写 SCOPE_UPDATE（含无变化的替换，与 mock 一致）。
+     * 撤销后该管理员的下一次请求即得 FORBIDDEN_SCOPE（授权每次查库，ACC-M3-07）。
+     */
+    @Transactional
+    public UserProfile replaceVenueScope(AuthenticatedUser admin, long id, List<Long> venueIds) {
+        AppUser user = users.lockById(id).orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+        if (user.getRole() != Role.VENUE_ADMIN) {
+            throw new BusinessException(ErrorCode.INVALID_STATE, Map.of("status", user.getRole().name()));
+        }
+        scopeReplacer.requireExistingVenues(venueIds);
+        UserProfile before = profiles.of(user);
+        scopeReplacer.replace(user.getId(), venueIds, admin.id());
+        UserProfile after = profiles.of(user);
+        logWriter.write(new OperationLogWriter.Entry(admin.id(), null, LogAction.SCOPE_UPDATE, user.getId(), null,
+                before, after, List.of()));
+        return after;
+    }
+
     /** 把真正改变的字段写入实体；有改变时 updated_at 取 Clock。返回是否有改变（null 视为未给）。 */
     private boolean apply(AppUser user, AccountStatus status, String displayName) {
         boolean changed = false;

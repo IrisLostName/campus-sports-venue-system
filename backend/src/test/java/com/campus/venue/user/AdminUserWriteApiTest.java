@@ -152,7 +152,7 @@ class AdminUserWriteApiTest extends AdminUserApiTestBase {
     }
 
     @Test
-    @DisplayName("08 创建/停用用户账号：SA 停用他人 → 其令牌下一次请求即 ACCOUNT_DISABLED（ACC-M3-02）；日志；重新启用后恢复")
+    @DisplayName("ACC-M3-02 08 创建/停用用户账号：SA 停用他人 → 其令牌下一次请求即 ACCOUNT_DISABLED；日志；重新启用后恢复")
     void disablingTakesEffectOnTheNextRequest() throws Exception {
         String token = bearer(zhangsan, Role.USER);
         assertThat(mockMvc.perform(get("/api/v1/auth/me").header(HttpHeaders.AUTHORIZATION, token)).andReturn()

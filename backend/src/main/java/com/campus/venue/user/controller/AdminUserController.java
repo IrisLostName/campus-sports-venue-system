@@ -7,6 +7,7 @@ import com.campus.venue.security.AuthenticatedUser;
 import com.campus.venue.user.domain.Role;
 import com.campus.venue.user.dto.AdminUsersQuery;
 import com.campus.venue.user.dto.CreateUserRequest;
+import com.campus.venue.user.dto.SetVenueScopeRequest;
 import com.campus.venue.user.dto.UpdateUserRequest;
 import com.campus.venue.user.service.UserAdminService;
 import com.campus.venue.user.service.UserQueryService;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -62,5 +64,13 @@ public class AdminUserController {
     public UserProfile update(@AuthenticationPrincipal AuthenticatedUser admin, @PathVariable long id,
             @Valid @RequestBody UpdateUserRequest request) {
         return userAdminService.update(admin, id, request);
+    }
+
+    /** U4：整体替换授权场馆（空数组 = 全部撤销），返回 UserProfile。 */
+    @PutMapping("/{id}/venue-scope")
+    @PreAuthorize("hasRole('SYS_ADMIN')")
+    public UserProfile replaceVenueScope(@AuthenticationPrincipal AuthenticatedUser admin, @PathVariable long id,
+            @Valid @RequestBody SetVenueScopeRequest request) {
+        return userAdminService.replaceVenueScope(admin, id, request.venueIds());
     }
 }
