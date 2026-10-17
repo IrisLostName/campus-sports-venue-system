@@ -5,6 +5,7 @@ import com.campus.venue.audit.domain.VenueScopeStatus;
 import com.campus.venue.audit.repository.AdminVenueScopeRepository;
 import com.campus.venue.common.error.BusinessException;
 import com.campus.venue.common.error.ErrorCode;
+import com.campus.venue.user.dto.VenueIdListValidator;
 import com.campus.venue.venue.service.VenueLookup;
 import java.time.Clock;
 import java.time.LocalDateTime;
@@ -34,9 +35,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class VenueScopeReplacer {
 
-    /** 与 mock userService.ts 的 venueIdsProblem 文案一致（格式阶段与存在性检查共用）。 */
-    public static final String VENUE_IDS_PROBLEM = "应为已存在场馆 id 组成的数组";
-
     private final AdminVenueScopeRepository scopes;
     private final VenueLookup venueLookup;
     private final Clock clock;
@@ -53,7 +51,7 @@ public class VenueScopeReplacer {
     public void requireExistingVenues(Collection<Long> venueIds) {
         if (!venueLookup.allExist(venueIds)) {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR,
-                    Map.of("fields", Map.of("venueIds", VENUE_IDS_PROBLEM)));
+                    Map.of("fields", Map.of("venueIds", VenueIdListValidator.PROBLEM)));
         }
     }
 
