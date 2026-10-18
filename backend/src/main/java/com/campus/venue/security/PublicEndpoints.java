@@ -16,6 +16,7 @@ public final class PublicEndpoints {
             match(HttpMethod.POST, ApiPaths.BASE + "/auth/register"),
             match(HttpMethod.POST, ApiPaths.BASE + "/auth/login"),
             match(HttpMethod.GET, ApiPaths.BASE + "/config/booking-rules"),
+            match(HttpMethod.GET, ApiPaths.BASE + "/display/summary"),
             match(HttpMethod.GET, "/actuator/health"));
 
     private PublicEndpoints() {

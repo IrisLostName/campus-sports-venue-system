@@ -63,6 +63,20 @@ public class SlotDataReader {
         return rules.findCovering(venueId, AvailabilityRuleType.CLOSURE, AvailabilityRuleStatus.ACTIVE, date);
     }
 
+    /**
+     * 这些场馆在 [from, to] 内的开放日历（BE-7 K3、D4）：全部 ACTIVE 每周窗口与区间内有效的 ACTIVE 关闭各一次查询，
+     * 查询次数不随天数或场地数增加；空集合不发查询。
+     */
+    public OpeningCalendar openingCalendar(Collection<Long> venueIds, LocalDate from, LocalDate to) {
+        if (venueIds.isEmpty()) {
+            return new OpeningCalendar(from, to, List.of(), List.of());
+        }
+        return new OpeningCalendar(from, to,
+                rules.findByVenueIdInAndRuleTypeAndStatus(venueIds, AvailabilityRuleType.WEEKLY,
+                        AvailabilityRuleStatus.ACTIVE),
+                rules.findOverlapping(venueIds, AvailabilityRuleType.CLOSURE, AvailabilityRuleStatus.ACTIVE, from, to));
+    }
+
     /** 这些场地当天的有效预约（状态不是 CANCELLED/ADMIN_CANCELLED）。 */
     List<Reservation> activeReservations(Collection<Long> resourceIds, LocalDate date) {
         if (resourceIds.isEmpty()) {
