@@ -1,11 +1,13 @@
-// 契约测试套件：只含与时钟无关的用例，可对任意 ApiClient 实现运行（docs/16 第 4.4 节）。
-// FE-1 只对 mock 运行（见 mock.contract.spec.ts）；对真实后端的 http 版本由 BE-8 运行。
-// 与时钟有关的行为（窗口边界、PAST、日期范围等）属于 mockBehavior 测试，见 tests/api/mock/。
+// 契约测试套件：可对任意 ApiClient 实现运行（docs/16 第 4.4 节）。
+// mock 版见 mock.contract.spec.ts（默认门禁）；对真实后端的 http 版见 tests/e2e/contract/http.contract.e2e.ts（BE-8）。
+// 日期一律相对“今天”（取自 getDisplaySummary().generatedAt：mock 为其固定时钟，后端为 APP_TIMEZONE 的当前日期），
+// 所以对真实后端在任何一天都能运行。窗口边界、PAST 等与时刻细节有关的行为属于 mockBehavior 测试，见 tests/api/mock/。
 import { describe, expect, it } from 'vitest'
 
 import type { ApiClient } from '../../../src/api/client'
 import { ApiError } from '../../../src/api/errors'
 import { DEMO_PASSWORD } from '../../../src/api/mock/seed'
+import { addDays, dateOf } from '../../../src/api/mock/timeMath'
 import { ERROR_HTTP_STATUS, type ErrorCode } from '../../../src/api/types'
 
 export interface ContractTarget {
@@ -18,6 +20,12 @@ let registrations = 0
 async function loginAs(target: ContractTarget, username: string): Promise<void> {
   target.setToken(null)
   target.setToken((await target.api.login({ username, password: DEMO_PASSWORD })).token)
+}
+
+// 被测实现眼中的“今天”与“明天”（BE-8 K1）。明天总在可预约范围 [今天, 今天 + advanceDays) 内，且不受当天时刻影响。
+export async function serverDates(target: ContractTarget): Promise<{ today: string; tomorrow: string }> {
+  const today = dateOf((await target.api.getDisplaySummary()).generatedAt)
+  return { today, tomorrow: addDays(today, 1) }
 }
 
 async function expectCode(pending: Promise<unknown>, code: ErrorCode): Promise<ApiError> {
@@ -82,9 +90,10 @@ function catalogContract(label: string, makeTarget: () => ContractTarget): void 
 
     it('时段查询：未开放场馆 VENUE_NOT_BOOKABLE；场馆不存在 NOT_FOUND；日期格式错误 VALIDATION_ERROR', async () => {
       const target = makeTarget()
+      const { tomorrow } = await serverDates(target)
       await loginAs(target, 'lisi')
-      await expectCode(target.api.getVenueSlots(2, '2026-10-12'), 'VENUE_NOT_BOOKABLE')
-      await expectCode(target.api.getVenueSlots(99999, '2026-10-12'), 'NOT_FOUND')
+      await expectCode(target.api.getVenueSlots(2, tomorrow), 'VENUE_NOT_BOOKABLE')
+      await expectCode(target.api.getVenueSlots(99999, tomorrow), 'NOT_FOUND')
       await expectCode(target.api.getVenueSlots(1, 'not-a-date'), 'VALIDATION_ERROR')
     })
 
@@ -111,10 +120,25 @@ function reservationContract(label: string, makeTarget: () => ContractTarget): v
   describe(`${label}：预约的错误码`, () => {
     it('管理员账号不能创建预约 FORBIDDEN；未开放场馆的场地 VENUE_NOT_BOOKABLE', async () => {
       const target = makeTarget()
+      const { tomorrow } = await serverDates(target)
       await loginAs(target, 'sysadmin')
-      await expectCode(target.api.createReservation({ resourceId: 1, serviceDate: '2026-10-12', startTime: '09:30' }), 'FORBIDDEN')
+      await expectCode(target.api.createReservation({ resourceId: 1, serviceDate: tomorrow, startTime: '09:30' }), 'FORBIDDEN')
       await loginAs(target, 'lisi')
-      await expectCode(target.api.createReservation({ resourceId: 5, serviceDate: '2026-10-12', startTime: '09:30' }), 'VENUE_NOT_BOOKABLE')
+      await expectCode(target.api.createReservation({ resourceId: 5, serviceDate: tomorrow, startTime: '09:30' }), 'VENUE_NOT_BOOKABLE')
+    })
+
+    it('同一时段先到者成功，后到者 SLOT_TAKEN（BE-8 K1）', async () => {
+      const target = makeTarget()
+      const { tomorrow } = await serverDates(target)
+      await loginAs(target, 'lisi')
+      const free = (await target.api.getVenueSlots(1, tomorrow)).resources
+        .flatMap((resource) => resource.slots.map((slot) => ({ resourceId: resource.resourceId, ...slot })))
+        .find((slot) => slot.status === 'AVAILABLE')
+      expect(free, '明天应有可预约的时段').toBeDefined()
+      const request = { resourceId: free?.resourceId ?? 0, serviceDate: tomorrow, startTime: free?.startTime ?? '' }
+      expect(await target.api.createReservation(request)).toMatchObject({ ...request, status: 'CONFIRMED' })
+      await loginAs(target, 'zhangsan')
+      await expectCode(target.api.createReservation(request), 'SLOT_TAKEN')
     })
 
     it('预约不存在 NOT_FOUND；格式错误 VALIDATION_ERROR', async () => {
