@@ -7,7 +7,7 @@ import { DEMO_PASSWORD } from '../../../src/api/mock/seed'
 import { addDays, dateOf } from '../../../src/api/mock/timeMath'
 import { launchEdge, type EdgeHandle } from '../browser/edgeProcess'
 import { PageDriver, type Viewport } from '../browser/pageDriver'
-import { E2E } from '../support/e2eEnv'
+import { announceShotDir, E2E } from '../support/e2eEnv'
 import { makeHttpTarget } from '../support/httpTarget'
 
 export interface Walk {
@@ -26,6 +26,7 @@ export async function openWalk(): Promise<Walk> {
   const today = dateOf(summary.generatedAt)
   mkdirSync(E2E.logDir, { recursive: true })
   writeFileSync(join(E2E.logDir, LOG_FILE), '')
+  announceShotDir()
   const edge = await launchEdge(E2E.edgePath, E2E.cdpPort)
   const page = new PageDriver(edge.page, E2E.shotDir)
   await page.start()

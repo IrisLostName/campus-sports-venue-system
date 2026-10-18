@@ -11,7 +11,7 @@ import { DEMO_PASSWORD } from '../../../src/api/mock/seed'
 import { ERROR_MESSAGES } from '../../../src/utils/errorMessages'
 import { launchEdge } from '../browser/edgeProcess'
 import { MOBILE, PageDriver } from '../browser/pageDriver'
-import { E2E } from '../support/e2eEnv'
+import { announceShotDir, E2E } from '../support/e2eEnv'
 
 const WAIT_MS = 15000
 
@@ -32,6 +32,7 @@ async function loginRequest(page: PageDriver) {
 
 describe('ACC-M3-11 反证：CORS_ALLOWED_ORIGINS 不含前端来源', () => {
   it('浏览器以 CORS 拦截登录请求，页面停留在登录页并显示错误', async () => {
+    announceShotDir()
     const edge = await launchEdge(E2E.edgePath, E2E.cdpPort)
     try {
       const page = new PageDriver(edge.page, E2E.shotDir)
