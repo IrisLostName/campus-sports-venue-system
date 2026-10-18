@@ -15,10 +15,11 @@ import { E2E } from '../support/e2eEnv'
 
 const WAIT_MS = 15000
 
+// Edge 会把预检（OPTIONS）也报告为一条请求；这里等的是被拦截的那条 POST。
 async function loginRequest(page: PageDriver) {
   const deadline = Date.now() + WAIT_MS
   for (;;) {
-    const found = page.requests.find((request) => request.url.endsWith('/api/v1/auth/login'))
+    const found = page.requests.find((request) => request.method === 'POST' && request.url.endsWith('/api/v1/auth/login'))
     if (found !== undefined) {
       return found
     }
@@ -43,7 +44,7 @@ describe('ACC-M3-11 反证：CORS_ALLOWED_ORIGINS 不含前端来源', () => {
       await page.clickText('登录', { selector: 'button[type="submit"]' })
       const login = await loginRequest(page)
       mkdirSync(E2E.logDir, { recursive: true })
-      appendFileSync(join(E2E.logDir, 'cors.jsonl'), `${JSON.stringify({ at: new Date().toISOString(), login })}\n`)
+      appendFileSync(join(E2E.logDir, 'cors.jsonl'), `${JSON.stringify({ at: new Date().toISOString(), requests: page.requests })}\n`)
       expect(login.status).toBeNull()
       expect(login.corsError).not.toBeNull()
       await page.waitForText(ERROR_MESSAGES.INTERNAL_ERROR)
