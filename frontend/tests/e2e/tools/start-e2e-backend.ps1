@@ -2,7 +2,7 @@
 # 全部配置经环境变量给出（docs/14 第 3.1 节），不改 application*.yml：
 #   - DB_URL 写死为 e2e 库；DB_PASSWORD 取自本终端的 PGPASSWORD，不写进任何文件；
 #   - JWT_SECRET 每次启动随机生成，只在本进程环境中；
-#   - 这些变量只在 java 运行期间存在：脚本退出时（含出错与 Ctrl-C）恢复为启动前的值，不留在调用它的终端会话里（BE-8 审计 N3）；
+#   - 这些变量只在 java 运行期间存在：脚本退出时（含出错与 Ctrl-C）恢复为启动前的值，启动前未设置的变量被删除，不留在调用它的终端会话里（BE-8 审计 N3、复审 F2）；
 #   - CORS_ALLOWED_ORIGINS 由 -AllowedOrigin 给出（反证时传入不含前端来源的值）。
 # 工作目录是不含 .env 的临时目录：application.yml 的 spring.config.import 会读取工作目录下的 .env，联调绝不能读到 backend/.env。
 # 只监听 127.0.0.1。-NoSweep 关闭每分钟的清扫（走查截图期间用；契约运行保持开启）。
@@ -68,8 +68,14 @@ try {
     & java @JavaArgs
 }
 finally {
+    # 启动前未设置的变量必须删除：把 $null 传给 SetEnvironmentVariable 会被 PowerShell 转成空字符串，变量以空值留下（BE-8 复审 F2）。
     foreach ($Name in $BackendEnv.Keys) {
-        [Environment]::SetEnvironmentVariable($Name, $Saved[$Name], 'Process')
+        if ($null -eq $Saved[$Name]) {
+            Remove-Item "Env:$Name" -ErrorAction SilentlyContinue
+        }
+        else {
+            [Environment]::SetEnvironmentVariable($Name, $Saved[$Name], 'Process')
+        }
     }
     Pop-Location
     Write-Host 'e2e backend stopped; backend environment variables restored for this terminal.'
