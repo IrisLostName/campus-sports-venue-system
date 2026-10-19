@@ -14,7 +14,7 @@ import { pageOf } from './paging'
 import { run } from './run'
 import { nextId, type AnnouncementRecord, type MockContext, type RepairRecord } from './state'
 import { secondsOf } from './timeMath'
-import { collect, intProblem, oneOfProblem, optional, pagingChecks, textProblem } from './validate'
+import { collect, intProblem, isAbsent, oneOfProblem, optional, pagingChecks, textProblem } from './validate'
 
 function toAnnouncement(ctx: MockContext, record: AnnouncementRecord): Announcement {
   return {
@@ -76,7 +76,7 @@ function createAnnouncement(ctx: MockContext, request: CreateAnnouncementRequest
   const venueScoped = request.scope === 'VENUE'
   collect([
     ['scope', oneOfProblem(request.scope, ANNOUNCEMENT_SCOPES)],
-    ['venueId', venueScoped ? intProblem(request.venueId) : (request.venueId === undefined ? null : 'SYSTEM 公告不应带 venueId')],
+    ['venueId', venueScoped ? intProblem(request.venueId) : (isAbsent(request.venueId) ? null : 'SYSTEM 公告不应带 venueId')],
     ['title', textProblem(request.title, 100)],
     ['content', textProblem(request.content, 2000)],
     ['expiresAt', optional(request.expiresAt, (value) => textProblem(value, 19))],
@@ -97,7 +97,7 @@ function createAnnouncement(ctx: MockContext, request: CreateAnnouncementRequest
   ctx.state.announcements.push(record)
   const created = toAnnouncement(ctx, record)
   appendLog(ctx, user, {
-    venueId, action: 'ANNOUNCEMENT_PUBLISH', targetId: record.id, before: null, after: snapshot(created),
+    venueId, action: 'ANNOUNCEMENT_PUBLISH', targetId: record.id, before: snapshot(null), after: snapshot(created),
   })
   return created
 }
@@ -142,7 +142,7 @@ function createRepair(ctx: MockContext, request: CreateRepairRequest): RepairRep
   ])
   requireRole(user, 'USER')
   const venue = getOrFail(ctx.state.venues, request.venueId)
-  if (request.resourceId !== undefined) {
+  if (!isAbsent(request.resourceId)) {
     const resource = getOrFail(ctx.state.resources, request.resourceId)
     if (resource.venueId !== venue.id) {
       fail('VALIDATION_ERROR', { fields: { resourceId: '场地不属于该场馆' } })

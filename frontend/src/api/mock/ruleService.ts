@@ -14,7 +14,7 @@ import { getOrFail } from './lookup'
 import { run } from './run'
 import { nextId, type ClosureRecord, type MockContext, type WeeklyRecord } from './state'
 import { toMinutes } from './timeMath'
-import { collect, dateProblem, intProblem, optional, timeProblem, type FieldCheck } from './validate'
+import { blankToNull, collect, dateProblem, intProblem, isAbsent, optional, timeProblem, type FieldCheck } from './validate'
 
 function toWeekly(record: WeeklyRecord): WeeklyWindow {
   return { id: record.id, weekday: record.weekday, openTime: record.openTime, closeTime: record.closeTime }
@@ -53,7 +53,8 @@ function windowChecks(windows: WeeklyWindowInput[]): FieldCheck[] {
   if (!Array.isArray(windows)) {
     return [['windows', '应为数组']]
   }
-  return windows.flatMap((window, index): FieldCheck[] => [
+  // null 元素报“必填”，不读取其字段（台账 S-044）。
+  return windows.flatMap((window: WeeklyWindowInput | null, index): FieldCheck[] => isAbsent(window) ? [[`windows[${index}]`, '必填']] : [
     [`windows[${index}].weekday`, intProblem(window.weekday, 1, 7)],
     [`windows[${index}].openTime`, timeProblem(window.openTime)],
     [`windows[${index}].closeTime`, timeProblem(window.closeTime)],
@@ -134,7 +135,7 @@ function addClosure(ctx: MockContext, venueId: number, request: AddClosureReques
     commit: () => {
       const record: ClosureRecord = {
         id: nextId(ctx.state, 'closure'), venueId: venue.id, resourceId,
-        startDate: request.startDate, endDate: request.endDate, reason: request.reason ?? null, status: 'ACTIVE',
+        startDate: request.startDate, endDate: request.endDate, reason: blankToNull(request.reason), status: 'ACTIVE',
       }
       ctx.state.closures.push(record)
       return toClosure(record)

@@ -13,7 +13,7 @@ import {
 } from './reservationView'
 import { run } from './run'
 import type { MockContext, ReservationRecord, UserRecord } from './state'
-import { collect, dateProblem, intProblem, oneOfProblem, optional, pagingChecks, textProblem, timeProblem } from './validate'
+import { blankToNull, collect, dateProblem, intProblem, oneOfProblem, optional, optionalText, pagingChecks, timeProblem } from './validate'
 import { secondsOf } from './timeMath'
 
 function createReservation(ctx: MockContext, request: CreateReservationRequest): Reservation {
@@ -22,13 +22,13 @@ function createReservation(ctx: MockContext, request: CreateReservationRequest):
     ['resourceId', intProblem(request.resourceId)],
     ['serviceDate', dateProblem(request.serviceDate)],
     ['startTime', timeProblem(request.startTime)],
-    ['purpose', optional(request.purpose, (value) => textProblem(value, 200))],
+    ['purpose', optionalText(request.purpose, 200)],
   ])
   requireRole(user, 'USER')
   checkCreatable(ctx, user, request)
   const record = insertReservation(ctx, {
     userId: user.id, resourceId: request.resourceId, serviceDate: request.serviceDate,
-    startTime: request.startTime, purpose: request.purpose ?? null,
+    startTime: request.startTime, purpose: blankToNull(request.purpose),
   })
   return toReservation(ctx, record)
 }
@@ -82,7 +82,7 @@ function ownReservation(ctx: MockContext, user: UserRecord, id: number): Reserva
 // 10 第 3 节：本人 → CONFIRMED → 无签到记录 → 距开始 ≥ cancelDeadlineMinutes。
 function cancelReservation(ctx: MockContext, id: number, request: CancelReservationRequest): Reservation {
   const user = authenticate(ctx)
-  collect([['reason', optional(request.reason, (value) => textProblem(value, 200))]])
+  collect([['reason', optionalText(request.reason, 200)]])
   const record = ownReservation(ctx, user, id)
   if (record.status !== 'CONFIRMED') {
     fail('INVALID_STATE', { status: record.status })
@@ -96,7 +96,7 @@ function cancelReservation(ctx: MockContext, id: number, request: CancelReservat
   record.status = 'CANCELLED'
   record.cancelledAt = ctx.clock.now()
   record.cancelledBy = user.id
-  record.cancelReason = request.reason ?? null
+  record.cancelReason = blankToNull(request.reason)
   return toReservation(ctx, record)
 }
 
