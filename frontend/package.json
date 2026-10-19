@@ -12,7 +12,10 @@
     "type-check": "vue-tsc --build",
     "lint:check": "eslint . --max-warnings 0",
     "test:unit:run": "vitest run",
-    "build": "vite build"
+    "build": "vite build",
+    "test:e2e:contract": "vitest run --config tests/e2e/vitest.e2e.config.ts --project contract-http",
+    "test:e2e:walkthrough": "vitest run --config tests/e2e/vitest.e2e.config.ts --project walkthrough",
+    "test:e2e:cors": "vitest run --config tests/e2e/vitest.e2e.config.ts --project cors"
   },
   "dependencies": {
     "pinia": "^4.0.3",
