@@ -7,8 +7,8 @@ import { expect } from 'vitest'
 import { IPHONE16, MOBILE } from '../browser/pageDriver'
 import { E2E } from '../support/e2eEnv'
 import { makeHttpTarget } from '../support/httpTarget'
-import { loginUi, openVenueSlots, pickSlot, visit } from '../walkthrough/session'
-import { capture, type Theme, type Tour } from './tourSession'
+import { openVenueSlots, pickSlot } from '../walkthrough/session'
+import { capture, go, login, type Theme, type Tour } from './tourSession'
 
 const BOTH: Theme[] = ['light', 'dark']
 
@@ -16,9 +16,9 @@ export async function userLoginAndEmpty(tour: Tour): Promise<void> {
   const { page } = tour
   await page.setViewport(IPHONE16)
   await page.clearLocalStorage(E2E.appUrl)
-  await visit(tour, '/login')
+  await go(tour, '/login')
   await capture(tour, '01-user-login', { surface: 'login', expect: ['校园场馆预约系统', '用户名', '密码'], themes: BOTH })
-  await loginUi(tour, 'wangwu', IPHONE16)
+  await login(tour, 'wangwu', IPHONE16)
   await capture(tour, '02-user-home-empty', {
     surface: 'user', expect: ['首页', '你还没有预约', '去订场', '系统公告'], absent: ['查看预约详情'], themes: BOTH,
   })
@@ -37,7 +37,7 @@ export async function userBooking(tour: Tour): Promise<void> {
   await pickSlot(tour, '网球场3', '11:00')
   await page.fill('用途（可选）', '周末约练（演示）')
   await capture(tour, '05-user-booking-confirm', {
-    surface: 'user', expect: ['确认预约', '网球馆 · 网球场3', tour.tomorrow, '11:00–12:30'], themes: BOTH,
+    surface: 'user', expect: ['确认预约', '网球馆', '网球场3', tour.tomorrow, '11:00–12:30'], themes: BOTH,
   })
   await page.clickText('确认预约', { selector: 'button' })
   await capture(tour, '06-user-booking-success', { surface: 'user', expect: ['预约成功', '查看预约', '回到首页'], themes: BOTH })
@@ -46,7 +46,7 @@ export async function userBooking(tour: Tour): Promise<void> {
 // zhangsan：首页摘要 → 预约页（UPCOMING，取消可用）→ 取消层 → 取消后“我的”历史里是“已取消”。
 export async function userReservationAndCancel(tour: Tour): Promise<void> {
   const { page } = tour
-  await loginUi(tour, 'zhangsan', IPHONE16)
+  await login(tour, 'zhangsan', IPHONE16)
   await capture(tour, '07-user-home-summary', {
     surface: 'user', expect: ['首页', '查看预约详情', '网球馆 · 网球场1', '08:00–09:30', '张三', '待使用', '系统公告'], themes: BOTH,
   })
@@ -58,8 +58,9 @@ export async function userReservationAndCancel(tour: Tour): Promise<void> {
   await page.fill('取消原因（可选）', '临时有事（演示）')
   await capture(tour, '09-user-cancel-sheet', { surface: 'user', expect: ['确认取消预约？', '再想想', '确认取消'], themes: BOTH })
   await page.clickText('确认取消', { selector: 'button' })
-  await page.waitForText('暂无当前预约')
-  await visit(tour, '/me')
+  // FE-3 B3：成功后卡片换成接口返回的预约（已取消、没有按钮），刷新后才离开当前列表。
+  await page.waitFor('document.querySelector(\'article[data-status="CANCELLED"]\')', '卡片变为已取消')
+  await go(tour, '/me')
   await capture(tour, '10-user-me-history-cancelled', {
     surface: 'user', expect: ['我的', '历史预约', '网球馆 · 网球场1', '已取消'], themes: BOTH,
   })
@@ -80,15 +81,15 @@ export async function seedZhaoliu(tour: Tour): Promise<void> {
 
 export async function userSeesAdminChanges(tour: Tour): Promise<void> {
   const { page } = tour
-  await loginUi(tour, 'zhaoliu', IPHONE16)
-  await visit(tour, '/reservation')
+  await login(tour, 'zhaoliu', IPHONE16)
+  await go(tour, '/reservation')
   await page.waitForText('管理员说明')
   await page.scrollTo('section[aria-label="管理员说明"]')
   await capture(tour, '11-user-reservation-admin-note', {
     surface: 'user', expect: ['管理员说明', '网球馆 · 网球场3', '12:30–14:00', '网球场4 灯光检修，改到网球场3（演示）'], themes: BOTH,
   })
-  await loginUi(tour, 'lisi', IPHONE16)
-  await visit(tour, '/me')
+  await login(tour, 'lisi', IPHONE16)
+  await go(tour, '/me')
   await page.waitForText('管理员已取消')
   await capture(tour, '12-user-me-history-admin-cancelled', {
     surface: 'user', expect: ['历史预约', '管理员已取消', '管理员说明', '网球场2 地面维修（演示）'], themes: BOTH,
@@ -98,13 +99,13 @@ export async function userSeesAdminChanges(tour: Tour): Promise<void> {
 // wangwu：提交报修 → “我的报修”出现“已提交”；随后“我的”滚到底。
 export async function userRepair(tour: Tour): Promise<void> {
   const { page } = tour
-  await loginUi(tour, 'wangwu', IPHONE16)
-  await visit(tour, '/me')
+  await login(tour, 'wangwu', IPHONE16)
+  await go(tour, '/me')
   await page.setControl('场馆', '网球馆')
   await page.fill('问题描述', '网球场3 南侧灯光不亮（演示）')
   await page.clickText('提交报修', { selector: 'button[type="submit"]' })
   await page.waitForText('报修已提交')
-  await page.scrollTo('section[aria-label="我的报修"]')
+  await page.scrollTo('form[aria-label="提交报修"]')
   await capture(tour, '13-user-me-repair', {
     surface: 'user', expect: ['报修已提交', '我的报修', '网球场3 南侧灯光不亮（演示）', '已提交'], themes: BOTH,
   })
@@ -117,17 +118,17 @@ export async function userRepair(tour: Tour): Promise<void> {
 export async function userMobile375(tour: Tour): Promise<void> {
   const { page } = tour
   await page.setViewport(MOBILE)
-  await visit(tour, '/me')
+  await go(tour, '/me')
   await page.clickText('退出登录')
   await page.waitFor('location.pathname === "/login"', '退出后回到登录页')
   await capture(tour, '15-user-login', { surface: 'login', expect: ['校园场馆预约系统', '用户名'] })
-  await loginUi(tour, 'wangwu', MOBILE)
+  await login(tour, 'wangwu', MOBILE)
   await capture(tour, '16-user-home', { surface: 'user', expect: ['查看预约详情', '网球馆 · 网球场3'] })
-  await visit(tour, '/reservation')
+  await go(tour, '/reservation')
   await capture(tour, '17-user-reservation', { surface: 'user', expect: ['周末约练（演示）', '取消预约'] })
-  await visit(tour, '/booking')
+  await go(tour, '/booking')
   await openVenueSlots(tour, '网球馆', '网球场1')
   await capture(tour, '18-user-booking-slots', { surface: 'user', expect: ['场馆公告', '网球场1'] })
-  await visit(tour, '/me')
+  await go(tour, '/me')
   await capture(tour, '19-user-me', { surface: 'user', expect: ['我的', '历史预约', '报修'] })
 }

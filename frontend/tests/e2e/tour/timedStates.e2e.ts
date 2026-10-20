@@ -8,8 +8,7 @@ import { addDays } from '../../../src/api/mock/timeMath'
 import { secondsUntilStart } from '../../../src/utils/cancelDeadline'
 import { IPHONE16 } from '../browser/pageDriver'
 import { makeHttpTarget, type RecordingTarget } from '../support/httpTarget'
-import { loginUi, visit } from '../walkthrough/session'
-import { capture, closeTour, openTour, type Theme, type Tour } from './tourSession'
+import { capture, closeTour, go, login, openTour, type Theme, type Tour } from './tourSession'
 
 const BOTH: Theme[] = ['light', 'dark']
 const CHECKIN_OPEN_SECONDS = 15 * 60
@@ -108,8 +107,8 @@ describe('TEST-2 依赖真实时钟的状态（K3 置灰、可签到 → 使用�
 
   it('K3：待使用且距开始不足 120 分钟，“取消预约”置灰并显示说明', async () => {
     const { tour: t, plan: p } = ready()
-    await loginUi(t, 'wangwu', IPHONE16)
-    await visit(t, '/reservation')
+    await login(t, 'wangwu', IPHONE16)
+    await go(t, '/reservation')
     await cardShows(t, p.locked.resourceName, ['待使用', '已过可取消时间（需在开始前至少 120 分钟取消）'])
     expect(await cancelDisabled(t, p.locked.resourceName)).toBe(true)
     await capture(t, '41-user-reservation-cancel-locked', { surface: 'user', expect: ['已过可取消时间'], themes: BOTH })

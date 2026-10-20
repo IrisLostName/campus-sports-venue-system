@@ -5,8 +5,8 @@ import { expect } from 'vitest'
 
 import { IPHONE16 } from '../browser/pageDriver'
 import { makeHttpTarget } from '../support/httpTarget'
-import { loginUi, openVenueSlots, pickSlot, visit } from '../walkthrough/session'
-import type { Tour } from './tourSession'
+import { openVenueSlots, pickSlot } from '../walkthrough/session'
+import { go, login, type Tour } from './tourSession'
 
 const LATENCY_MS = 2000
 const COURT = '网球场1'
@@ -22,7 +22,7 @@ async function reservationsAtSlot(tour: Tour): Promise<number> {
 
 export async function backDuringSubmit(tour: Tour): Promise<void> {
   const { page } = tour
-  await loginUi(tour, 'wangwu', IPHONE16)
+  await login(tour, 'wangwu', IPHONE16)
   await page.waitForText('首页')
   await page.clickText('订场', { within: 'nav[aria-label="主导航"]', exact: false })
   await page.waitFor('location.pathname === "/booking"', '进入订场')
@@ -43,7 +43,7 @@ export async function backDuringSubmit(tour: Tour): Promise<void> {
   await page.waitForText('网球馆')
   const bookingText = await page.text()
   const count = await reservationsAtSlot(tour)
-  await visit(tour, '/reservation')
+  await go(tour, '/reservation')
   await page.waitForText('预约')
   await page.waitForGone('加载中…')
   const reservationText = await page.text()

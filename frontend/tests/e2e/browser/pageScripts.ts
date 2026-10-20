@@ -88,7 +88,9 @@ export interface LayoutReport {
   pageOverflowX: number          // document 的 scrollWidth - clientWidth
   contentOverflowX: number       // 用户端内容区的 scrollWidth - clientWidth（没有内容区为 0）
   dockTop: number | null         // 用户端 Dock 顶边（没有 Dock 为 null）
-  lastBottom: number | null      // 内容区滚到底后，内容区内可见元素的最大底边
+  lastBottom: number | null      // 内容区滚到底后，内容区内可见元素的最大底边（不含打开着的模态浮层）
+  modalBottom: number | null     // 打开着的模态浮层（aria-modal）的底边；浮层盖在 Dock 之上是设计，单独判断不超出视口
+  viewportHeight: number
   minFontPx: number              // 有直接文字的可见元素中最小的计算字号
 }
 
@@ -101,11 +103,14 @@ export function layoutProbe(): LayoutReport {
   const doc = document.documentElement
   const content = document.querySelector('main.content')
   const dock = document.querySelector('nav[aria-label="主导航"]')
+  const modal = document.querySelector('[aria-modal="true"]')
+  const inOverlay = (el: Element): boolean => modal !== null && (el.contains(modal) || modal.contains(el)
+    || (modal.parentElement !== null && modal.parentElement.contains(el)))
   let lastBottom: number | null = null
   if (content !== null) {
     const saved = content.scrollTop
     content.scrollTop = content.scrollHeight
-    lastBottom = Math.max(0, ...[...content.querySelectorAll('*')].filter(visible)
+    lastBottom = Math.max(0, ...[...content.querySelectorAll('*')].filter((el) => visible(el) && !inOverlay(el))
       .map((el) => Math.round(el.getBoundingClientRect().bottom)))
     content.scrollTop = saved
   }
@@ -118,6 +123,8 @@ export function layoutProbe(): LayoutReport {
     contentOverflowX: content === null ? 0 : content.scrollWidth - content.clientWidth,
     dockTop: dock === null ? null : Math.round(dock.getBoundingClientRect().top),
     lastBottom,
+    modalBottom: modal === null ? null : Math.round(modal.getBoundingClientRect().bottom),
+    viewportHeight: innerHeight,
     minFontPx: fonts.length === 0 ? 0 : Math.min(...fonts),
   }
 }
@@ -167,8 +174,11 @@ export function targetProbe(args: { minSize: number }): TargetReport {
     || el.getAttribute('aria-label') || '').replace(/\s+/g, ' ').trim().slice(0, 24)}」`
   const inViewport = (rect: DOMRect): boolean => rect.width > 0 && rect.height > 0
     && rect.bottom > 0 && rect.right > 0 && rect.top < innerHeight && rect.left < innerWidth
+  // 打开着模态浮层时，只有浮层里的元素可以点（遮罩挡住了其余部分）。
+  const modal = document.querySelector('[aria-modal="true"]')
   const targets = [...new Set([...document.querySelectorAll(selector)].map(area))]
-    .filter((el) => getComputedStyle(el).visibility !== 'hidden' && inViewport(el.getBoundingClientRect()))
+    .filter((el) => getComputedStyle(el).visibility !== 'hidden' && inViewport(el.getBoundingClientRect())
+      && (modal === null || modal.contains(el)))
   const small = targets.filter((el) => {
     const rect = el.getBoundingClientRect()
     return rect.width < args.minSize - 0.5 || rect.height < args.minSize - 0.5

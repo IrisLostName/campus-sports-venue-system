@@ -3,8 +3,7 @@
 //   改派 zhaoliu 明天 网球场4 12:30 → 网球场3 12:30；取消 lisi 明天 网球场2 09:30（原因必填）。
 import { DESKTOP } from '../browser/pageDriver'
 import { DIALOG } from '../walkthrough/adminSteps'
-import { loginUi, visit } from '../walkthrough/session'
-import { capture, type Theme, type Tour } from './tourSession'
+import { capture, go, login, type Theme, type Tour } from './tourSession'
 
 const BOTH: Theme[] = ['light', 'dark']
 // 页面出现这些文字说明数据没加载好或出了错，截图前一律不得出现。
@@ -15,8 +14,8 @@ export const CANCEL_NOTE = '网球场2 地面维修（演示）'
 
 export async function adminActions(tour: Tour): Promise<void> {
   const { page } = tour
-  await loginUi(tour, 'admin_tennis', DESKTOP)
-  await visit(tour, '/venue-admin/reservations?venueId=1')
+  await login(tour, 'admin_tennis', DESKTOP)
+  await go(tour, '/venue-admin/reservations?venueId=1')
   await page.clickText('改派场地：赵六', { selector: 'button', exact: false })
   await page.waitForText('目标场地')
   await page.setControl('目标场地', '网球场3', DIALOG)
@@ -44,7 +43,7 @@ interface AdminPage {
 
 async function tourPages(tour: Tour, pages: AdminPage[]): Promise<void> {
   for (const item of pages) {
-    await visit(tour, item.path)
+    await go(tour, item.path)
     await capture(tour, item.name, {
       surface: 'admin', heading: item.heading, expect: item.expect, absent: NOT_READY, themes: item.themes,
     })
@@ -52,7 +51,7 @@ async function tourPages(tour: Tour, pages: AdminPage[]): Promise<void> {
 }
 
 export async function venueAdminPages(tour: Tour): Promise<void> {
-  await loginUi(tour, 'admin_tennis', DESKTOP)
+  await login(tour, 'admin_tennis', DESKTOP)
   await tourPages(tour, [
     { name: '20-va-overview', path: '/venue-admin?venueId=1', heading: '概览', expect: ['网球馆'], themes: BOTH },
     {
@@ -61,7 +60,7 @@ export async function venueAdminPages(tour: Tour): Promise<void> {
     },
     { name: '22-va-resources', path: '/venue-admin/resources?venueId=1', heading: '场地与开放规则', expect: ['网球场1', '保存每周窗口'] },
   ])
-  await visit(tour, '/venue-admin/occupancy?venueId=1')
+  await go(tour, '/venue-admin/occupancy?venueId=1')
   await tour.page.setControl('日期', tour.tomorrow)
   await capture(tour, '23-va-occupancy', {
     surface: 'admin', heading: '场地占用总览', expect: ['网球场1', '王五', '赵六'], absent: NOT_READY, themes: BOTH,
@@ -74,7 +73,7 @@ export async function venueAdminPages(tour: Tour): Promise<void> {
 }
 
 export async function sysAdminPages(tour: Tour): Promise<void> {
-  await loginUi(tour, 'sysadmin', DESKTOP)
+  await login(tour, 'sysadmin', DESKTOP)
   await tourPages(tour, [
     { name: '27-sa-venues', path: '/sys-admin', heading: '场馆资料与开关', expect: ['场馆列表', '网球馆', '游泳馆'], themes: BOTH },
     { name: '28-sa-admins', path: '/sys-admin/admins', heading: '管理员与授权', expect: ['admin_tennis', 'admin_pool'] },

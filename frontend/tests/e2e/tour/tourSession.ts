@@ -1,14 +1,18 @@
 // TEST-2 页面走查（ACC-M4-02）的上下文：沿用 BE-8 的走查上下文（无头 Edge、页面驱动、接口记录），另加
 // 页面脚本异常的收集与 capture()：每张截图前先断言页面文字、等待接口空闲、做布局测量并写日志，测量不合格即失败。
 // 截图文件名：ACC-M4-02-<序号>-<表面>-<页面>[-<状态>]-<宽>x<高>-<light|dark>.png（TEST-2 裁决第 6 节）。
+import { setTimeout as delay } from 'node:timers/promises'
+
 import { expect } from 'vitest'
 
 import {
   layoutProbe, panelProbe, targetProbe, type LayoutReport, type PanelReport, type TargetReport,
 } from '../browser/pageScripts'
-import { closeWalk, openWalk, type Walk } from '../walkthrough/session'
+import type { Viewport } from '../browser/pageDriver'
+import { closeWalk, loginUi, openWalk, visit, type Walk } from '../walkthrough/session'
 
 export const SHOT_PREFIX = 'ACC-M4-02-'
+const SETTLE_MS = 500
 const MIN_TARGET_PX = 44
 const MIN_FONT_PX = 12
 
@@ -83,6 +87,9 @@ function judge(name: string, surface: Surface, { layout, targets, panels }: Meas
   if (surface === 'user' || surface === 'login') {
     expect(targets.small, `${name} 小于 ${MIN_TARGET_PX} px 的可点击元素`).toEqual([])
   }
+  if (layout.modalBottom !== null) {
+    expect(layout.modalBottom, `${name} 浮层超出视口`).toBeLessThanOrEqual(layout.viewportHeight)
+  }
   if (surface === 'user') {
     expect(layout.dockTop, `${name} 没有 Dock`).not.toBeNull()
     expect(layout.lastBottom ?? 0, `${name} 滚到底时最后一项被 Dock 压住`).toBeLessThanOrEqual(layout.dockTop ?? 0)
@@ -93,6 +100,24 @@ function judge(name: string, surface: Surface, { layout, targets, panels }: Meas
     expect(panels.overlaps, `${name} 面板重叠`).toEqual([])
     expect([panels.scrollX, panels.scrollY], `${name} 出现滚动条`).toEqual([0, 0])
   }
+}
+
+// 接口空闲、过渡动画（--motion-slow 360ms）走完、再确认空闲：页面常在一个请求结束后接着发下一个（例如先取场馆再取统计）。
+export async function settle(tour: Tour): Promise<void> {
+  await tour.page.waitIdle()
+  await delay(SETTLE_MS)
+  await tour.page.waitIdle()
+}
+
+// 走查里的整页跳转：先 settle，避免把上一页链式发出的请求截断（BE-8 的 goto 只等一次空闲）。
+export async function go(tour: Tour, path: string): Promise<void> {
+  await settle(tour)
+  await visit(tour, path)
+}
+
+export async function login(tour: Tour, username: string, viewport: Viewport): Promise<void> {
+  await settle(tour)
+  await loginUi(tour, username, viewport)
 }
 
 async function scrollContentToBottom(tour: Tour): Promise<void> {
@@ -106,7 +131,7 @@ export async function capture(tour: Tour, name: string, options: CaptureOptions)
       await tour.page.setTheme(theme)
     }
     await assertTexts(tour, options)
-    await tour.page.waitIdle()
+    await settle(tour)
     const measures = await measure(tour, options.surface)
     judge(`${name}（${theme}）`, options.surface, measures)
     if (options.scrolledBottom === true) {

@@ -2,9 +2,8 @@
 // 并测量：面板两两不重叠、没有滚动条、最小字号 ≥ 12px、没有可交互元素（tourSession.judge）。
 import { DESKTOP, type Viewport } from '../browser/pageDriver'
 import { E2E } from '../support/e2eEnv'
-import { visit } from '../walkthrough/session'
 import { SEED_PEOPLE } from '../walkthrough/sysSteps'
-import { capture, type Tour } from './tourSession'
+import { capture, go, type Tour } from './tourSession'
 
 const SIZES: [string, Viewport][] = [
   ['38-display', DESKTOP],
@@ -17,7 +16,7 @@ export async function displayPages(tour: Tour): Promise<void> {
   await page.clearLocalStorage(E2E.appUrl)
   for (const [name, viewport] of SIZES) {
     await page.setViewport(viewport)
-    await visit(tour, '/display')
+    await go(tour, '/display')
     await capture(tour, name, {
       surface: 'display', expect: ['运营大屏', '数据更新于', '本周预约趋势', '网球馆'], absent: SEED_PEOPLE,
     })
