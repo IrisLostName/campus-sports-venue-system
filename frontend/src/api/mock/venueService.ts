@@ -12,7 +12,7 @@ import { displayStatusOf, nowSeconds } from './reservationView'
 import { findActiveReservation, isClosedByRule, isUnavailable, resolveSlotStatus, deriveSlots, type DerivedSlot, type SlotFacts } from './slotDerivation'
 import { nextId, type MockContext, type ResourceRecord, type VenueRecord } from './state'
 import { dateOf, isWithinAdvance, slotSeconds } from './timeMath'
-import { collect, dateProblem, oneOfProblem, optional, textProblem } from './validate'
+import { blankToNull, collect, dateProblem, oneOfProblem, optionalText, textProblem } from './validate'
 
 export function toVenueSummary(ctx: MockContext, venue: VenueRecord): VenueSummary {
   return {
@@ -86,8 +86,8 @@ function adminCreateVenue(ctx: MockContext, request: CreateVenueRequest): VenueS
   collect([
     ['name', textProblem(request.name, 50)],
     ['venueType', oneOfProblem(request.venueType, VENUE_TYPES)],
-    ['location', optional(request.location, (value) => textProblem(value, 100))],
-    ['description', optional(request.description, (value) => textProblem(value, 500))],
+    ['location', optionalText(request.location, 100)],
+    ['description', optionalText(request.description, 500)],
   ])
   requireRole(user, 'SYS_ADMIN')
   if (ctx.state.venues.some((venue) => venue.name === request.name)) {
@@ -95,7 +95,7 @@ function adminCreateVenue(ctx: MockContext, request: CreateVenueRequest): VenueS
   }
   const venue: VenueRecord = {
     id: nextId(ctx.state, 'venue'), name: request.name, venueType: request.venueType,
-    location: request.location ?? null, description: request.description ?? null,
+    location: blankToNull(request.location), description: blankToNull(request.description),
     operationalStatus: 'OPEN', userBookingEnabled: false,
   }
   ctx.state.venues.push(venue)

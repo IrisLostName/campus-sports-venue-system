@@ -22,11 +22,11 @@ import { findActiveReservation, isClosedByRule, isDerivedSlot, isUnavailable } f
 import type { MockContext, ReservationRecord, UserRecord } from './state'
 import { endTimeOf, slotSeconds } from './timeMath'
 import {
-  collect, dateProblem, intProblem, isBlank, oneOfProblem, optional, pagingChecks, textProblem, timeProblem,
+  collect, dateProblem, intProblem, isBlank, keywordNeedle, keywordProblem, oneOfProblem, optional, pagingChecks, timeProblem,
 } from './validate'
 
-function requireReason(reason: string | undefined): string {
-  if (reason === undefined || isBlank(reason)) {
+function requireReason(reason: string | null | undefined): string {
+  if (reason === undefined || reason === null || isBlank(reason)) {
     return fail('REASON_REQUIRED')
   }
   return reason
@@ -49,9 +49,11 @@ function requireNotCheckedIn(record: ReservationRecord): void {
   }
 }
 
-function matchesKeyword(ctx: MockContext, record: ReservationRecord, keyword: string): boolean {
+function matchesKeyword(ctx: MockContext, record: ReservationRecord, needle: string | null): boolean {
+  if (needle === null) {
+    return true
+  }
   const view = toAdminReservation(ctx, record)
-  const needle = keyword.trim().toLowerCase()
   return [view.userUsername, view.userDisplayName, view.resourceName].some((text) => text.toLowerCase().includes(needle))
 }
 
@@ -60,12 +62,13 @@ function visibleReservations(ctx: MockContext, user: UserRecord, query: AdminRes
     requireScope(ctx, user, query.venueId)
   }
   const venueIds = query.venueId === undefined ? manageableVenueIds(ctx, user) : [query.venueId]
+  const needle = keywordNeedle(query.keyword)
   return ctx.state.reservations.filter((record) =>
     venueIds.includes(venueIdOfReservation(ctx, record))
     && (query.dateFrom === undefined || record.serviceDate >= query.dateFrom)
     && (query.dateTo === undefined || record.serviceDate <= query.dateTo)
     && (query.status === undefined || record.status === query.status)
-    && (query.keyword === undefined || matchesKeyword(ctx, record, query.keyword)))
+    && matchesKeyword(ctx, record, needle))
 }
 
 function listReservations(ctx: MockContext, query: AdminReservationsQuery): Page<AdminReservation> {
@@ -75,7 +78,7 @@ function listReservations(ctx: MockContext, query: AdminReservationsQuery): Page
     ['dateFrom', optional(query.dateFrom, dateProblem)],
     ['dateTo', optional(query.dateTo, dateProblem)],
     ['status', optional(query.status, (value) => oneOfProblem(value, RESERVATION_STATUSES))],
-    ['keyword', optional(query.keyword, (value) => textProblem(value, 50))],
+    ['keyword', optional(query.keyword, keywordProblem)],
     ...pagingChecks(query.page, query.pageSize),
   ])
   requireRole(user, 'VENUE_ADMIN', 'SYS_ADMIN')

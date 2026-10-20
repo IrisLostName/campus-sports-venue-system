@@ -171,7 +171,9 @@ function liveState(ctx: MockContext, venue: VenueRecord, resource: ResourceRecor
 function getDisplaySummary(ctx: MockContext): DisplaySummary {
   const today = dateOf(ctx.clock.now())
   const { venues } = ctx.state
-  const states = ctx.state.resources.map((resource) => ({
+  // 按场馆 id、sortOrder、id 升序，与后端一致（台账 S-048）。
+  const ordered = [...ctx.state.resources].sort((a, b) => a.venueId - b.venueId || a.sortOrder - b.sortOrder || a.id - b.id)
+  const states = ordered.map((resource) => ({
     resource, state: liveState(ctx, venueOfResource(ctx.state, resource), resource),
   }))
   return {

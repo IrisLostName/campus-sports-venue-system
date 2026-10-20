@@ -10,7 +10,7 @@ import { run } from './run'
 import { nextId, type MockContext, type UserRecord } from './state'
 import { addHours } from './timeMath'
 import { TOKEN_TTL_HOURS } from './bookingRules'
-import { collect, oneOfProblem, optional, textProblem } from './validate'
+import { blankToNull, collect, oneOfProblem, optional, optionalText, textProblem } from './validate'
 
 const USERNAME_PATTERN = /^[A-Za-z0-9_]{3,32}$/
 const PASSWORD_MIN = 8
@@ -20,9 +20,15 @@ export function usernameProblem(value: unknown): string | null {
   return typeof value === 'string' && USERNAME_PATTERN.test(value) ? null : '用户名应为 3–32 位字母、数字或下划线'
 }
 
+// BCrypt 只处理前 72 字节，后端拒绝更长的口令（台账 S-043）。
+const PASSWORD_MAX_BYTES = 72
+
 export function passwordProblem(value: unknown): string | null {
   const ok = typeof value === 'string' && value.length >= PASSWORD_MIN && value.length <= PASSWORD_MAX
-  return ok ? null : `密码应为 ${PASSWORD_MIN}–${PASSWORD_MAX} 位`
+  if (!ok) {
+    return `密码应为 ${PASSWORD_MIN}–${PASSWORD_MAX} 位`
+  }
+  return new TextEncoder().encode(value).length > PASSWORD_MAX_BYTES ? `不能超过 ${PASSWORD_MAX_BYTES} 字节` : null
 }
 
 export function issueSession(ctx: MockContext, user: UserRecord): LoginResponse {
@@ -38,7 +44,7 @@ function register(ctx: MockContext, request: RegisterRequest): LoginResponse {
     ['password', passwordProblem(request.password)],
     ['displayName', textProblem(request.displayName, 50)],
     ['userType', optional(request.userType, (value) => oneOfProblem(value, USER_TYPES))],
-    ['phone', optional(request.phone, (value) => textProblem(value, 20))],
+    ['phone', optionalText(request.phone, 20)],
   ])
   if (ctx.state.users.some((user) => user.username === request.username)) {
     fail('USERNAME_TAKEN')
@@ -46,7 +52,7 @@ function register(ctx: MockContext, request: RegisterRequest): LoginResponse {
   const user: UserRecord = {
     id: nextId(ctx.state, 'user'), username: request.username, password: request.password,
     displayName: request.displayName, role: 'USER', userType: request.userType ?? 'STUDENT',
-    phone: request.phone ?? null, status: 'ACTIVE',
+    phone: blankToNull(request.phone), status: 'ACTIVE',
   }
   ctx.state.users.push(user)
   return issueSession(ctx, user)

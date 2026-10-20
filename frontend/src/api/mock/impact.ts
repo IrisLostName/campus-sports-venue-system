@@ -8,7 +8,7 @@ import { endSeconds, nowSeconds, toBrief, venueIdOfReservation } from './reserva
 import { sliceWindow } from './slotDerivation'
 import type { MockContext, ReservationRecord, UserRecord } from './state'
 import { weekdayOf } from './timeMath'
-import { isBlank, oneOfProblem, optional, type FieldCheck } from './validate'
+import { blankToNull, isAbsent, isBlank, oneOfProblem, optional, type FieldCheck } from './validate'
 
 export interface ImpactControl { onExistingReservations?: OnExisting; reason?: string; dryRun?: boolean }
 
@@ -74,13 +74,13 @@ function buildImpact(ctx: MockContext, affected: ReservationRecord[]): ImpactRep
   return { affectedCount: affected.length, reservations: affected.map((record) => toBrief(ctx, record)) }
 }
 
-// 第 4 条：CANCEL → 受影响预约置 ADMIN_CANCELLED，admin_note = reason。
-function cancelAffected(ctx: MockContext, admin: UserRecord, affected: ReservationRecord[], reason: string | undefined): number[] {
+// 第 4 条：CANCEL → 受影响预约置 ADMIN_CANCELLED，admin_note = reason（空白存 null，台账 S-042）。
+function cancelAffected(ctx: MockContext, admin: UserRecord, affected: ReservationRecord[], reason: string | null): number[] {
   for (const record of affected) {
     record.status = 'ADMIN_CANCELLED'
     record.cancelledAt = ctx.clock.now()
     record.cancelledBy = admin.id
-    record.adminNote = reason ?? null
+    record.adminNote = reason
   }
   return affected.map((record) => record.id)
 }
@@ -103,17 +103,19 @@ export function applyImpactChange<T>(
     return { applied: false, impact, cancelledIds: [], data: null }
   }
   // 第 2 条：存在受影响预约而未给出 onExistingReservations → 409。
-  if (plan.affected.length > 0 && control.onExistingReservations === undefined) {
+  if (plan.affected.length > 0 && isAbsent(control.onExistingReservations)) {
     fail('IMPACT_CONFIRMATION_REQUIRED', { impact })
   }
   const data = plan.commit()
+  // 空白原因视为未填：admin_note、日志与关闭规则中都存 null（台账 S-042）。
+  const reason = blankToNull(control.reason)
   const cancelledIds = control.onExistingReservations === 'CANCEL'
-    ? cancelAffected(ctx, admin, plan.affected, control.reason)
+    ? cancelAffected(ctx, admin, plan.affected, reason)
     : []
   const affectedIds = plan.affected.map((record) => record.id)
   if (plan.action !== null) {
     appendLog(ctx, admin, {
-      venueId: plan.venueId, action: plan.action, targetId: typeof plan.targetId === 'function' ? plan.targetId(data) : plan.targetId, reason: control.reason ?? null,
+      venueId: plan.venueId, action: plan.action, targetId: typeof plan.targetId === 'function' ? plan.targetId(data) : plan.targetId, reason,
       before: snapshot(plan.before, affectedIds), after: snapshot(data, affectedIds),
     })
   }

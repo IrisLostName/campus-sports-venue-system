@@ -8,7 +8,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,7 +19,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * 错误码契约测试：解析 docs/12 第 3 节表格，与 ErrorCode 枚举双向比对 code、HTTP 状态与默认文案。
- * 文案仅有两项按 BE-0 裁决 R1 例外。文件不存在时测试失败，不跳过。
+ * 29 项默认文案全部与表格第三列逐字比对（BE-0 裁决 R1 的两项例外随 API-SYNC 台账 S-039 取消）。文件不存在时测试失败，不跳过。
  */
 class ErrorCodeContractTest {
 
@@ -28,10 +27,6 @@ class ErrorCodeContractTest {
     private static final Pattern ROW =
             Pattern.compile("^\\|\\s*`([A-Z][A-Z_]+)`\\s*\\|\\s*(\\d{3})\\s*\\|\\s*([^|]*?)\\s*\\|");
     private static final int EXPECTED_CODE_COUNT = 29;
-    /** R1：这两项的文案与表格第三列原文不同。 */
-    private static final Map<String, String> MESSAGE_EXCEPTIONS = Map.of(
-            "RULE_INVALID", "开放规则不合法",
-            "HAS_HISTORY", "该场地有历史预约，只能停用不能删除");
 
     /** 表格一行：HTTP 状态与第三列原文。 */
     private record Row(int status, String message) {
@@ -104,29 +99,16 @@ class ErrorCodeContractTest {
     }
 
     @Test
-    void defaultMessageMatchesExceptForTheTwoRulingExceptions() {
+    void defaultMessageMatchesForEveryCode() {
         Map<String, Row> documented = parseContractTable();
         List<String> mismatches = new ArrayList<>();
         for (Map.Entry<String, Row> entry : enumRows().entrySet()) {
             Row doc = documented.get(entry.getKey());
-            String expected = MESSAGE_EXCEPTIONS.getOrDefault(entry.getKey(), doc == null ? null : doc.message());
+            String expected = doc == null ? null : doc.message();
             if (expected != null && !expected.equals(entry.getValue().message())) {
                 mismatches.add(entry.getKey() + " 期望[" + expected + "] 实际[" + entry.getValue().message() + "]");
             }
         }
         assertThat(mismatches).as("默认文案与 docs/12 不一致的错误码").isEmpty();
-    }
-
-    @Test
-    void messageExceptionsAreExactlyTheTwoRulingOnesAndStillDiffer() {
-        Map<String, Row> documented = parseContractTable();
-        EnumMap<ErrorCode, String> differing = new EnumMap<>(ErrorCode.class);
-        for (ErrorCode code : ErrorCode.values()) {
-            Row doc = documented.get(code.name());
-            if (doc != null && !doc.message().equals(code.getDefaultMessage())) {
-                differing.put(code, code.getDefaultMessage());
-            }
-        }
-        assertThat(differing.keySet()).containsExactlyInAnyOrder(ErrorCode.RULE_INVALID, ErrorCode.HAS_HISTORY);
     }
 }
