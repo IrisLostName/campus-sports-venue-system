@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useId } from 'vue'
+
 import { ACTION_LABELS, type ReservationAction, type ReservationCard } from '../../utils/reservationDisplay'
 import { toneForDisplayStatus } from '../../utils/statusTone'
 import UiBanner from '../ui/UiBanner.vue'
@@ -6,14 +8,25 @@ import UiButton from '../ui/UiButton.vue'
 import UiGlassCard from '../ui/UiGlassCard.vue'
 import UiStatusPill from '../ui/UiStatusPill.vue'
 
-defineProps<{
+const props = withDefaults(defineProps<{
   card: ReservationCard
   busy: boolean          // 有任何操作进行中：所有按钮不可点
   working: boolean       // 本卡片的操作进行中
   feedback: string | null
-}>()
+  cancelLocked?: boolean            // 已过取消截止（TEST-2 K3）：“取消预约”置灰并显示说明
+  cancelLockedNote?: string | null
+}>(), {
+  cancelLocked: false,
+  cancelLockedNote: null,
+})
 
 defineEmits<{ action: [action: ReservationAction] }>()
+
+const lockNoteId = useId()
+
+function isLockedAction(action: ReservationAction): boolean {
+  return action === 'CANCEL' && props.cancelLocked
+}
 </script>
 
 <template>
@@ -88,12 +101,20 @@ defineEmits<{ action: [action: ReservationAction] }>()
         :key="action"
         class="action"
         :variant="action === 'CANCEL' ? 'destructive' : 'primary'"
-        :disabled="busy"
+        :disabled="busy || isLockedAction(action)"
+        :aria-describedby="isLockedAction(action) && cancelLockedNote !== null ? lockNoteId : undefined"
         @click="$emit('action', action)"
       >
         {{ working ? '处理中…' : ACTION_LABELS[action] }}
       </UiButton>
     </div>
+    <p
+      v-if="cancelLocked && cancelLockedNote !== null && card.actions.includes('CANCEL')"
+      :id="lockNoteId"
+      class="lock-note"
+    >
+      {{ cancelLockedNote }}
+    </p>
   </UiGlassCard>
 </template>
 
@@ -167,5 +188,10 @@ dd {
 
 .action {
   flex: 1;
+}
+
+.lock-note {
+  color: var(--color-text-secondary);
+  font: var(--font-footnote);
 }
 </style>
