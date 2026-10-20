@@ -15,7 +15,10 @@
     "build": "vite build",
     "test:e2e:contract": "vitest run --config tests/e2e/vitest.e2e.config.ts --project contract-http",
     "test:e2e:walkthrough": "vitest run --config tests/e2e/vitest.e2e.config.ts --project walkthrough",
-    "test:e2e:cors": "vitest run --config tests/e2e/vitest.e2e.config.ts --project cors"
+    "test:e2e:cors": "vitest run --config tests/e2e/vitest.e2e.config.ts --project cors",
+    "test:e2e:tour": "vitest run --config tests/e2e/vitest.e2e.config.ts --project tour",
+    "test:e2e:timed": "vitest run --config tests/e2e/vitest.e2e.config.ts --project timed",
+    "test:e2e:tools": "vitest run --config tests/e2e/vitest.e2e.config.ts --project tools"
   },
   "dependencies": {
     "pinia": "^4.0.3",

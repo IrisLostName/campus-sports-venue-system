@@ -21,6 +21,10 @@ export default defineConfig({
       { extends: true, test: { name: 'contract-http', include: ['tests/e2e/contract/**/*.e2e.ts'] } },
       { extends: true, test: { name: 'walkthrough', include: ['tests/e2e/walkthrough/**/*.e2e.ts'], testTimeout: 180000 } },
       { extends: true, test: { name: 'cors', include: ['tests/e2e/cors/**/*.e2e.ts'] } },
+      // TEST-2（裁决第 6 节待定项 2、3）：页面走查与依赖真实时钟的状态各自在重置后的库上单独运行；工具守卫只连 postgres 维护库。
+      { extends: true, test: { name: 'tour', include: ['tests/e2e/tour/tour.e2e.ts'], testTimeout: 300000 } },
+      { extends: true, test: { name: 'timed', include: ['tests/e2e/tour/timedStates.e2e.ts'], testTimeout: 300000 } },
+      { extends: true, test: { name: 'tools', include: ['tests/e2e/tools/**/*.e2e.ts'] } },
     ],
   },
 })
