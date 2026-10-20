@@ -2,6 +2,8 @@
 // 不伪造时间：后端用系统时钟，数据只经 http 客户端与界面产生。只能在“某个网球场时段开始前 15 分钟内”运行：
 //   预约 B = 今天开始于 (现在, 现在 + 15 分钟] 的时段 → 可签到；预约 A = B 之后 90 分钟的时段 → 待使用且距开始不足 120 分钟（置灰）。
 // 不在窗口内时明确失败并给出下一个窗口，不静默通过。前置同 tour.e2e.ts（重置后的库、-NoSweep）；用法：pnpm test:e2e:timed。
+// 午夜后运行（规划窗口 2026-10-20 批准，见 docs/evidence/ACC-M4-02.md 第 5 节）：另设 E2E_TIMED_WINDOW=HH:mm-HH:mm（不跨零点、时长为 90 分钟的整数倍，例如 00:15-03:15），
+// 先经界面同源的接口给网球馆追加今天所在星期的这个窗口（只在本次重置后的 e2e 库上存在），再按上面的条件取时段。
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { addDays } from '../../../src/api/mock/timeMath'
@@ -29,6 +31,26 @@ interface Plan {
 
 async function serverNow(): Promise<string> {
   return (await makeHttpTarget().api.getDisplaySummary()).generatedAt
+}
+
+// 可选（午夜后运行）：E2E_TIMED_WINDOW=HH:mm-HH:mm 时，sysadmin 经前端自己的 http 客户端给网球馆
+// 追加“今天（服务端日期）所在星期”的一个每周开放窗口，原有窗口保留；不改时钟、不写数据库。只用于重置后的 e2e 库。
+async function addTimedWindow(today: string, record: (label: string, data: unknown) => void): Promise<void> {
+  const spec = process.env.E2E_TIMED_WINDOW
+  if (spec === undefined || spec === '') {
+    return
+  }
+  const [openTime = '', closeTime = ''] = spec.split('-')
+  const [year = 0, month = 1, day = 1] = today.split('-').map(Number)
+  const weekday = new Date(Date.UTC(year, month - 1, day)).getUTCDay() || 7     // 1 = 周一 … 7 = 周日
+  const sys = makeHttpTarget()
+  await sys.loginAs('sysadmin')
+  const before = (await sys.api.adminGetAvailabilityRules(1)).weekly
+  const windows = [...before.map(({ weekday: w, openTime: o, closeTime: c }) => ({ weekday: w, openTime: o, closeTime: c })),
+    { weekday, openTime, closeTime }]
+  const result = await sys.api.adminReplaceWeeklyRules(1, { windows, onExistingReservations: 'KEEP' })
+  record('timed-window', { via: 'http client (sysadmin)', venueId: 1, today, weekday, openTime, closeTime,
+    before, applied: result.applied, after: result.data })
 }
 
 async function availableAt(user: RecordingTarget, date: string, startTime: string): Promise<Pick | null> {
@@ -63,16 +85,17 @@ async function planWindow(user: RecordingTarget): Promise<Plan> {
     + `下一个窗口：${next === undefined ? `${addDays(today, 1)} 07:45` : `${today} 开始于 ${next} 的时段之前 15 分钟`}。`)
 }
 
-async function cardShows(tour: Tour, resourceName: string, texts: string[]): Promise<void> {
-  const name = JSON.stringify(`网球馆 · ${resourceName}`)
+// 卡片按开始时间区分（两条预约可能在同一场地）。
+async function cardShows(tour: Tour, pick: Pick, texts: string[]): Promise<void> {
+  const name = JSON.stringify(`${pick.startTime}–`)
   const wanted = JSON.stringify(texts)
   await tour.page.waitFor(`[...document.querySelectorAll('article')].some((card) => card.innerText.includes(${name})
-    && ${wanted}.every((text) => card.innerText.includes(text)))`, `${resourceName} 的卡片含 ${texts.join('、')}`)
+    && ${wanted}.every((text) => card.innerText.includes(text)))`, `${pick.startTime} 的卡片含 ${texts.join('、')}`)
   await tour.page.evaluate(`[...document.querySelectorAll('article')].find((card) => card.innerText.includes(${name})).scrollIntoView({ block: 'center' })`)
 }
 
-async function cancelDisabled(tour: Tour, resourceName: string): Promise<boolean> {
-  const name = JSON.stringify(`网球馆 · ${resourceName}`)
+async function cancelDisabled(tour: Tour, pick: Pick): Promise<boolean> {
+  const name = JSON.stringify(`${pick.startTime}–`)
   return tour.page.evaluate<boolean>(`[...[...document.querySelectorAll('article')].find((card) => card.innerText.includes(${name}))
     .querySelectorAll('button')].find((button) => button.innerText.trim() === '取消预约').disabled`)
 }
@@ -84,8 +107,9 @@ describe('TEST-2 依赖真实时钟的状态（K3 置灰、可签到 → 使用�
 
   beforeAll(async () => {
     await wangwu.loginAs('wangwu')
-    plan = await planWindow(wangwu)
     tour = await openTour()
+    await addTimedWindow(tour.today, tour.record)
+    plan = await planWindow(wangwu)
     tour.record('timed-plan', plan)
     for (const pick of [plan.checkIn, plan.locked]) {
       const reservation = await wangwu.api.createReservation({ resourceId: pick.resourceId, serviceDate: tour.today, startTime: pick.startTime })
@@ -109,14 +133,14 @@ describe('TEST-2 依赖真实时钟的状态（K3 置灰、可签到 → 使用�
     const { tour: t, plan: p } = ready()
     await login(t, 'wangwu', IPHONE16)
     await go(t, '/reservation')
-    await cardShows(t, p.locked.resourceName, ['待使用', '已过可取消时间（需在开始前至少 120 分钟取消）'])
-    expect(await cancelDisabled(t, p.locked.resourceName)).toBe(true)
+    await cardShows(t, p.locked, ['待使用', '已过可取消时间（需在开始前至少 120 分钟取消）'])
+    expect(await cancelDisabled(t, p.locked)).toBe(true)
     await capture(t, '41-user-reservation-cancel-locked', { surface: 'user', expect: ['已过可取消时间'], themes: BOTH })
   })
 
   it('CHECKIN_OPEN → 签到 → IN_USE → 签退 → CHECKED_OUT', async () => {
     const { tour: t, plan: p } = ready()
-    const court = p.checkIn.resourceName
+    const court = p.checkIn
     await cardShows(t, court, ['可签到', '签到'])
     await capture(t, '42-user-reservation-checkin-open', { surface: 'user', expect: ['可签到'], themes: BOTH })
     await t.page.clickText('签到', { within: `article[data-status="CHECKIN_OPEN"]`, selector: 'button' })
