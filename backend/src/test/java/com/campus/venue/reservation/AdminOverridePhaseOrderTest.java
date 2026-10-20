@@ -163,6 +163,9 @@ class AdminOverridePhaseOrderTest extends AdminReservationApiTestBase {
         assertUntouched();
     }
 
+    // AdminOverrideGuard 的“结束时刻不晚于现在 → INVALID_STATE”在有效状态判断之后不可达，前提是签到截止
+    // （checkInCloseAfterMinutes，默认 15 分钟）短于 90 分钟的时段：库中 CONFIRMED 而已结束的预约，未签到的早在
+    // “开始 + 15 分钟”就有效为 NO_SHOW（本例），已签到的在结束时刻有效为 COMPLETED（下一例），所以先被有效状态拒绝（TEST-1 K6）
     @ParameterizedTest
     @MethodSource("endpoints")
     @DisplayName("INVALID_STATE：库中 CONFIRMED 但已越过签到窗口（有效 NO_SHOW）→ {status: NO_SHOW}，库中不变")

@@ -16,7 +16,11 @@ public interface AppUserRepository extends JpaRepository<AppUser, Long>, JpaSpec
 
     boolean existsByUsername(String username);
 
-    /** 锁定用户行（SELECT … FOR UPDATE）：同一用户的并发创建预约在此串行化（BE-3 C4），锁随事务结束释放。 */
+    /**
+     * 锁定用户行（PESSIMISTIC_WRITE；Hibernate 6 在 PostgreSQL 上发出 SELECT … FOR NO KEY UPDATE）：同一用户的并发创建预约、
+     * 同一目标用户的 PATCH 与授权替换在此串行化（BE-3 C4、BE-6），锁随事务结束释放。它与外键检查的 FOR KEY SHARE 兼容，
+     * 所以两个 SYS_ADMIN 同时互相停用不会死锁（TEST-1 K3，MutualDisableTest）。
+     */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select u from AppUser u where u.id = :id")
     Optional<AppUser> lockById(@Param("id") Long id);

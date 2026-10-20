@@ -4,6 +4,7 @@ import com.campus.venue.availability.service.SlotService;
 import com.campus.venue.common.error.BusinessException;
 import com.campus.venue.common.error.ErrorCode;
 import com.campus.venue.reservation.domain.Reservation;
+import com.campus.venue.reservation.domain.ReservationStatus;
 import com.campus.venue.reservation.dto.ReassignResourceRequest;
 import com.campus.venue.reservation.repository.ReservationRepository;
 import com.campus.venue.user.domain.AccountStatus;
@@ -59,7 +60,7 @@ public class ReassignTargetChecks {
         }
         creationChecks.notPast(request.serviceDate(), request.startTime(), now);
         if (reservations.existsByResourceIdAndServiceDateAndStartTimeAndStatusNotInAndIdNot(request.resourceId(),
-                request.serviceDate(), request.startTime(), ReservationCreationChecks.INACTIVE,
+                request.serviceDate(), request.startTime(), ReservationStatus.NOT_OCCUPYING,
                 reservation.getId())) {
             throw new BusinessException(ErrorCode.SLOT_TAKEN);
         }
