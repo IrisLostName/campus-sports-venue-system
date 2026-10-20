@@ -11,7 +11,7 @@ import { DIALOG } from './adminSteps'
 import { loginUi, openVenueSlots, pickSlot, shot, visit, type Walk } from './session'
 
 // V100 种子用户的用户名与姓名：大屏上一个都不能出现（BE-8 裁决 P4）。
-const SEED_PEOPLE = [
+export const SEED_PEOPLE = [
   'zhangsan', 'lisi', 'wangwu', 'zhaoliu', 'admin_tennis', 'admin_pool', 'sysadmin',
   '张三', '李四', '王五', '赵六', '网球馆管理员', '游泳羽毛球馆管理员', '系统管理员',
 ]
