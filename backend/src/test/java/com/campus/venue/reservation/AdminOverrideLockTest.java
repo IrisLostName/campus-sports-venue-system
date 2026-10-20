@@ -63,6 +63,9 @@ class AdminOverrideLockTest extends AdminReservationApiTestBase {
     @Test
     @DisplayName("ACC-M3-06 人员改派等待预约行锁；持锁方插入签到记录并提交后，改派得 ALREADY_CHECKED_IN，预约人不变、无日志")
     void reassignUserWaitsForConcurrentCheckIn() throws Exception {
+        // 08:30 是仓库中唯一不在开放网格（08:00 起每 90 分钟）上的夹具：固定测试时钟为 08:30:15，签到窗口为
+        // [08:15, 08:45]，所以持锁方插入的 08:25:15 签到落在窗口内，而“开始 + 15 分钟”的未到场判定点（08:45）尚未越过，
+        // 预约的有效状态仍为 CONFIRMED，改派走到“已签到”检查而不是 INVALID_STATE（TEST-1 K6，BE-5 复审第 (b) 点）
         long reservation = reservation(zhangsan, court1, TODAY, "08:30");
         long holderPid = lockReservation(reservation);
 
