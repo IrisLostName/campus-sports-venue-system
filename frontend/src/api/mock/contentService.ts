@@ -14,7 +14,7 @@ import { pageOf } from './paging'
 import { run } from './run'
 import { nextId, type AnnouncementRecord, type MockContext, type RepairRecord } from './state'
 import { secondsOf } from './timeMath'
-import { collect, intProblem, isAbsent, oneOfProblem, optional, pagingChecks, textProblem } from './validate'
+import { collect, filledTextProblem, intProblem, isAbsent, oneOfProblem, optional, pagingChecks, textProblem } from './validate'
 
 function toAnnouncement(ctx: MockContext, record: AnnouncementRecord): Announcement {
   return {
@@ -195,7 +195,8 @@ function updateRepair(ctx: MockContext, id: number, request: UpdateRepairRequest
   const user = authenticate(ctx)
   collect([
     ['status', oneOfProblem(request.status, ['IN_PROGRESS', 'RESOLVED'])],
-    ['resultNote', request.status === 'RESOLVED' ? textProblem(request.resultNote, 500) : optional(request.resultNote, (value) => textProblem(value, 500))],
+    // 是否填写按 isBlank 判断，与后端 ResultNoteMatchesStatusValidator 一致（台账 S-050、S-066）。
+    ['resultNote', request.status === 'RESOLVED' ? filledTextProblem(request.resultNote, 500) : optional(request.resultNote, (value) => filledTextProblem(value, 500))],
   ])
   requireRole(user, 'VENUE_ADMIN', 'SYS_ADMIN')
   const record = getOrFail(ctx.state.repairs, id)

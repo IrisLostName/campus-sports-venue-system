@@ -18,7 +18,7 @@ export function collect(checks: FieldCheck[]): void {
 
 // 空白的判定与后端逐处一致（台账 S-050）：
 // - 格式检查（必填文本非空白、可选文本“空白视为未填”）只认 ASCII 空白，与 Java 正则 \s、\S 一致，全角空格不算空白；
-// - 语义判断（原因是否填写、可选文本按 null 保存、关键字是否忽略）同 Java String.isBlank()：
+// - 语义判断（原因与报修处理结果是否填写、可选文本按 null 保存、关键字是否忽略）同 Java String.isBlank()：
 //   Character.isWhitespace，全角空格算空白，NBSP（U+00A0、U+2007、U+202F）不算。
 const ASCII_BLANK = /^[ \t\n\v\f\r]*$/
 const UNICODE_SEPARATOR = /^[\p{Zs}\p{Zl}\p{Zp}]$/u
@@ -96,6 +96,14 @@ export function intProblem(value: unknown, min = 1, max = Number.MAX_SAFE_INTEGE
 
 export function textProblem(value: unknown, maxLength: number): string | null {
   if (typeof value !== 'string' || isAsciiBlank(value)) {
+    return '不能为空'
+  }
+  return value.length > maxLength ? `长度不能超过 ${maxLength}` : null
+}
+
+// “是否填写”类的文本检查：后端用 String.isBlank() 判空（如报修处理的 resultNote），全角空格算空白（台账 S-050、S-066）。
+export function filledTextProblem(value: unknown, maxLength: number): string | null {
+  if (typeof value !== 'string' || isJavaBlank(value)) {
     return '不能为空'
   }
   return value.length > maxLength ? `长度不能超过 ${maxLength}` : null
