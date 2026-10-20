@@ -28,10 +28,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class SlotDataReader {
 
-    /** 不占用时段的预约状态（docs/03 第 4.1 节；与部分唯一索引条件一致）。 */
-    static final List<ReservationStatus> INACTIVE =
-            List.of(ReservationStatus.CANCELLED, ReservationStatus.ADMIN_CANCELLED);
-
     private final ResourceRepository resources;
     private final AvailabilityRuleRepository rules;
     private final ReservationRepository reservations;
@@ -82,7 +78,8 @@ public class SlotDataReader {
         if (resourceIds.isEmpty()) {
             return List.of();
         }
-        return reservations.findByResourceIdInAndServiceDateAndStatusNotIn(resourceIds, date, INACTIVE);
+        return reservations.findByResourceIdInAndServiceDateAndStatusNotIn(resourceIds, date,
+                ReservationStatus.NOT_OCCUPYING);
     }
 
     /** 预约人 id → 姓名。 */

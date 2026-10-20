@@ -15,7 +15,6 @@ import com.campus.venue.venue.repository.VenueRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.springframework.stereotype.Component;
@@ -27,10 +26,6 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class ReservationCreationChecks {
-
-    /** 不占用时段的预约状态（docs/03 第 4.1 节；与部分唯一索引条件一致）。 */
-    static final List<ReservationStatus> INACTIVE =
-            List.of(ReservationStatus.CANCELLED, ReservationStatus.ADMIN_CANCELLED);
 
     private final ResourceRepository resources;
     private final VenueRepository venues;
@@ -101,7 +96,7 @@ public class ReservationCreationChecks {
     /** 第 8 步：该时段没有有效预约（前置检查，给友好提示）→ 否则 SLOT_TAKEN。最终保证是部分唯一索引。 */
     public void slotFree(long resourceId, LocalDate serviceDate, LocalTime startTime) {
         if (reservations.existsByResourceIdAndServiceDateAndStartTimeAndStatusNotIn(resourceId, serviceDate,
-                startTime, INACTIVE)) {
+                startTime, ReservationStatus.NOT_OCCUPYING)) {
             throw new BusinessException(ErrorCode.SLOT_TAKEN);
         }
     }

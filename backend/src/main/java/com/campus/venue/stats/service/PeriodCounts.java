@@ -29,7 +29,7 @@ final class PeriodCounts {
 
     /** K2：按服务日期归入，排除两类取消（与场地当前状态无关）；库中 NO_SHOW、COMPLETED 计入 K6。 */
     void served(long venueId, LocalDate date, ReservationStatus status, long count) {
-        if (!StatsDataReader.CANCELLED.contains(status)) {
+        if (!ReservationStatus.NOT_OCCUPYING.contains(status)) {
             occupied.add(venueId, date, count);
         }
         if (status == ReservationStatus.NO_SHOW) {

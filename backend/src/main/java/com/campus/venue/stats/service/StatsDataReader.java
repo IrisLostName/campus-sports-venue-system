@@ -12,10 +12,8 @@ import com.campus.venue.venue.domain.Resource;
 import com.campus.venue.venue.repository.ResourceRepository;
 import java.time.LocalDate;
 import java.util.Collection;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import org.springframework.stereotype.Component;
 
 /**
@@ -25,10 +23,6 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class StatsDataReader {
-
-    /** 不占用时段的预约状态（docs/03 第 4.1 节，与部分唯一索引的条件一致）。 */
-    static final Set<ReservationStatus> CANCELLED =
-            EnumSet.of(ReservationStatus.CANCELLED, ReservationStatus.ADMIN_CANCELLED);
 
     private final ResourceRepository resources;
     private final ReservationStatsRepository stats;
@@ -64,7 +58,8 @@ public class StatsDataReader {
         if (resourceIds.isEmpty()) {
             return List.of();
         }
-        return reservations.findByResourceIdInAndServiceDateAndStatusNotIn(resourceIds, date, CANCELLED);
+        return reservations.findByResourceIdInAndServiceDateAndStatusNotIn(resourceIds, date,
+                ReservationStatus.NOT_OCCUPYING);
     }
 
     /** S9：预约 id → 使用记录（没有使用记录的预约不在结果中）。 */
