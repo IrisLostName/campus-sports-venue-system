@@ -60,6 +60,18 @@ describe('TEST-2 K1 取消确认层：提交中不可关闭', () => {
     expect(dialog.emitted('dismiss')).toHaveLength(2)
   })
 
+  it('D-01：busy 时“再想想”不可用，点击不发出 dismiss；空闲时可以', async () => {
+    const busy = mountDialog(true)
+    const later = busy.findAll('button').find((node) => node.text() === '再想想')
+    expect(later?.attributes('disabled')).toBeDefined()
+    await later?.trigger('click')
+    expect(busy.emitted('dismiss')).toBeUndefined()
+
+    const idle = mountDialog(false)
+    await idle.findAll('button').find((node) => node.text() === '再想想')?.trigger('click')
+    expect(idle.emitted('dismiss')).toHaveLength(1)
+  })
+
   it('busy 结束后：Esc 重新可以关闭', async () => {
     const dialog = mountDialog(true)
     pressEscape()

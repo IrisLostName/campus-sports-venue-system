@@ -218,13 +218,14 @@ describe('取消确认层（B2）', () => {
     expect(dialog.emitted('dismiss')).toHaveLength(1)
   })
 
-  it('操作进行中：“确认取消”不可用，点击不提交；“再想想”仍可用', async () => {
+  // TEST-2 D-01（裁决第 7 节第 1 条，FE-8 F1）：提交中不允许以任何方式关闭，“再想想”也不可用。
+  it('操作进行中：“确认取消”不可用，点击不提交；“再想想”也不可用', async () => {
     const dialog = mountDialog({ busy: true })
     const confirm = buttonByText(dialog, '确认取消')
 
     expect(confirm.attributes('disabled')).toBeDefined()
     await confirm.trigger('click')
     expect(dialog.emitted('confirm')).toBeUndefined()
-    expect(buttonByText(dialog, '再想想').attributes('disabled')).toBeUndefined()
+    expect(buttonByText(dialog, '再想想').attributes('disabled')).toBeDefined()
   })
 })
