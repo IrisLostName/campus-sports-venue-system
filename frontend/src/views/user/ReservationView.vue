@@ -12,7 +12,7 @@ import { PATHS } from '../../router/paths'
 
 const {
   phase, cards, isBusy, isEmpty, busyId, loadError, rulesError, pageFeedback, cancelTarget, cancelReason,
-  feedbackFor, trigger, confirmCancel, dismissCancel, load,
+  feedbackFor, trigger, confirmCancel, dismissCancel, load, cancelLockedIds, cancelLockedNote,
 } = useReservationBoard()
 
 onMounted(() => {
@@ -83,6 +83,8 @@ onMounted(() => {
       :busy="isBusy"
       :working="busyId === card.id"
       :feedback="feedbackFor(card.id)"
+      :cancel-locked="cancelLockedIds.has(card.id)"
+      :cancel-locked-note="cancelLockedNote"
       @action="trigger($event, card.id)"
     />
 

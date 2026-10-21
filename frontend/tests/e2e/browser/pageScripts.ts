@@ -81,3 +81,124 @@ export function setControl(args: { label: string; value: string; within: string 
   control.dispatchEvent(new Event('change', { bubbles: true }))
   return true
 }
+
+// TEST-2 布局测量（ACC-M2-10、docs/17 第 9 节）：横向溢出、滚到底时最后一项与 Dock 的关系、可见文字的最小字号。
+// 用户端的内容区（main.content）自己滚动：先滚到底测最后一项的底边，再恢复原来的滚动位置，截图不受影响。
+export interface LayoutReport {
+  pageOverflowX: number          // document 的 scrollWidth - clientWidth
+  contentOverflowX: number       // 用户端内容区的 scrollWidth - clientWidth（没有内容区为 0）
+  dockTop: number | null         // 用户端 Dock 顶边（没有 Dock 为 null）
+  lastBottom: number | null      // 内容区滚到底后，内容区内可见元素的最大底边（不含打开着的模态浮层）
+  modalBottom: number | null     // 打开着的模态浮层（aria-modal）的底边；浮层盖在 Dock 之上是设计，单独判断不超出视口
+  viewportHeight: number
+  minFontPx: number              // 有直接文字的可见元素中最小的计算字号
+}
+
+export function layoutProbe(): LayoutReport {
+  const visible = (el: Element): boolean => {
+    const rect = el.getBoundingClientRect()
+    const style = getComputedStyle(el)
+    return rect.width > 0 && rect.height > 0 && style.visibility !== 'hidden' && style.display !== 'none'
+  }
+  const doc = document.documentElement
+  const content = document.querySelector('main.content')
+  const dock = document.querySelector('nav[aria-label="主导航"]')
+  const modal = document.querySelector('[aria-modal="true"]')
+  const inOverlay = (el: Element): boolean => modal !== null && (el.contains(modal) || modal.contains(el)
+    || (modal.parentElement !== null && modal.parentElement.contains(el)))
+  let lastBottom: number | null = null
+  if (content !== null) {
+    const saved = content.scrollTop
+    content.scrollTop = content.scrollHeight
+    lastBottom = Math.max(0, ...[...content.querySelectorAll('*')].filter((el) => visible(el) && !inOverlay(el))
+      .map((el) => Math.round(el.getBoundingClientRect().bottom)))
+    content.scrollTop = saved
+  }
+  const ownText = (el: Element): boolean => [...el.childNodes]
+    .some((node) => node.nodeType === Node.TEXT_NODE && (node.textContent ?? '').trim() !== '')
+  const fonts = [...document.querySelectorAll('body *')].filter((el) => ownText(el) && visible(el))
+    .map((el) => parseFloat(getComputedStyle(el).fontSize))
+  return {
+    pageOverflowX: doc.scrollWidth - doc.clientWidth,
+    contentOverflowX: content === null ? 0 : content.scrollWidth - content.clientWidth,
+    dockTop: dock === null ? null : Math.round(dock.getBoundingClientRect().top),
+    lastBottom,
+    modalBottom: modal === null ? null : Math.round(modal.getBoundingClientRect().bottom),
+    viewportHeight: innerHeight,
+    minFontPx: fonts.length === 0 ? 0 : Math.min(...fonts),
+  }
+}
+
+// TEST-2 大屏（1366×768 等）：选择器匹配到的面板两两不重叠（嵌套的不算），以及文档是否出现滚动条。
+export interface PanelReport {
+  panels: number
+  overlaps: string[]
+  scrollX: number                // scrollWidth - clientWidth
+  scrollY: number                // scrollHeight - clientHeight
+}
+
+export function panelProbe(args: { selector: string }): PanelReport {
+  const panels = [...document.querySelectorAll(args.selector)].filter((el) => el.getBoundingClientRect().width > 0)
+  const label = (el: Element): string => `${el.tagName.toLowerCase()}.${[...el.classList].join('.')}「${
+    ((el as HTMLElement).innerText || '').replace(/\s+/g, ' ').trim().slice(0, 16)}」`
+  const overlaps: string[] = []
+  panels.forEach((a, i) => panels.slice(i + 1).forEach((b) => {
+    if (a.contains(b) || b.contains(a)) {
+      return
+    }
+    const r1 = a.getBoundingClientRect()
+    const r2 = b.getBoundingClientRect()
+    const w = Math.min(r1.right, r2.right) - Math.max(r1.left, r2.left)
+    const h = Math.min(r1.bottom, r2.bottom) - Math.max(r1.top, r2.top)
+    if (w > 0.5 && h > 0.5) {
+      overlaps.push(`${label(a)} × ${label(b)}`)
+    }
+  }))
+  const doc = document.documentElement
+  return { panels: panels.length, overlaps, scrollX: doc.scrollWidth - doc.clientWidth, scrollY: doc.scrollHeight - doc.clientHeight }
+}
+
+// TEST-2 可点击元素：数量、小于 minSize 的（docs/17 第 4 节触控 44×44）、互相重叠的。
+// 表单控件以包住它的 <label> 为触控区域；嵌套关系（一个包含另一个）不算重叠；Dock 与内容区之间的遮挡由 layoutProbe 判断。
+export interface TargetReport {
+  count: number
+  small: string[]
+  overlaps: string[]
+}
+
+export function targetProbe(args: { minSize: number }): TargetReport {
+  const selector = 'button, a[href], [role="button"], [role="tab"], [role="option"], [role="radio"], [role="switch"], '
+    + 'summary, input:not([type="hidden"]), select, textarea'
+  const area = (el: Element): Element => (el.matches('input, select, textarea') ? el.closest('label') ?? el : el)
+  const name = (el: Element): string => `${el.tagName.toLowerCase()}「${((el as HTMLElement).innerText
+    || el.getAttribute('aria-label') || '').replace(/\s+/g, ' ').trim().slice(0, 24)}」`
+  const inViewport = (rect: DOMRect): boolean => rect.width > 0 && rect.height > 0
+    && rect.bottom > 0 && rect.right > 0 && rect.top < innerHeight && rect.left < innerWidth
+  // 打开着模态浮层时，只有浮层里的元素可以点（遮罩挡住了其余部分）。
+  const modal = document.querySelector('[aria-modal="true"]')
+  const targets = [...new Set([...document.querySelectorAll(selector)].map(area))]
+    .filter((el) => getComputedStyle(el).visibility !== 'hidden' && inViewport(el.getBoundingClientRect())
+      && (modal === null || modal.contains(el)))
+  const small = targets.filter((el) => {
+    const rect = el.getBoundingClientRect()
+    return rect.width < args.minSize - 0.5 || rect.height < args.minSize - 0.5
+  }).map((el) => {
+    const rect = el.getBoundingClientRect()
+    return `${name(el)} ${Math.round(rect.width)}×${Math.round(rect.height)}`
+  })
+  const inDock = (el: Element): boolean => el.closest('nav[aria-label="主导航"]') !== null
+  const overlaps: string[] = []
+  targets.forEach((a, i) => targets.slice(i + 1).forEach((b) => {
+    if (a.contains(b) || b.contains(a) || inDock(a) !== inDock(b)) {
+      return
+    }
+    const r1 = a.getBoundingClientRect()
+    const r2 = b.getBoundingClientRect()
+    const w = Math.min(r1.right, r2.right) - Math.max(r1.left, r2.left)
+    const h = Math.min(r1.bottom, r2.bottom) - Math.max(r1.top, r2.top)
+    if (w > 1 && h > 1) {
+      overlaps.push(`${name(a)} × ${name(b)}`)
+    }
+  }))
+  return { count: targets.length, small, overlaps }
+}

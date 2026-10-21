@@ -18,6 +18,8 @@ export interface ActionSource {
   cards: ComputedRef<ReservationCard[]>
   replace(updated: Reservation): void
   refresh(): Promise<void>
+  // 卡片上提供了该动作、但按钮已置灰（TEST-2 K3 取消截止）：不执行。缺省不置灰。
+  isLocked?(id: number, action: ReservationAction): boolean
 }
 
 interface CardFeedback {
@@ -82,7 +84,7 @@ export function createReservationActions(deps: ActionDeps, source: ActionSource)
 
   // 页面上的按钮统一从这里进入：只有当前卡片确实提供该动作时才执行。防重复点击只在 perform 里守卫一次（FE-3 N2）。
   async function trigger(action: ReservationAction, id: number): Promise<void> {
-    if (!isOffered(id, action)) {
+    if (!isOffered(id, action) || source.isLocked?.(id, action) === true) {
       return
     }
     if (action === 'CANCEL') {

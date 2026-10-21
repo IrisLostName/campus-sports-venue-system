@@ -60,6 +60,28 @@ export class PageDriver {
     this.trackRequests()
   }
 
+  // TEST-2：真实的 prefers-color-scheme 模拟（BE-8 的截图只按浅色拍摄，主题只体现在文件名里）。
+  async setTheme(theme: 'light' | 'dark'): Promise<void> {
+    await this.cdp.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: theme }] })
+  }
+
+  // TEST-2 K2：给每个请求加固定延迟，让“提交进行中”可以被观察；null 取消限速。
+  async throttle(latencyMs: number | null): Promise<void> {
+    await this.cdp.send('Network.emulateNetworkConditions', {
+      offline: false, latency: latencyMs ?? 0, downloadThroughput: -1, uploadThroughput: -1,
+    })
+  }
+
+  // TEST-2 K2：浏览器“后退”（历史记录上一项），不等待任何事件。
+  async historyBack(): Promise<void> {
+    const history = await this.cdp.send<{ currentIndex: number; entries: { id: number }[] }>('Page.getNavigationHistory')
+    const previous = history.entries[history.currentIndex - 1]
+    if (previous === undefined) {
+      throw new Error('没有可以后退的历史记录')
+    }
+    await this.cdp.send('Page.navigateToHistoryEntry', { entryId: previous.id })
+  }
+
   async setViewport(viewport: Viewport): Promise<void> {
     this.viewport = viewport
     await this.cdp.send('Emulation.setDeviceMetricsOverride', {
@@ -151,12 +173,13 @@ export class PageDriver {
   }
 
   // 等接口请求全部结束、过渡动画走完后截图；返回文件名。
-  // theme 只影响文件名：大屏固定为深色（FE-7），其余页面按浅色拍摄。
-  async screenshot(name: string, theme: 'light' | 'dark' = 'light'): Promise<string> {
+  // theme 只影响文件名：大屏固定为深色（FE-7），其余页面按浅色拍摄；要真的切换深色先调用 setTheme。
+  // prefix 缺省为 BE-8 的 ACC-M3-，TEST-2 传 ACC-M4-02-。
+  async screenshot(name: string, theme: 'light' | 'dark' = 'light', prefix = 'ACC-M3-'): Promise<string> {
     await this.waitIdle()
     await delay(SETTLE_MS)
     const { data } = await this.cdp.send<{ data: string }>('Page.captureScreenshot', { format: 'png' })
-    const file = `ACC-M3-${name}-${this.viewport.width}x${this.viewport.height}-${theme}.png`
+    const file = `${prefix}${name}-${this.viewport.width}x${this.viewport.height}-${theme}.png`
     mkdirSync(this.shotDir, { recursive: true })
     writeFileSync(join(this.shotDir, file), Buffer.from(data, 'base64'))
     return file

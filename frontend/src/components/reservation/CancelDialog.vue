@@ -33,6 +33,7 @@ defineEmits<{ confirm: []; dismiss: [] }>()
       <UiButton
         variant="secondary"
         class="button"
+        :disabled="busy"
         @click="$emit('dismiss')"
       >
         再想想
