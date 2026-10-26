@@ -29,7 +29,7 @@ function onModeChange(value: string | null): void {
       novalidate
       @submit.prevent="form.submit()"
     >
-      <h1>校园场馆预约系统</h1>
+      <h1>校园场馆预约与服务管理系统</h1>
 
       <UiSegmented
         :items="MODE_ITEMS"

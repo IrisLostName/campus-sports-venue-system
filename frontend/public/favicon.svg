@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <title>校园场馆预约与服务管理系统</title>
+  <rect width="32" height="32" rx="6" fill="#165dff"/>
+  <g fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" transform="translate(4 4)">
+    <path d="M3 6h18v12H3zM12 6v12M12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6"/>
+  </g>
+</svg>

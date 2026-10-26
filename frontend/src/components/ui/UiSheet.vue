@@ -88,7 +88,7 @@ useEscapeClose(() => props.open, () => {
 
 /* 浮层压在遮罩之上：底色取 --color-surface 的 88%，比 --glass-thick 更不透明（docs/17 第 3 节：对比度不达标时加厚材质）。 */
 .sheet {
-  background-color: color-mix(in srgb, var(--color-surface) 88%, transparent);
+  background-color: var(--sheet-background, color-mix(in srgb, var(--color-surface) 88%, transparent));
   display: flex;
   flex-direction: column;
   gap: var(--space-3);

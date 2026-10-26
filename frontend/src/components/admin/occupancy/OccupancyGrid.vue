@@ -97,6 +97,7 @@ defineProps<{ grid: OccupancyGridView }>()
 
 thead th {
   padding: var(--space-3);
+  background: var(--admin-fill-2);
   color: var(--color-text-secondary);
   font: var(--font-footnote);
   font-weight: 600;

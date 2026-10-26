@@ -23,6 +23,7 @@ const { venues, loaded, error, venueId, load, select } = useAdminVenueContext({ 
 // 带场馆要求的链接携带当前所选场馆；全局页面的链接不带。
 const items = computed<AdminNavItem[]>(() => SYS_ADMIN_NAV.map((entry) => ({
   label: entry.label,
+  icon: entry.icon,
   group: entry.group,
   to: venueId.value === null || scopeOfRoute(router.resolve(entry.path)) === 'none'
     ? entry.path

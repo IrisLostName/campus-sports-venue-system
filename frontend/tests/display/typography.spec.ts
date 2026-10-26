@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest'
 // UI-2a 新增的大屏组件同样受 12px 下限约束。
 const FILES = [
   'views/display/DisplayView.vue',
-  'components/display/DisplayIcon.vue',
+  'components/ui/UiIcon.vue',
   'components/display/DisplayLegend.vue',
   'components/display/DisplayMetrics.vue',
   'components/display/DisplayNotices.vue',

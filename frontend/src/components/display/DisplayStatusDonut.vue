@@ -6,6 +6,7 @@ import { computed } from 'vue'
 import type { StateCountView } from '../../utils/displayModel'
 import { toneForResourceState } from '../../utils/statusTone'
 import UiGlassCard from '../ui/UiGlassCard.vue'
+import UiIcon from '../ui/UiIcon.vue'
 import { DONUT_RADIUS, donutSegments } from './chartGeometry'
 
 const props = defineProps<{ breakdown: StateCountView[]; total: number }>()
@@ -23,6 +24,10 @@ const summary = computed(() =>
     radius="sm"
   >
     <h3 class="title display-panel-title">
+      <UiIcon
+        class="panel-title-icon"
+        name="pie"
+      />
       场地实时状态
     </h3>
     <div class="body">
@@ -79,12 +84,6 @@ const summary = computed(() =>
 </template>
 
 <style scoped>
-.tone-accent { --tone: var(--color-accent-fill); }
-.tone-success { --tone: var(--color-success); }
-.tone-warning { --tone: var(--color-warning); }
-.tone-danger { --tone: var(--color-danger); }
-.tone-neutral { --tone: var(--color-neutral); }
-
 .body {
   display: flex;
   align-items: center;

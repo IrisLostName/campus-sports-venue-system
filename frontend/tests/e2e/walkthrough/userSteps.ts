@@ -17,7 +17,7 @@ export async function step1Architecture(walk: Walk): Promise<void> {
   await shot(walk, '10-01-backend-booking-rules')
   await page.setViewport(MOBILE)
   await visit(walk, '/login')
-  await page.waitForText('校园场馆预约系统')
+  await page.waitForText('校园场馆预约与服务管理系统')
   await shot(walk, '10-01-frontend-login')
   walk.record('step1', { frontendOrigin: E2E.appUrl, backendBaseUrl: E2E.apiBaseUrl, today: walk.today, tomorrow: walk.tomorrow })
 }

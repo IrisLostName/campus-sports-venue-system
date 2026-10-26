@@ -33,7 +33,7 @@ async function page(): Promise<VueWrapper> {
 
 describe('本周预约趋势', () => {
   it('SVG 是 role="img"，aria-label 写出 7 天的日期与预约量', async () => {
-    const svg = (await page()).get('section.trend svg')
+    const svg = (await page()).get('section.trend svg[role="img"]')
     expect(svg.attributes('role')).toBe('img')
     expect(svg.attributes('aria-label')).toBe(
       '本周预约趋势：10-06 5 单，10-07 2 单，10-08 0 单，10-09 3 单，10-10 4 单，10-11 1 单，10-12 6 单')
@@ -51,7 +51,7 @@ describe('本周预约趋势', () => {
 describe('场地实时状态', () => {
   it('aria-label 写出五种状态的数量与场地总数；图例逐项可见，中心为总数', async () => {
     const shown = await page()
-    expect(shown.get('section.donut svg').attributes('aria-label'))
+    expect(shown.get('section.donut svg[role="img"]').attributes('aria-label'))
       .toBe('场地实时状态：空闲 2，已预约 1，使用中 1，维护 1，停用 1，共 6 个场地')
     expect(shown.findAll('section.donut .count-item').map((item) => `${item.get('.count-label').text()} ${item.get('.count-value').text()}`))
       .toEqual(['空闲 2', '已预约 1', '使用中 1', '维护 1', '停用 1'])

@@ -2,6 +2,7 @@
 // 系统提示（UI-2a-rulings 第 1 节）：每条带“公告”标签；.item 只放标题文字。
 import type { NoticeView } from '../../utils/displayModel'
 import UiGlassCard from '../ui/UiGlassCard.vue'
+import UiIcon from '../ui/UiIcon.vue'
 
 defineProps<{ notices: NoticeView[] }>()
 </script>
@@ -14,6 +15,10 @@ defineProps<{ notices: NoticeView[] }>()
     radius="sm"
   >
     <h3 class="title display-panel-title">
+      <UiIcon
+        class="panel-title-icon"
+        name="bell"
+      />
       系统提示
     </h3>
     <ul

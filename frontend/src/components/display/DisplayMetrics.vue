@@ -5,14 +5,14 @@ import { computed } from 'vue'
 
 import type { MetricView, OpenResourcesView } from '../../utils/displayModel'
 import UiGlassCard from '../ui/UiGlassCard.vue'
-import DisplayIcon from './DisplayIcon.vue'
-import type { DisplayIconName } from './displayIcons'
+import UiIcon from '../ui/UiIcon.vue'
+import type { UiIconName } from '../../utils/icons'
 
 const props = defineProps<{ metrics: MetricView[]; openResources: OpenResourcesView }>()
 
 type IconTone = 'blue' | 'orange' | 'green' | 'purple'
 
-const DECOR: Record<MetricView['key'], { icon: DisplayIconName; tone: IconTone; unit: string }> = {
+const DECOR: Record<MetricView['key'], { icon: UiIconName; tone: IconTone; unit: string }> = {
   reservations: { icon: 'calendar', tone: 'blue', unit: '单' },
   inUse: { icon: 'bolt', tone: 'orange', unit: '个场地' },
   utilization: { icon: 'gauge', tone: 'green', unit: '' },
@@ -35,6 +35,10 @@ const items = computed(() => [
   >
     <header class="overview-head">
       <h2 class="overview-title">
+        <UiIcon
+          class="panel-title-icon"
+          name="activity"
+        />
         今日概览
       </h2>
       <span class="overview-note">只读聚合指标，不含个人信息</span>
@@ -49,7 +53,7 @@ const items = computed(() => [
           class="icon"
           :class="`icon--${metric.tone}`"
         >
-          <DisplayIcon :name="metric.icon" />
+          <UiIcon :name="metric.icon" />
         </span>
         <span class="text">
           <span class="label">{{ metric.label }}</span>
@@ -123,7 +127,7 @@ const items = computed(() => [
   font-size: 1.8em;
 }
 
-.icon :deep(.display-icon) {
+.icon :deep(.ui-icon) {
   width: 1.05em;
   height: 1.05em;
 }

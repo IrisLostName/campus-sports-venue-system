@@ -286,3 +286,96 @@
     --display-motion: 0s;
   }
 }
+
+/* 两类管理端（UI-2b，Arco Design Pro 观感）：只在 [data-surface="admin"] 子树内生效，上面各块的取值不变（上面原有的管理端块也不变，
+   这里写在其后，覆盖它的模糊）。跟随系统深浅色；纯色侧栏、顶栏、卡片与对话框，4px 圆角，无毛玻璃与画布柔光。
+   子树内重设通用令牌，使共用 Ui* 组件直接得到管理端观感；--control-*、--button-padding、--segmented-item-padding、
+   --sheet-background 是 Ui* 组件里“var(--x, 原值)”回退钩子的取值（用户端不设，取原值）；--admin-* 是管理端专用令牌。
+   状态色不作文字颜色。对比度（按最差背景）：正文、次要文字、强调文字在画布、卡片、填充色与浅主色底上均 ≥ 4.5:1，
+   白字在主色按钮上 5.19:1；测量见 docs/evidence/UI-2b.md。 */
+[data-surface="admin"] {
+  color-scheme: light;
+
+  --color-canvas: #f2f3f5;
+  --color-surface: #ffffff;
+  --color-text: #1d2129;
+  --color-text-secondary: #4e5969;
+  --color-text-tertiary: #86909c;
+  --color-separator: #e5e6eb;
+  --color-accent: #165dff;
+  --color-accent-fill: #165dff;
+  --on-accent: #ffffff;
+  --color-success: #00b42a;
+  --color-warning: #ff7d00;
+  --color-danger: #f53f3f;
+  --color-danger-text: #cb2634;
+  --color-neutral: #86909c;
+
+  --canvas-glow: none;
+  --glass-thin: var(--admin-fill-2);
+  --glass-regular: var(--color-surface);
+  --glass-thick: var(--color-surface);
+  --glass-blur: none;
+  --glass-border: 1px solid var(--color-separator);
+  --glass-highlight: none;
+  --glass-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+  --tint-strength: 10%;
+  --color-scrim: rgba(29, 33, 41, 0.6);
+
+  /* 圆角：卡片、输入框、对话框 4px；按钮与标签 2px（Arco）。 */
+  --radius-sm: 4px;
+  --radius-md: 4px;
+  --radius-lg: 4px;
+  --radius-xl: 4px;
+  --radius-2xl: 4px;
+  --radius-capsule: 2px;
+
+  /* 字号（Arco）：正文 14px、页面标题 20px；最小字号仍是 --font-caption（12px）。 */
+  --font-callout: 400 14px/1.5 var(--font-family);
+  --font-title: 600 20px/1.4 var(--font-family);
+
+  /* 共用 Ui* 组件的回退钩子：桌面管理端以鼠标为主，控件高 32px（Arco 默认尺寸），焦点样式不变。 */
+  --control-min-height: 32px;
+  --control-min-width: 32px;
+  --control-padding: var(--space-1) var(--space-3);
+  --control-font: var(--font-callout);
+  --button-padding: 0 var(--space-4);
+  --segmented-item-padding: var(--space-1) var(--space-3);
+  --sheet-background: var(--color-surface);
+
+  --admin-fill-1: #f7f8fa;
+  --admin-fill-2: #f2f3f5;
+  --admin-soft-accent: #e8f3ff;
+  --admin-sidebar-width: 220px;
+  --admin-header-height: 60px;
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-surface="admin"] {
+    color-scheme: dark;
+
+    --color-canvas: #17171a;
+    --color-surface: #232324;
+    --color-text: rgba(255, 255, 255, 0.9);
+    --color-text-secondary: rgba(255, 255, 255, 0.7);
+    --color-text-tertiary: rgba(255, 255, 255, 0.5);
+    --color-separator: #333335;
+    --color-accent: #6aa1ff;
+    /* Arco 深色主色 #3c7eff 上的白字只有约 3.7:1，主按钮底色沿用 #165dff（5.19:1）。 */
+    --color-accent-fill: #165dff;
+    --on-accent: #ffffff;
+    --color-success: #27c346;
+    --color-warning: #ff9626;
+    --color-danger: #f76965;
+    --color-danger-text: #fbaca3;
+    --color-neutral: #929293;
+
+    --glass-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    --tint-strength: 16%;
+    --color-scrim: rgba(0, 0, 0, 0.6);
+
+    --admin-fill-1: #2a2a2b;
+    --admin-fill-2: #2e2e30;
+    --admin-soft-accent: rgba(60, 126, 255, 0.2);
+  }
+}

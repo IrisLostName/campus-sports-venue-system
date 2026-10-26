@@ -82,7 +82,8 @@ describe('组件不把状态色或三级灰用作文字颜色', () => {
     .map((name) => ({ name, css: /<style[^>]*>([\s\S]*?)<\/style>/.exec(readFileSync(new URL(name, dir), 'utf8'))?.[1] ?? '' })))
 
   it('color: 只取正文、次要文字、强调色、按钮文字色或图标色', () => {
-    expect(styles.length).toBeGreaterThan(8)
+    // UI-2b 删除了 DisplayIcon.vue（提升为 components/ui/UiIcon.vue）；这条只防止扫描为空。
+    expect(styles.length).toBeGreaterThan(7)
     for (const { name, css } of styles) {
       const used = Array.from(css.matchAll(/(?:^|[\s;{])color:\s*([^;]+);/g)).map((match) => (match[1] ?? '').trim())
       for (const value of used) {
