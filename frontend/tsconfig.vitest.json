@@ -23,7 +23,9 @@
     "src/composables/**/*.ts",
     "src/router/**/*.ts",
     "src/components/**/*.vue",
-    "src/views/**/*.vue"
+    "src/components/display/*.ts",
+    "src/views/**/*.vue",
+    "src/views/display/*.ts"
   ],
   "exclude": ["src/router/index.ts"]
 }

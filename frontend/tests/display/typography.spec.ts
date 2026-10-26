@@ -4,10 +4,15 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
+// UI-2a 新增的大屏组件同样受 12px 下限约束。
 const FILES = [
   'views/display/DisplayView.vue',
+  'components/display/DisplayIcon.vue',
+  'components/display/DisplayLegend.vue',
   'components/display/DisplayMetrics.vue',
   'components/display/DisplayNotices.vue',
+  'components/display/DisplayStatusDonut.vue',
+  'components/display/DisplayToolbar.vue',
   'components/display/DisplayTrend.vue',
   'components/display/DisplayVenueGroup.vue',
 ]

@@ -57,8 +57,8 @@ describe('各 .vue 的样式块里没有这些规则的副本', () => {
     expect(withStyleRule('.heading')).toEqual(['src/components/admin/logs/LogTable.vue'])
   })
 
-  it('大屏三个面板不再各自定义内边距与标题样式', () => {
-    for (const file of ['DisplayNotices', 'DisplayTrend', 'DisplayVenueGroup']) {
+  it('大屏四个面板不再各自定义内边距与标题样式', () => {
+    for (const file of ['DisplayNotices', 'DisplayStatusDonut', 'DisplayTrend', 'DisplayVenueGroup']) {
       const style = FILES.find(({ name }) => name === `src/components/display/${file}.vue`)
       expect(style, file).toBeDefined()
       expect(styleOf(style?.source ?? '')).not.toContain('padding: 0.8em 1.2em 1em')
@@ -81,10 +81,12 @@ describe('模板使用共用类', () => {
     ])
   })
 
-  it('大屏三个面板都带 display-panel，标题带 display-panel-title', () => {
+  // UI-2a 计划闸门第 5 条：新增的“场地实时状态”环形图面板同样使用共用类。
+  it('大屏四个面板都带 display-panel，标题带 display-panel-title', () => {
     expect(usingClass('display-panel').sort()).toEqual([
-      'src/components/display/DisplayNotices.vue', 'src/components/display/DisplayTrend.vue', 'src/components/display/DisplayVenueGroup.vue',
+      'src/components/display/DisplayNotices.vue', 'src/components/display/DisplayStatusDonut.vue',
+      'src/components/display/DisplayTrend.vue', 'src/components/display/DisplayVenueGroup.vue',
     ])
-    expect(usingClass('display-panel-title')).toHaveLength(3)
+    expect(usingClass('display-panel-title')).toHaveLength(4)
   })
 })

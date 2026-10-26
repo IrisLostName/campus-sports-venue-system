@@ -82,7 +82,7 @@ describe('从未取到数据时拉取失败', () => {
     await shown.nextPoll()
 
     expect(shown.page.find('.state').exists()).toBe(false)
-    expect(texts(shown.page, 'li.metric .value')).toEqual(['9', '1', '62.5%'])
+    expect(texts(shown.page, 'li.metric .value')).toEqual(['9', '1', '62.5%', '2/3'])
   })
 })
 

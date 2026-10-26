@@ -1,8 +1,9 @@
 <script setup lang="ts">
+// 场馆卡片（UI-2a-rulings 第 1 节）：标题与两个标签、开放场地与当前已预约、已预约进度条、场地方块（每行最多 6 个）。
+// 状态色只用于圆点、色条与浅色底，文字一律用正文色（docs/17 第 2 节）；场地状态的色调取 toneForResourceState（第 6 节）。
 import type { VenueGroupView } from '../../utils/displayModel'
 import { toneForResourceState } from '../../utils/statusTone'
 import UiGlassCard from '../ui/UiGlassCard.vue'
-import UiStatusPill from '../ui/UiStatusPill.vue'
 
 defineProps<{ venue: VenueGroupView }>()
 </script>
@@ -11,98 +12,175 @@ defineProps<{ venue: VenueGroupView }>()
   <UiGlassCard
     tag="section"
     class="venue display-panel"
-    material="thick"
+    material="solid"
+    radius="sm"
   >
     <header class="head">
       <h3 class="name display-panel-title display-panel-title--inline">
         {{ venue.name }}
       </h3>
-      <UiStatusPill
-        class="tag"
-        tone="neutral"
-      >
-        {{ venue.statusLabel }}
-      </UiStatusPill>
-      <UiStatusPill
-        class="tag"
-        tone="neutral"
-      >
-        {{ venue.bookingLabel }}
-      </UiStatusPill>
+      <span class="tags">
+        <span
+          class="tag"
+          :class="venue.isOpen ? 'tone-success' : 'tone-danger'"
+        >{{ venue.statusLabel }}</span>
+        <span
+          class="tag"
+          :class="venue.bookingEnabled ? 'tone-accent' : 'tone-neutral'"
+        >{{ venue.bookingLabel }}</span>
+      </span>
+    </header>
+    <div class="meta">
       <span class="stat">{{ venue.openText }}</span>
       <span class="stat">{{ venue.reservedNowText }}</span>
-    </header>
+      <span
+        class="progress"
+        role="progressbar"
+        aria-label="当前已预约占开放场地的比例"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        :aria-valuenow="Math.round(venue.reservedRatio * 100)"
+      >
+        <span
+          class="progress-fill"
+          :style="{ width: `${venue.reservedRatio * 100}%` }"
+        />
+      </span>
+    </div>
     <ul class="resources">
       <li
         v-for="resource in venue.resources"
         :key="resource.id"
         class="resource"
+        :class="`tone-${toneForResourceState(resource.state)}`"
       >
         <span class="resource-name">{{ resource.name }}</span>
-        <UiStatusPill
-          class="resource-state"
-          :tone="toneForResourceState(resource.state)"
-        >
-          {{ resource.stateLabel }}
-        </UiStatusPill>
+        <span class="resource-state">
+          <span
+            class="dot"
+            aria-hidden="true"
+          />{{ resource.stateLabel }}</span>
       </li>
     </ul>
   </UiGlassCard>
 </template>
 
 <style scoped>
-/* 面板在列里平分多出来的高度，状态格随之拉伸（FE-8 L13）。 */
-.venue {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-}
+/* 面板在列里平分多出来的高度（FE-8 L13）；场地方块按内容高度排列，不随面板拉伸。 */
+.venue { display: flex; flex: 1 1 auto; flex-direction: column; }
+
+.tone-accent { --tone: var(--color-accent-fill); --tone-soft: var(--display-soft-accent); }
+.tone-success { --tone: var(--color-success); --tone-soft: var(--display-soft-success); }
+.tone-warning { --tone: var(--color-warning); --tone-soft: var(--display-soft-warning); }
+.tone-danger { --tone: var(--color-danger); --tone-soft: var(--display-soft-danger); }
+.tone-neutral { --tone: var(--color-neutral); --tone-soft: var(--display-soft-neutral); }
 
 .head {
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
+  align-items: center;
+  justify-content: space-between;
   gap: 0.5em 1em;
+  margin-bottom: 0.5em;
+}
+
+.tags {
+  display: flex;
+  gap: 0.5em;
+}
+
+.tag {
+  padding: 0.1em 0.6em;
+  border: 1px solid var(--tone);
+  border-radius: var(--radius-sm);
+  background: var(--tone-soft);
+  color: var(--color-text);
+  font-size: 1em;
+  line-height: 1.5;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 1.6em;
   margin-bottom: 0.7em;
-}
-
-.tag.tag {
-  font-size: 1em;
-}
-
-.stat {
   color: var(--color-text-secondary);
-  font-size: 1em;
+  font-size: 1.05em;
+}
+
+.progress {
+  flex: 1;
+  max-width: 20em;
+  height: 0.5em;
+  overflow: hidden;
+  border-radius: var(--radius-capsule);
+  background: var(--display-track);
+}
+
+.progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-accent-fill);
+  transition: width var(--display-motion);
 }
 
 .resources {
   display: grid;
-  flex: 1;
-  grid-auto-rows: 1fr;
-  grid-template-columns: repeat(auto-fill, minmax(8.5em, 1fr));
-  gap: 0.6em;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  align-content: start;
+  gap: 0.7em;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
+@media (max-width: 800px) {
+  .resources {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 .resource {
+  position: relative;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.3em;
-  padding: 0.6em 0.8em;
-  border: var(--glass-border);
-  border-radius: var(--radius-md);
-  background: var(--glass-thin);
+  gap: 0.4em;
+  min-width: 0;
+  padding: 0.6em 0.7em 0.6em 1em;
+  overflow: hidden;
+  border: 1px solid var(--color-separator);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+
+.resource::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--tone);
+  content: "";
 }
 
 .resource-name {
+  overflow: hidden;
+  font-size: 1.1em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.resource-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  color: var(--color-text-secondary);
   font-size: 1.05em;
 }
 
-.resource-state.resource-state {
-  font-size: 1.1em;
+.dot {
+  flex: none;
+  width: 0.55em;
+  height: 0.55em;
+  border-radius: 50%;
+  background: var(--tone);
 }
 </style>

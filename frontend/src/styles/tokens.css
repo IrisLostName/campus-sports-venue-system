@@ -191,3 +191,98 @@
     --slide-distance: 0px;
   }
 }
+
+/* 运营大屏（UI-2a，Arco Design Pro 观感）：只在 [data-surface="display"] 子树内生效，上面各块的取值不变。
+   默认浅色；data-display-theme="dark" 时为深色，不随系统设置变化。子树内重设通用令牌，使 UiGlassCard（solid）、UiBanner、
+   UiEmptyState 直接得到大屏的观感；--display-* 是大屏专用令牌。状态色不作文字颜色，只用于圆点、色条与浅色底。
+   对比度（按最差背景）：正文、次要文字、强调文字在画布、卡片与各浅色底上均 ≥ 4.5:1，测量见 docs/evidence/UI-2a.md。 */
+[data-surface="display"] {
+  color-scheme: light;
+
+  --color-canvas: #f2f3f5;
+  --color-surface: #ffffff;
+  --color-text: #1d2129;
+  --color-text-secondary: #4e5969;
+  --color-text-tertiary: #86909c;
+  --color-separator: #e5e6eb;
+  --color-accent: #165dff;
+  --color-accent-fill: #165dff;
+  --on-accent: #ffffff;
+  --color-success: #00b42a;
+  --color-warning: #ff7d00;
+  --color-danger: #f53f3f;
+  --color-danger-text: #cb2634;
+  --color-neutral: #86909c;
+
+  --canvas-glow: none;
+  --glass-thin: var(--color-surface);
+  --glass-regular: var(--color-surface);
+  --glass-thick: var(--color-surface);
+  --glass-blur: none;
+  --glass-border: 1px solid var(--color-separator);
+  --glass-highlight: none;
+  --glass-shadow: none;
+  --tint-strength: 10%;
+  --radius-sm: 4px;
+  --radius-md: 4px;
+
+  --display-track: #f2f3f5;
+  --display-soft-accent: #e8f3ff;
+  --display-soft-success: #e8ffea;
+  --display-soft-warning: #fff3e8;
+  --display-soft-danger: #ffece8;
+  --display-soft-neutral: #f2f3f5;
+  --display-icon-blue: #165dff;
+  --display-icon-blue-soft: #e8f3ff;
+  --display-icon-orange: #ff7d00;
+  --display-icon-orange-soft: #fff3e8;
+  --display-icon-green: #00b42a;
+  --display-icon-green-soft: #e8ffea;
+  --display-icon-purple: #722ed1;
+  --display-icon-purple-soft: #f5e8ff;
+  --display-area-top: rgba(22, 93, 255, 0.28);
+  --display-area-bottom: rgba(22, 93, 255, 0);
+  --display-motion: var(--motion-fast);
+}
+
+[data-surface="display"][data-display-theme="dark"] {
+  color-scheme: dark;
+
+  --color-canvas: #17171a;
+  --color-surface: #232324;
+  --color-text: rgba(255, 255, 255, 0.9);
+  --color-text-secondary: rgba(255, 255, 255, 0.7);
+  --color-text-tertiary: rgba(255, 255, 255, 0.5);
+  --color-separator: #333335;
+  --color-accent: #6aa1ff;
+  --color-accent-fill: #3c7eff;
+  --on-accent: #ffffff;
+  --color-success: #27c346;
+  --color-warning: #ff9626;
+  --color-danger: #f76965;
+  --color-danger-text: #fbaca3;
+  --color-neutral: #929293;
+
+  --display-track: #2e2e30;
+  --display-soft-accent: rgba(60, 126, 255, 0.2);
+  --display-soft-success: rgba(39, 195, 70, 0.2);
+  --display-soft-warning: rgba(255, 150, 38, 0.2);
+  --display-soft-danger: rgba(247, 105, 101, 0.2);
+  --display-soft-neutral: rgba(255, 255, 255, 0.08);
+  --display-icon-blue: #3c7eff;
+  --display-icon-blue-soft: rgba(60, 126, 255, 0.2);
+  --display-icon-orange: #ff9626;
+  --display-icon-orange-soft: rgba(255, 150, 38, 0.2);
+  --display-icon-green: #27c346;
+  --display-icon-green-soft: rgba(39, 195, 70, 0.2);
+  --display-icon-purple: #8e51da;
+  --display-icon-purple-soft: rgba(142, 81, 218, 0.2);
+  --display-area-top: rgba(60, 126, 255, 0.32);
+  --display-area-bottom: rgba(60, 126, 255, 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-surface="display"] {
+    --display-motion: 0s;
+  }
+}
