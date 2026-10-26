@@ -6,6 +6,7 @@ import { computed } from 'vue'
 
 import type { TrendBarView, TrendTickView } from '../../utils/displayModel'
 import UiGlassCard from '../ui/UiGlassCard.vue'
+import UiIcon from '../ui/UiIcon.vue'
 import { areaPath, smoothLinePath } from './chartGeometry'
 
 const props = defineProps<{ bars: TrendBarView[]; ticks: TrendTickView[] }>()
@@ -24,6 +25,10 @@ const summary = computed(() => `本周预约趋势：${props.bars.map((bar) => `
   >
     <header class="panel-head">
       <h3 class="title display-panel-title display-panel-title--inline">
+        <UiIcon
+          class="panel-title-icon"
+          name="trend"
+        />
         本周预约趋势
       </h3>
       <span class="note">近 7 天（含今天）</span>

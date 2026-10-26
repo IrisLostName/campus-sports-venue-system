@@ -144,3 +144,19 @@ main.display .display-panel {
     scroll-behavior: auto;
   }
 }
+
+/* 运营大屏的状态色调（UI-2b，UI-2a 审计 N6）：场地方块、标签、环形图与图例共用这一份映射，色调由 toneForResourceState 决定。
+   --tone 用于圆点、色条、弧段与描边，--tone-soft 用于浅色底；状态色不作文字颜色（docs/17 第 2 节）。 */
+[data-surface="display"] .tone-accent { --tone: var(--color-accent-fill); --tone-soft: var(--display-soft-accent); }
+[data-surface="display"] .tone-success { --tone: var(--color-success); --tone-soft: var(--display-soft-success); }
+[data-surface="display"] .tone-warning { --tone: var(--color-warning); --tone-soft: var(--display-soft-warning); }
+[data-surface="display"] .tone-danger { --tone: var(--color-danger); --tone-soft: var(--display-soft-danger); }
+[data-surface="display"] .tone-neutral { --tone: var(--color-neutral); --tone-soft: var(--display-soft-neutral); }
+
+/* 运营大屏面板标题前的图标（UI-2b）：与标题同字号，主色描边，名称由标题文字提供。 */
+[data-surface="display"] .ui-icon.panel-title-icon {
+  display: inline-block;
+  margin-inline-end: 0.35em;
+  color: var(--color-accent-fill);
+  vertical-align: -0.125em;
+}

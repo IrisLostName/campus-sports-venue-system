@@ -4,7 +4,7 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 
 import type { DisplayTheme } from '../../views/display/displayTheme'
-import DisplayIcon from './DisplayIcon.vue'
+import UiIcon from '../ui/UiIcon.vue'
 
 defineProps<{ updatedText: string | null; countdown: string; theme: DisplayTheme }>()
 const emit = defineEmits<{ 'toggle-theme': [] }>()
@@ -49,7 +49,7 @@ onBeforeUnmount(() => {
       class="updated"
     >数据更新于 {{ updatedText }}</span>
     <span class="countdown">
-      <DisplayIcon
+      <UiIcon
         class="countdown-icon"
         name="sync"
       />
@@ -62,7 +62,7 @@ onBeforeUnmount(() => {
       :title="theme === 'dark' ? '切换为浅色' : '切换为深色'"
       @click="toggleTheme"
     >
-      <DisplayIcon :name="theme === 'dark' ? 'sun' : 'moon'" />
+      <UiIcon :name="theme === 'dark' ? 'sun' : 'moon'" />
     </button>
     <button
       v-if="fullscreenAvailable"
@@ -72,7 +72,7 @@ onBeforeUnmount(() => {
       :title="fullscreen ? '退出全屏' : '全屏显示'"
       @click="toggleFullscreen"
     >
-      <DisplayIcon :name="fullscreen ? 'fullscreenExit' : 'fullscreen'" />
+      <UiIcon :name="fullscreen ? 'fullscreenExit' : 'fullscreen'" />
     </button>
   </div>
 </template>
@@ -113,12 +113,12 @@ onBeforeUnmount(() => {
   transition: background-color var(--display-motion), border-color var(--display-motion);
 }
 
-.tool :deep(.display-icon) {
+.tool :deep(.ui-icon) {
   width: 1.3em;
   height: 1.3em;
 }
 
-.countdown :deep(.display-icon) {
+.countdown :deep(.ui-icon) {
   width: 1.1em;
   height: 1.1em;
 }

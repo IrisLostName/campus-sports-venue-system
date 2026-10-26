@@ -1,5 +1,5 @@
 // UI-2a-rulings 第 0 节第 3 条、第 4 节：tokens.css 只在末尾新增大屏作用域；:root、系统深色、[data-theme="dark"]、
-// [data-surface="admin"] 与各回退块逐字不变，所以用户端与管理端的观感不受影响。
+// [data-surface="admin"] 与各回退块逐字不变，所以用户端的观感不受影响。UI-2b 在其后追加管理端作用域（UI-2b-rulings 第 0 节第 3 条）。
 // fixtures/tokens-baseline.css 是 d14d066（UI-2a 开工前）tokens.css 的原样副本。
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
@@ -31,12 +31,15 @@ describe('既有令牌不变', () => {
     expect(CURRENT.startsWith(BASELINE)).toBe(true)
   })
 
-  it('追加的部分只有大屏作用域：浅色、深色与减少动效三块', () => {
+  it('追加的部分先是大屏作用域（浅色、深色与减少动效三块），其后只有 UI-2b 的管理端作用域（浅色与系统深色）', () => {
     expect(selectors(CURRENT.slice(BASELINE.length))).toEqual([
       '[data-surface="display"]',
       '[data-surface="display"][data-display-theme="dark"]',
       '@media (prefers-reduced-motion: reduce)',
       '[data-surface="display"]',
+      '[data-surface="admin"]',
+      '@media (prefers-color-scheme: dark)',
+      '[data-surface="admin"]',
     ])
   })
 })

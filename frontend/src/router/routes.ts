@@ -1,4 +1,5 @@
 // 路由表（docs/02 第 3.1 节）。视图由调用方传入：应用传懒加载组件，测试传替身组件。
+// meta.title 是页面名（UI-2b）：标签页标题与管理端顶栏都取它（titles.ts）；管理端的页面名与侧栏导航项文字相同。
 import type { RouteComponent, RouteRecordRaw } from 'vue-router'
 
 import { PATHS } from './paths'
@@ -34,16 +35,16 @@ const NEVER_RENDERED: RouteComponent = { render: () => null }
 
 export function buildRoutes(views: RouteViews): RouteRecordRaw[] {
   return [
-    { path: PATHS.login, name: 'login', component: views.login, meta: { access: 'guest' } },
+    { path: PATHS.login, name: 'login', component: views.login, meta: { access: 'guest', title: '登录' } },
     {
       path: PATHS.home,
       component: views.clientShell,
       meta: { access: 'USER' },
       children: [
-        { path: '', name: 'home', component: views.home },
-        { path: PATHS.reservation, name: 'reservation', component: views.reservation },
-        { path: PATHS.booking, name: 'booking', component: views.booking },
-        { path: PATHS.me, name: 'me', component: views.me },
+        { path: '', name: 'home', component: views.home, meta: { title: '首页' } },
+        { path: PATHS.reservation, name: 'reservation', component: views.reservation, meta: { title: '预约' } },
+        { path: PATHS.booking, name: 'booking', component: views.booking, meta: { title: '订场' } },
+        { path: PATHS.me, name: 'me', component: views.me, meta: { title: '我的' } },
       ],
     },
     {
@@ -51,13 +52,13 @@ export function buildRoutes(views: RouteViews): RouteRecordRaw[] {
       component: views.venueAdmin,
       meta: { access: 'VENUE_ADMIN' },
       children: [
-        { path: '', name: 'venue-admin', component: views.venueAdminOverview },
-        { path: PATHS.venueAdminReservations, name: 'venue-admin-reservations', component: views.venueAdminReservations },
-        { path: PATHS.venueAdminResources, name: 'venue-admin-resources', component: views.venueAdminResources },
-        { path: PATHS.venueAdminOccupancy, name: 'venue-admin-occupancy', component: views.venueAdminOccupancy },
-        { path: PATHS.venueAdminAnnouncements, name: 'venue-admin-announcements', component: views.venueAdminAnnouncements },
-        { path: PATHS.venueAdminRepairs, name: 'venue-admin-repairs', component: views.venueAdminRepairs },
-        { path: PATHS.venueAdminLogs, name: 'venue-admin-logs', component: views.venueAdminLogs },
+        { path: '', name: 'venue-admin', component: views.venueAdminOverview, meta: { title: '概览' } },
+        { path: PATHS.venueAdminReservations, name: 'venue-admin-reservations', component: views.venueAdminReservations, meta: { title: '预约管理' } },
+        { path: PATHS.venueAdminResources, name: 'venue-admin-resources', component: views.venueAdminResources, meta: { title: '场地与开放规则' } },
+        { path: PATHS.venueAdminOccupancy, name: 'venue-admin-occupancy', component: views.venueAdminOccupancy, meta: { title: '场地占用总览' } },
+        { path: PATHS.venueAdminAnnouncements, name: 'venue-admin-announcements', component: views.venueAdminAnnouncements, meta: { title: '公告' } },
+        { path: PATHS.venueAdminRepairs, name: 'venue-admin-repairs', component: views.venueAdminRepairs, meta: { title: '报修' } },
+        { path: PATHS.venueAdminLogs, name: 'venue-admin-logs', component: views.venueAdminLogs, meta: { title: '操作记录' } },
         // 未知子路径回到概览，并保留查询参数（场馆选择）。
         // beforeEnter 在全局守卫之后运行：未登录者仍会带着原路径被送去登录，登录后的管理员才被带回概览。
         { path: ':pathMatch(.*)*', component: NEVER_RENDERED, beforeEnter: (to) => ({ path: PATHS.venueAdmin, query: to.query }) },
@@ -69,23 +70,23 @@ export function buildRoutes(views: RouteViews): RouteRecordRaw[] {
       meta: { access: 'SYS_ADMIN' },
       children: [
         // meta.venueScope 是各页面对场馆上下文的要求（FE-6 S4），外壳从匹配到的路由记录读取，不按地址字符串判断。
-        { path: '', name: 'sys-admin', component: views.sysAdminVenues, meta: { venueScope: 'none' } },
-        { path: PATHS.sysAdminAdmins, name: 'sys-admin-admins', component: views.sysAdminAdmins, meta: { venueScope: 'none' } },
-        { path: PATHS.sysAdminUsers, name: 'sys-admin-users', component: views.sysAdminUsers, meta: { venueScope: 'none' } },
-        { path: PATHS.sysAdminAnnouncements, name: 'sys-admin-announcements', component: views.sysAdminAnnouncements, meta: { venueScope: 'none' } },
-        { path: PATHS.sysAdminStats, name: 'sys-admin-stats', component: views.sysAdminStats, meta: { venueScope: 'none' } },
-        { path: PATHS.sysAdminLogs, name: 'sys-admin-logs', component: views.venueAdminLogs, meta: { venueScope: 'venue-or-all' } },
+        { path: '', name: 'sys-admin', component: views.sysAdminVenues, meta: { venueScope: 'none', title: '场馆资料与开关' } },
+        { path: PATHS.sysAdminAdmins, name: 'sys-admin-admins', component: views.sysAdminAdmins, meta: { venueScope: 'none', title: '管理员与授权' } },
+        { path: PATHS.sysAdminUsers, name: 'sys-admin-users', component: views.sysAdminUsers, meta: { venueScope: 'none', title: '用户' } },
+        { path: PATHS.sysAdminAnnouncements, name: 'sys-admin-announcements', component: views.sysAdminAnnouncements, meta: { venueScope: 'none', title: '系统公告' } },
+        { path: PATHS.sysAdminStats, name: 'sys-admin-stats', component: views.sysAdminStats, meta: { venueScope: 'none', title: '全局统计' } },
+        { path: PATHS.sysAdminLogs, name: 'sys-admin-logs', component: views.venueAdminLogs, meta: { venueScope: 'venue-or-all', title: '操作记录' } },
         // 场馆运营五页直接复用场馆管理员端的页面组件（FE-6 S2），场馆上下文由系统管理员外壳提供。
-        { path: PATHS.sysAdminReservations, name: 'sys-admin-reservations', component: views.venueAdminReservations, meta: { venueScope: 'venue-or-all' } },
-        { path: PATHS.sysAdminResources, name: 'sys-admin-resources', component: views.venueAdminResources, meta: { venueScope: 'venue' } },
-        { path: PATHS.sysAdminOccupancy, name: 'sys-admin-occupancy', component: views.venueAdminOccupancy, meta: { venueScope: 'venue' } },
-        { path: PATHS.sysAdminVenueAnnouncements, name: 'sys-admin-venue-announcements', component: views.venueAdminAnnouncements, meta: { venueScope: 'venue' } },
-        { path: PATHS.sysAdminRepairs, name: 'sys-admin-repairs', component: views.venueAdminRepairs, meta: { venueScope: 'venue' } },
+        { path: PATHS.sysAdminReservations, name: 'sys-admin-reservations', component: views.venueAdminReservations, meta: { venueScope: 'venue-or-all', title: '预约管理' } },
+        { path: PATHS.sysAdminResources, name: 'sys-admin-resources', component: views.venueAdminResources, meta: { venueScope: 'venue', title: '场地与开放规则' } },
+        { path: PATHS.sysAdminOccupancy, name: 'sys-admin-occupancy', component: views.venueAdminOccupancy, meta: { venueScope: 'venue', title: '场地占用总览' } },
+        { path: PATHS.sysAdminVenueAnnouncements, name: 'sys-admin-venue-announcements', component: views.venueAdminAnnouncements, meta: { venueScope: 'venue', title: '场馆公告' } },
+        { path: PATHS.sysAdminRepairs, name: 'sys-admin-repairs', component: views.venueAdminRepairs, meta: { venueScope: 'venue', title: '报修' } },
         // 同 FE-5：未知子路径回到 /sys-admin，保留查询参数；beforeEnter 在全局守卫之后运行。
         { path: ':pathMatch(.*)*', component: NEVER_RENDERED, beforeEnter: (to) => ({ path: PATHS.sysAdmin, query: to.query }) },
       ],
     },
-    { path: PATHS.display, name: 'display', component: views.display, meta: { access: 'public' } },
+    { path: PATHS.display, name: 'display', component: views.display, meta: { access: 'public', title: '运营大屏' } },
     { path: '/:pathMatch(.*)*', name: 'not-found', component: NEVER_RENDERED, meta: { access: 'fallback' } },
   ]
 }

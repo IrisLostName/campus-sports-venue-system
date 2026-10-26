@@ -84,9 +84,9 @@ const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-width: 44px;
-  min-height: 44px;
-  padding: var(--space-2) var(--space-4);
+  min-width: var(--control-min-width, 44px);
+  min-height: var(--control-min-height, 44px);
+  padding: var(--segmented-item-padding, var(--space-2) var(--space-4));
   border: 0;
   background: transparent;
   color: var(--color-text);

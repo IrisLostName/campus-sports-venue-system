@@ -17,7 +17,7 @@ export async function userLoginAndEmpty(tour: Tour): Promise<void> {
   await page.setViewport(IPHONE16)
   await page.clearLocalStorage(E2E.appUrl)
   await go(tour, '/login')
-  await capture(tour, '01-user-login', { surface: 'login', expect: ['校园场馆预约系统', '用户名', '密码'], themes: BOTH })
+  await capture(tour, '01-user-login', { surface: 'login', expect: ['校园场馆预约与服务管理系统', '用户名', '密码'], themes: BOTH })
   await login(tour, 'wangwu', IPHONE16)
   await capture(tour, '02-user-home-empty', {
     surface: 'user', expect: ['首页', '你还没有预约', '去订场', '系统公告'], absent: ['查看预约详情'], themes: BOTH,
@@ -121,7 +121,7 @@ export async function userMobile375(tour: Tour): Promise<void> {
   await go(tour, '/me')
   await page.clickText('退出登录')
   await page.waitFor('location.pathname === "/login"', '退出后回到登录页')
-  await capture(tour, '15-user-login', { surface: 'login', expect: ['校园场馆预约系统', '用户名'] })
+  await capture(tour, '15-user-login', { surface: 'login', expect: ['校园场馆预约与服务管理系统', '用户名'] })
   await login(tour, 'wangwu', MOBILE)
   await capture(tour, '16-user-home', { surface: 'user', expect: ['查看预约详情', '网球馆 · 网球场3'] })
   await go(tour, '/reservation')

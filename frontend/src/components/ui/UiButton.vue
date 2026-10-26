@@ -67,9 +67,9 @@ const classes = computed(() => [
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  min-width: 44px;
-  min-height: 44px;
-  padding: 0 var(--space-5);
+  min-width: var(--control-min-width, 44px);
+  min-height: var(--control-min-height, 44px);
+  padding: var(--button-padding, 0 var(--space-5));
   border: 0;
   border-radius: var(--radius-capsule);
   font: var(--font-callout);

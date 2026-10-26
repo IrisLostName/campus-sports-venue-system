@@ -54,4 +54,11 @@ const model = computed<number | string | null>({
 .venue-select {
   min-width: 200px;
 }
+
+/* UI-2b：顶栏里标签与下拉框排在同一行（Arco 顶栏）。 */
+.venue-select :deep(.label) {
+  flex-direction: row;
+  align-items: center;
+  white-space: nowrap;
+}
 </style>

@@ -3,7 +3,7 @@ import { computed } from 'vue'
 
 import { api } from '../../api'
 import DisplayLegend from '../../components/display/DisplayLegend.vue'
-import DisplayIcon from '../../components/display/DisplayIcon.vue'
+import UiIcon from '../../components/ui/UiIcon.vue'
 import DisplayMetrics from '../../components/display/DisplayMetrics.vue'
 import DisplayNotices from '../../components/display/DisplayNotices.vue'
 import DisplayStatusDonut from '../../components/display/DisplayStatusDonut.vue'
@@ -33,13 +33,13 @@ const { theme, toggle: toggleTheme } = useDisplayTheme()
     <header class="top">
       <div class="brand">
         <span class="logo">
-          <DisplayIcon name="dashboard" />
+          <UiIcon name="dashboard" />
         </span>
         <span class="brand-text">
           <h1 class="title">
             运营大屏
           </h1>
-          <span class="subtitle">校园场馆预约系统</span>
+          <span class="subtitle">校园场馆预约与服务管理系统</span>
         </span>
       </div>
       <DisplayToolbar
@@ -161,7 +161,7 @@ const { theme, toggle: toggleTheme } = useDisplayTheme()
   font-size: 1.3em;
 }
 
-.logo :deep(.display-icon) {
+.logo :deep(.ui-icon) {
   width: 1.3em;
   height: 1.3em;
 }

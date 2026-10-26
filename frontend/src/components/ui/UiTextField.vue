@@ -119,13 +119,13 @@ const countText = computed(() => (
 .control {
   display: block;
   width: 100%;
-  min-height: 44px;
-  padding: var(--space-3);
+  min-height: var(--control-min-height, 44px);
+  padding: var(--control-padding, var(--space-3));
   border: 1px solid var(--color-separator);
   border-radius: var(--radius-md);
   background: var(--color-surface);
   color: var(--color-text);
-  font: var(--font-body);
+  font: var(--control-font, var(--font-body));
 }
 
 textarea.control {

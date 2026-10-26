@@ -4,6 +4,7 @@
 import type { VenueGroupView } from '../../utils/displayModel'
 import { toneForResourceState } from '../../utils/statusTone'
 import UiGlassCard from '../ui/UiGlassCard.vue'
+import UiIcon from '../ui/UiIcon.vue'
 
 defineProps<{ venue: VenueGroupView }>()
 </script>
@@ -17,6 +18,10 @@ defineProps<{ venue: VenueGroupView }>()
   >
     <header class="head">
       <h3 class="name display-panel-title display-panel-title--inline">
+        <UiIcon
+          class="panel-title-icon"
+          name="building"
+        />
         {{ venue.name }}
       </h3>
       <span class="tags">
@@ -68,12 +73,6 @@ defineProps<{ venue: VenueGroupView }>()
 <style scoped>
 /* 面板在列里平分多出来的高度（FE-8 L13）；场地方块按内容高度排列，不随面板拉伸。 */
 .venue { display: flex; flex: 1 1 auto; flex-direction: column; }
-
-.tone-accent { --tone: var(--color-accent-fill); --tone-soft: var(--display-soft-accent); }
-.tone-success { --tone: var(--color-success); --tone-soft: var(--display-soft-success); }
-.tone-warning { --tone: var(--color-warning); --tone-soft: var(--display-soft-warning); }
-.tone-danger { --tone: var(--color-danger); --tone-soft: var(--display-soft-danger); }
-.tone-neutral { --tone: var(--color-neutral); --tone-soft: var(--display-soft-neutral); }
 
 .head {
   display: flex;

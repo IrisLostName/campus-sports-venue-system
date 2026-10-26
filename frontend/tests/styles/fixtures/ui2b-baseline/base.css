@@ -1,0 +1,146 @@
+/* 全局基础样式（docs/17 第 8 节）：重置、画布、字体、玻璃底座与四个用户端页面共用的版式。只引用令牌。 */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-canvas);
+  color: var(--color-text);
+  font: var(--font-body);
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 画布柔光：固定在视口，给玻璃提供可模糊的背景。 */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--canvas-glow);
+  pointer-events: none;
+}
+
+h1,
+h2,
+h3,
+h4,
+p,
+dl,
+dd,
+figure {
+  margin: 0;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+a {
+  color: var(--color-accent);
+}
+
+:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-accent) 55%, transparent);
+  outline-offset: 2px;
+}
+
+/* 管理端（第 7 节）：正文用 callout。 */
+[data-surface="admin"] {
+  font: var(--font-callout);
+}
+
+/* 玻璃底座：只给 Ui 组件使用。 */
+.ui-glass {
+  background: var(--glass-regular);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  box-shadow: var(--glass-highlight), var(--glass-shadow);
+}
+
+.ui-glass--thin {
+  background: var(--glass-thin);
+}
+
+.ui-glass--thick {
+  background: var(--glass-thick);
+}
+
+/* 用户端四个页面共用的版式。 */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.page-title {
+  padding-inline: var(--space-1);
+  font: var(--font-large-title);
+  letter-spacing: -0.02em;
+}
+
+.hint {
+  color: var(--color-text-secondary);
+  font: var(--font-footnote);
+}
+
+/* 管理端与表单共用的小版式（FE-8 L12）：区块标题、纵向排列的表单、只给读屏软件看的文字。 */
+.section-heading {
+  font: var(--font-headline);
+}
+
+.section-heading--spaced {
+  margin-bottom: var(--space-3);
+}
+
+.stack-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* 运营大屏的面板（FE-8 L12）：em 取自 .display 根元素的字号，所以随屏幕宽度缩放。
+   选择器带上 main.display，使它的优先级高于 UiGlassCard 自带的内边距类，与原来各面板自己的作用域样式效果相同。 */
+main.display .display-panel {
+  padding: 0.8em 1.2em 1em;
+}
+
+.display-panel-title {
+  margin: 0 0 0.6em;
+  font-size: 1.5em;
+  font-weight: 600;
+}
+
+.display-panel-title--inline {
+  margin: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}

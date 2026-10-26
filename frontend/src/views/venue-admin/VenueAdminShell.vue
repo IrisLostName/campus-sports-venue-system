@@ -16,6 +16,7 @@ const { venues, loaded, error, venueId, load, select } = useAdminVenueContext()
 // 每个导航链接都带着当前所选场馆，跳转后保持。
 const items = computed<AdminNavItem[]>(() => VENUE_ADMIN_NAV.map((entry) => ({
   label: entry.label,
+  icon: entry.icon,
   to: venueId.value === null ? entry.path : { path: entry.path, query: { venueId: String(venueId.value) } },
 })))
 

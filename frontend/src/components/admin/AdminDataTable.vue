@@ -94,6 +94,7 @@ function keyOf(row: T): string {
 
 th {
   padding: var(--space-3) var(--space-4);
+  background: var(--admin-fill-2);
   color: var(--color-text-secondary);
   font: var(--font-footnote);
   font-weight: 600;
@@ -105,6 +106,11 @@ td {
   padding: var(--space-3) var(--space-4);
   border-top: 1px solid var(--color-separator);
   vertical-align: top;
+}
+
+/* UI-2b：行悬停为浅灰底（Arco 表格）。 */
+tbody tr:hover td {
+  background: var(--admin-fill-1);
 }
 
 .end {

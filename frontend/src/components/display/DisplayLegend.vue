@@ -19,7 +19,7 @@ const STATES: ResourceLiveState[] = ['FREE', 'RESERVED', 'IN_USE', 'MAINTENANCE'
     >
       <span
         class="legend-dot"
-        :class="`legend-dot--${toneForResourceState(state)}`"
+        :class="[`legend-dot--${toneForResourceState(state)}`, `tone-${toneForResourceState(state)}`]"
         aria-hidden="true"
       />{{ stateLabel(state) }}
     </li>
@@ -48,11 +48,7 @@ const STATES: ResourceLiveState[] = ['FREE', 'RESERVED', 'IN_USE', 'MAINTENANCE'
   width: 0.6em;
   height: 0.6em;
   border-radius: 50%;
+  background: var(--tone);
 }
 
-.legend-dot--accent { background: var(--color-accent-fill); }
-.legend-dot--success { background: var(--color-success); }
-.legend-dot--warning { background: var(--color-warning); }
-.legend-dot--danger { background: var(--color-danger); }
-.legend-dot--neutral { background: var(--color-neutral); }
 </style>
