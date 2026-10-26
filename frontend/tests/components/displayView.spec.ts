@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import type { DisplaySummary } from '../../src/api/typesSection5'
 import { makeSummary } from '../display/support'
-import { installIntervalClock, mountDisplay } from './displaySupport'
+import { controls, DISPLAY_BUTTONS, installDisplayEnvironment, installIntervalClock, mountDisplay } from './displaySupport'
 import { texts } from './support'
 
 vi.mock('../../src/api/index', async (importOriginal) => {
@@ -14,6 +14,7 @@ vi.mock('../../src/api/index', async (importOriginal) => {
 })
 
 installIntervalClock()
+installDisplayEnvironment()
 
 async function show(summary: DisplaySummary): Promise<VueWrapper> {
   return (await mountDisplay([summary])).page
@@ -34,31 +35,30 @@ function chips(root: Element): string[] {
   return Array.from(root.querySelectorAll('.tag, .stat')).map((node) => node.textContent?.trim() ?? '')
 }
 
-describe('ACC-M2-09 只读：挂载后没有任何可交互元素', () => {
-  const INTERACTIVE = 'button, input, form, select, textarea, a, [role="button"]'
-
+// UI-2a 计划闸门第 3 条：除主题与全屏两个 <button type="button"> 外没有任何可交互元素。
+describe('ACC-M2-09 只读：挂载后只有主题与全屏两个按钮', () => {
   it('有数据时', async () => {
     const page = await show(makeSummary())
-    expect(page.findAll('li.metric')).toHaveLength(3)
-    expect(page.findAll(INTERACTIVE)).toHaveLength(0)
+    expect(page.findAll('li.metric')).toHaveLength(4)
+    expect(controls(page)).toEqual(DISPLAY_BUTTONS)
   })
 
   it('加载中', async () => {
     const { page } = await mountDisplay(['pending'])
-    expect(page.findAll(INTERACTIVE)).toHaveLength(0)
+    expect(controls(page)).toEqual(DISPLAY_BUTTONS)
   })
 
   it('没有数据且拉取失败（错误状态）', async () => {
     const { page } = await mountDisplay([new Error('x')])
     expect(page.find('.state.error').exists()).toBe(true)
-    expect(page.findAll(INTERACTIVE)).toHaveLength(0)
+    expect(controls(page)).toEqual(DISPLAY_BUTTONS)
   })
 
   it('有旧数据且更新失败', async () => {
     const shown = await mountDisplay([makeSummary(), new Error('x')])
     await shown.nextPoll()
     expect(shown.page.find('.stale').exists()).toBe(true)
-    expect(shown.page.findAll(INTERACTIVE)).toHaveLength(0)
+    expect(controls(shown.page)).toEqual(DISPLAY_BUTTONS)
   })
 })
 
@@ -67,7 +67,7 @@ describe('指标与利用率（D2、D3）', () => {
     const page = await show(makeSummary({ todayReservationCount: 12, currentInUse: 4, todayUtilizationRate: 0.625 }))
 
     expect(page.find('h1').text()).toBe('运营大屏')
-    expect(metrics(page)).toEqual([['今日预约量', '12'], ['当前使用', '4'], ['今日利用率', '62.5%']])
+    expect(metrics(page)).toEqual([['今日预约量', '12'], ['当前使用', '4'], ['今日利用率', '62.5%'], ['开放场地', '2/3']])
     expect(page.find('.updated').text()).toBe('数据更新于 2026-10-12 07:00:00')
   })
 

@@ -1,4 +1,4 @@
-// 大屏 30 秒轮询（FE-7-rulings T1、T2）：定时器注入，不真实等待。
+// 大屏 5 分钟轮询（FE-7-rulings T1、T2；UI-2a-rulings 第 3 节）：定时器注入，不真实等待。
 import { effectScope } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -27,7 +27,7 @@ function sequence(...stamps: string[]) {
 }
 
 describe('进入页面与周期', () => {
-  it('进入页面立即拉取一次，随后按 30 秒周期注册定时器', async () => {
+  it('进入页面立即拉取一次，随后按 5 分钟周期注册定时器', async () => {
     const { calls, fetchSummary } = sequence('2026-10-12T07:00:00')
     const { scheduler, state } = start(fetchSummary)
     expect(calls.count).toBe(1)
@@ -35,7 +35,7 @@ describe('进入页面与周期', () => {
     await settle()
     expect(state.value).toMatchObject({ phase: 'ready', failure: null })
     expect(scheduler.intervals).toEqual([POLL_INTERVAL_MS])
-    expect(POLL_INTERVAL_MS).toBe(30_000)
+    expect(POLL_INTERVAL_MS).toBe(300_000)
   })
 
   it('每次定时触发再拉取一次，并用最新数据替换旧数据', async () => {
@@ -107,7 +107,7 @@ describe('默认定时器（vitest 假定时器）', () => {
     vi.useRealTimers()
   })
 
-  it('不注入定时器时 30 秒触发一次；卸载后不再触发', async () => {
+  it('不注入定时器时 5 分钟触发一次；卸载后不再触发', async () => {
     vi.useFakeTimers()
     const fetchSummary = vi.fn(() => Promise.resolve(makeSummary()))
     const scope = effectScope()

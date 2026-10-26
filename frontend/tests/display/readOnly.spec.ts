@@ -60,11 +60,23 @@ function sources(): { name: string; text: string }[] {
 }
 
 describe('视图与组件的静态检查（不能挂载组件，此处核对源码）', () => {
-  it('没有按钮、表单、输入框、链接，也没有点击或提交事件', () => {
+  it('除 DisplayToolbar 外没有按钮、表单、输入框、链接，也没有点击或提交事件', () => {
     const forbidden = /<(button|form|input|select|textarea|a)[\s>]|@click|@submit|v-model|v-on:/
-    for (const { name, text } of sources()) {
+    const others = sources().filter(({ name }) => name !== 'DisplayToolbar.vue')
+    expect(others.length).toBeGreaterThan(5)
+    for (const { name, text } of others) {
       expect(forbidden.test(text), `${name} 含有可交互元素`).toBe(false)
     }
+  })
+
+  // UI-2a 计划闸门第 3 条：只有主题切换与全屏两个按钮，只改变本机显示方式，不调用接口。
+  it('DisplayToolbar 只有主题与全屏两个 <button type="button">，点击只切换显示方式，不引用 api', () => {
+    const toolbar = sources().find(({ name }) => name === 'DisplayToolbar.vue')?.text ?? ''
+    expect(toolbar.match(/<button\b/g)).toHaveLength(2)
+    expect(toolbar.match(/<button\b[^>]*\stype="button"/g)).toHaveLength(2)
+    expect(/<(form|input|select|textarea|a)[\s>]|@submit|v-model|v-on:/.test(toolbar)).toBe(false)
+    expect([...toolbar.matchAll(/@click="(\w+)"/g)].map((match) => match[1])).toEqual(['toggleTheme', 'toggleFullscreen'])
+    expect(/from '[^']*\/api|\bapi\./.test(toolbar)).toBe(false)
   })
 
   it('页面代码里对 api 的调用只有 getDisplaySummary，且不使用 callApi / session / auth store', () => {

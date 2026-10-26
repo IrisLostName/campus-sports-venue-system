@@ -28,7 +28,7 @@ export interface CaptureOptions {
   heading?: string              // 页面上必须有文字完全相同的 <h1>（管理端：导航项名同时出现在侧栏里，只看文字不够）
   expect: string[]              // 截图前页面上必须出现的文字
   absent?: string[]             // 截图前页面上不得出现的文字
-  themes?: Theme[]              // 缺省只拍浅色；大屏固定深色
+  themes?: Theme[]              // 缺省只拍浅色；大屏默认浅色、可切换深色，缺省浅色与深色都拍（UI-2a）
   scrolledBottom?: boolean      // 用户端：先把内容区滚到底再拍
 }
 
@@ -70,6 +70,18 @@ interface Measures {
   layout: LayoutReport
   targets: TargetReport
   panels: PanelReport | null
+  controls: string[] | null
+}
+
+// UI-2a 计划闸门第 3 条：大屏上只允许主题与全屏两个 <button type="button">，没有表单、输入框、链接。
+const DISPLAY_CONTROLS = ['button[type=button].theme-toggle', 'button[type=button].fullscreen-toggle']
+
+function displayControlProbe(): string[] {
+  const selector = 'button, a, form, input, select, textarea, summary, [role="button"], [role="link"], [tabindex]'
+  return [...document.querySelectorAll(selector)].map((el) => {
+    const toggle = ['theme-toggle', 'fullscreen-toggle'].find((name) => el.classList.contains(name))
+    return `${el.tagName.toLowerCase()}[type=${el.getAttribute('type') ?? ''}]${toggle === undefined ? '' : `.${toggle}`}`
+  })
 }
 
 async function measure(tour: Tour, surface: Surface): Promise<Measures> {
@@ -77,11 +89,12 @@ async function measure(tour: Tour, surface: Surface): Promise<Measures> {
   const layout = await run<LayoutReport>(layoutProbe)
   const targets = await run<TargetReport>(targetProbe, { minSize: MIN_TARGET_PX })
   const panels = surface === 'display' ? await run<PanelReport>(panelProbe, { selector: 'main.display .ui-glass-card' }) : null
-  return { layout, targets, panels }
+  const controls = surface === 'display' ? await run<string[]>(displayControlProbe) : null
+  return { layout, targets, panels, controls }
 }
 
 // 不合格即失败；只记录不判定的：管理端（桌面）小于 44 px 的可点击元素。
-function judge(name: string, surface: Surface, { layout, targets, panels }: Measures): void {
+function judge(name: string, surface: Surface, { layout, targets, panels, controls }: Measures): void {
   expect([layout.pageOverflowX <= 0, layout.contentOverflowX <= 0], `${name} 横向溢出`).toEqual([true, true])
   expect(targets.overlaps, `${name} 可点击元素互相重叠`).toEqual([])
   if (surface === 'user' || surface === 'login') {
@@ -95,7 +108,7 @@ function judge(name: string, surface: Surface, { layout, targets, panels }: Meas
     expect(layout.lastBottom ?? 0, `${name} 滚到底时最后一项被 Dock 压住`).toBeLessThanOrEqual(layout.dockTop ?? 0)
   }
   if (surface === 'display' && panels !== null) {
-    expect(targets.count, `${name} 大屏出现可交互元素`).toBe(0)
+    expect(controls, `${name} 大屏只应有主题与全屏两个按钮`).toEqual(DISPLAY_CONTROLS)
     expect(layout.minFontPx, `${name} 最小字号`).toBeGreaterThanOrEqual(MIN_FONT_PX)
     expect(panels.overlaps, `${name} 面板重叠`).toEqual([])
     expect([panels.scrollX, panels.scrollY], `${name} 出现滚动条`).toEqual([0, 0])
@@ -124,10 +137,21 @@ async function scrollContentToBottom(tour: Tour): Promise<void> {
   await tour.page.evaluate('(() => { const c = document.querySelector("main.content"); c.scrollTop = c.scrollHeight })()')
 }
 
+// 大屏的主题不随系统设置：需要时点一下页面上的主题按钮（UI-2a），并等到根元素的 data-display-theme 变过来。
+async function setDisplayTheme(tour: Tour, theme: Theme): Promise<void> {
+  const current = 'document.querySelector("main.display")?.getAttribute("data-display-theme")'
+  if (await tour.page.evaluate<string | null>(current) !== theme) {
+    await tour.page.clickCss('main.display button.theme-toggle')
+    await tour.page.waitFor(`${current} === ${JSON.stringify(theme)}`, `大屏主题 ${theme}`)
+  }
+}
+
 export async function capture(tour: Tour, name: string, options: CaptureOptions): Promise<void> {
-  const themes = options.themes ?? [options.surface === 'display' ? 'dark' : 'light']
+  const themes = options.themes ?? (options.surface === 'display' ? ['light', 'dark'] : ['light'])
   for (const theme of themes) {
-    if (options.surface !== 'display') {
+    if (options.surface === 'display') {
+      await setDisplayTheme(tour, theme)
+    } else {
       await tour.page.setTheme(theme)
     }
     await assertTexts(tour, options)

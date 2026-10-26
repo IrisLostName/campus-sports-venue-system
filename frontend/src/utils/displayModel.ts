@@ -40,9 +40,23 @@ export function formatTimestamp(timestamp: string): string {
 }
 
 export interface MetricView {
-  key: 'reservations' | 'inUse' | 'utilization'
+  key: 'reservations' | 'inUse' | 'utilization' | 'openResources'
   label: string
   value: string
+}
+
+// “开放场地 X/Y”（UI-2a）：各场馆 resourceOpen、resourceTotal 的合计，不另取数据。
+export interface OpenResourcesView {
+  open: number
+  total: number
+  text: string
+}
+
+// “场地实时状态”环形图（UI-2a）：按接口给出的 state 计数，五种状态都列出（数量可为 0）。
+export interface StateCountView {
+  state: ResourceLiveState
+  label: string
+  count: number
 }
 
 export interface ResourceView {
@@ -57,16 +71,29 @@ export interface VenueGroupView {
   name: string
   statusLabel: string
   bookingLabel: string
+  isOpen: boolean
+  bookingEnabled: boolean
   openText: string
   reservedNowText: string
+  // 进度条：当前已预约 ÷ 开放场地（0–1）；开放场地为 0 时为 0。
+  reservedRatio: number
   resources: ResourceView[]
 }
 
+// x、y 是折线点在绘图区里的百分比坐标：x 取每列的中点，y 从上往下量（100 为横轴）。
 export interface TrendBarView {
   date: string
   label: string
   count: number
   heightPercent: number
+  x: number
+  y: number
+}
+
+// 纵轴刻度：只取 0、最大值的一半与最大值中的整数；percent 是距横轴的高度。
+export interface TrendTickView {
+  value: number
+  percent: number
 }
 
 export interface NoticeView {
@@ -77,8 +104,12 @@ export interface NoticeView {
 export interface DisplayBoardView {
   generatedAtText: string
   metrics: MetricView[]
+  openResources: OpenResourcesView
   venues: VenueGroupView[]
+  stateBreakdown: StateCountView[]
+  resourceCount: number
   trend: TrendBarView[]
+  trendTicks: TrendTickView[]
   notices: NoticeView[]
 }
 
@@ -96,8 +127,11 @@ function buildVenues(summary: DisplaySummary): VenueGroupView[] {
     name: venue.venueName,
     statusLabel: VENUE_STATUS_LABELS[venue.operationalStatus],
     bookingLabel: venue.userBookingEnabled ? '开放预约' : '未开放预约',
+    isOpen: venue.operationalStatus === 'OPEN',
+    bookingEnabled: venue.userBookingEnabled,
     openText: `开放场地 ${venue.resourceOpen}/${venue.resourceTotal}`,
     reservedNowText: `当前已预约 ${venue.resourcesReservedNow}`,
+    reservedRatio: venue.resourceOpen === 0 ? 0 : Math.min(1, venue.resourcesReservedNow / venue.resourceOpen),
     resources: summary.resources
       .filter((resource) => resource.venueId === venue.venueId)
       .map((resource) => ({
@@ -112,11 +146,48 @@ function buildVenues(summary: DisplaySummary): VenueGroupView[] {
 // 柱高只是相对最大值的显示比例；日期标签取 MM-DD。
 function buildTrend(summary: DisplaySummary): TrendBarView[] {
   const peak = Math.max(0, ...summary.weekTrend.map((day) => day.reservationCount))
-  return summary.weekTrend.map((day) => ({
-    date: day.date,
-    label: day.date.slice(YEAR_PREFIX_LENGTH),
-    count: day.reservationCount,
-    heightPercent: peak === 0 ? 0 : (day.reservationCount / peak) * 100,
+  const columns = summary.weekTrend.length
+  return summary.weekTrend.map((day, index) => {
+    const heightPercent = peak === 0 ? 0 : (day.reservationCount / peak) * 100
+    return {
+      date: day.date,
+      label: day.date.slice(YEAR_PREFIX_LENGTH),
+      count: day.reservationCount,
+      heightPercent,
+      x: ((index + 0.5) / columns) * 100,
+      y: 100 - heightPercent,
+    }
+  })
+}
+
+function buildTrendTicks(summary: DisplaySummary): TrendTickView[] {
+  const peak = Math.max(0, ...summary.weekTrend.map((day) => day.reservationCount))
+  if (peak === 0) {
+    return [{ value: 0, percent: 0 }]
+  }
+  return [0, 0.5, 1]
+    .map((share) => ({ value: peak * share, percent: share * 100 }))
+    .filter((tick) => Number.isInteger(tick.value))
+}
+
+function buildOpenResources(summary: DisplaySummary): OpenResourcesView {
+  const open = summary.venues.reduce((sum, venue) => sum + venue.resourceOpen, 0)
+  const total = summary.venues.reduce((sum, venue) => sum + venue.resourceTotal, 0)
+  return { open, total, text: `${open}/${total}` }
+}
+
+// 只计入归属于 venues[] 的场地，与页面上显示的场地方块一致。
+function shownResources(summary: DisplaySummary) {
+  const venueIds = new Set(summary.venues.map((venue) => venue.venueId))
+  return summary.resources.filter((resource) => venueIds.has(resource.venueId))
+}
+
+function buildStateBreakdown(summary: DisplaySummary): StateCountView[] {
+  const resources = shownResources(summary)
+  return (Object.keys(STATE_LABELS) as ResourceLiveState[]).map((state) => ({
+    state,
+    label: STATE_LABELS[state],
+    count: resources.filter((resource) => resource.state === state).length,
   }))
 }
 
@@ -124,8 +195,12 @@ export function buildDisplayBoardView(summary: DisplaySummary): DisplayBoardView
   return {
     generatedAtText: formatTimestamp(summary.generatedAt),
     metrics: buildMetrics(summary),
+    openResources: buildOpenResources(summary),
     venues: buildVenues(summary),
+    stateBreakdown: buildStateBreakdown(summary),
+    resourceCount: shownResources(summary).length,
     trend: buildTrend(summary),
+    trendTicks: buildTrendTicks(summary),
     notices: summary.notices.slice(0, NOTICE_LIMIT).map((notice) => ({ id: notice.id, title: notice.title })),
   }
 }

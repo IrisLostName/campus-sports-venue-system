@@ -90,7 +90,9 @@ scan(feSrc.filter((f) => !relative(root, f).replaceAll('\\', '/').startsWith('fr
 ], (rel) => rel.includes('.spec.') || rel.includes('.test.'));
 // 令牌只允许在 auth store 中读写 storage
 scan(feSrc, [[/localStorage|sessionStorage/, 'storage 只允许在 stores/auth 中使用']],
-  (rel) => rel.includes('stores/auth') || rel.includes('.spec.') || rel.includes('.test.'));
+  // UI-2a：大屏主题偏好，2026-10-26 批准；只放行这一个文件。
+  (rel) => rel.includes('stores/auth') || rel === 'frontend/src/views/display/displayTheme.ts'
+    || rel.includes('.spec.') || rel.includes('.test.'));
 
 // ---------- 错误码覆盖 ----------
 function errorCodes() {

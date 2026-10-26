@@ -46,7 +46,7 @@ describe('ACC-M4-02 主要页面走查（http 模式，真实后端）', () => {
   it('用户端：375×812 关键页', () => userMobile375(current()))
   it('场馆管理员端：七个导航项（1440×900）', () => venueAdminPages(current()))
   it('系统管理员端：十一个导航项（1440×900）', () => sysAdminPages(current()))
-  it('运营大屏：1440×900、1920×1080、1366×768（固定深色）', () => displayPages(current()))
+  it('运营大屏：1440×900、1920×1080、1366×768（浅色与深色）', () => displayPages(current()))
 
   it('没有失败或超过 5 秒的接口请求，页面脚本没有异常', () => {
     const { page, pageErrors } = current()
