@@ -26,6 +26,8 @@
         <jacoco.version>0.8.15</jacoco.version>
         <checkstyle.plugin.version>3.6.0</checkstyle.plugin.version>
         <checkstyle.version>12.3.1</checkstyle.version>
+        <!-- 2026-10-25 SEC-1：Spring Boot 3.5 已停止更新，固定内嵌 Tomcat 以获得安全修复（含 CVE-2026-101296） -->
+        <tomcat.version>10.1.61</tomcat.version>
         <!-- 供 Surefire 的 @{argLine} 延迟替换使用；JaCoCo 的 prepare-agent 会覆盖它 -->
         <argLine></argLine>
     </properties>
