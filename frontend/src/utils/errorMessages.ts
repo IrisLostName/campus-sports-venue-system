@@ -24,6 +24,7 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   CANCEL_DEADLINE_PASSED: '已超过可取消时间',
   ALREADY_CHECKED_IN: '已签到',
   CHECKIN_WINDOW_CLOSED: '当前不在签到时间内',
+  CHECKIN_CODE_INVALID: '签到码无效',
   NOT_CHECKED_IN: '尚未签到',
   ALREADY_CHECKED_OUT: '已签退',
   USER_NOT_ELIGIBLE: '目标用户不可被分配预约',
