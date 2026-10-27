@@ -7,6 +7,7 @@ import com.campus.venue.common.error.UniqueViolations;
 import com.campus.venue.reservation.domain.Reservation;
 import com.campus.venue.reservation.domain.ReservationStatus;
 import com.campus.venue.reservation.domain.UsageRecord;
+import com.campus.venue.reservation.dto.AdminReservationView;
 import com.campus.venue.reservation.dto.ReservationView;
 import com.campus.venue.reservation.repository.ReservationRepository;
 import com.campus.venue.reservation.repository.UsageRecordRepository;
@@ -14,14 +15,16 @@ import com.campus.venue.security.AuthenticatedUser;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Map;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 签到与签退（docs/10 第 4 节，BE-4 I1–I4、O1–O2）。认证、格式、角色 USER 在过滤器与控制器完成；业务顺序与
- * mock 的 checkIn、checkOut（frontend/src/api/mock/reservationService.ts）一致。
+ * 签到与签退（docs/10 第 4 节，BE-4 I1–I4、O1–O2）。认证、格式、角色在过滤器与控制器完成；签到的业务规则与使用记录写入
+ * 只在 checkInLocked 一处实现（契约 v1.1 起由管理员扫码签到经 checkInScanned 复用，P2-1b）。签退的业务顺序与 mock 的 checkOut
+ * （frontend/src/api/mock/reservationService.ts）一致。
  * 只锁预约行、不锁用户行（BE-4 G6：全系统先用户行、后预约行）；状态判断一律用有效状态（BE-4 G7）。
  */
 @Service
@@ -57,14 +60,33 @@ public class ReservationUsageService {
     public ReservationView checkIn(AuthenticatedUser user, long id) {
         LocalDateTime now = LocalDateTime.now(clock);
         Reservation reservation = lockOwned(user, id);
-        UsageRecord usage = usageRecords.findByReservationId(id).orElse(null);
+        checkInLocked(reservation, now);
+        return mapper.toView(reservation, now);
+    }
+
+    /**
+     * 扫码签到的业务段（docs/12 第 5.7 节 POST /admin/check-ins，P2-1b）：签到码与范围已由 AdminCheckInService 在同一事务内
+     * 裁决，预约行已由其锁定；这里执行签到规则（checkInLocked）并返回 AdminReservation。不写管理员操作日志。
+     */
+    @Transactional
+    public AdminReservationView checkInScanned(Reservation reservation) {
+        LocalDateTime now = LocalDateTime.now(clock);
+        checkInLocked(reservation, now);
+        return mapper.toAdminViews(List.of(reservation), now).get(0);
+    }
+
+    /**
+     * 签到规则（I1–I4）：有效状态 CONFIRMED（否则 INVALID_STATE）→ 签到窗口闭区间（否则 CHECKIN_WINDOW_CLOSED）→
+     * 尚无使用记录（否则 ALREADY_CHECKED_IN）→ 写入 check_in_at。预约行须已由调用方锁定。
+     */
+    private void checkInLocked(Reservation reservation, LocalDateTime now) {
+        UsageRecord usage = usageRecords.findByReservationId(reservation.getId()).orElse(null);
         requireEffectiveStatus(reservation, usage, now, ReservationStatus.CONFIRMED);
         requireInsideCheckInWindow(reservation, now);
         if (usage != null) {
             throw new BusinessException(ErrorCode.ALREADY_CHECKED_IN);
         }
-        insertUsage(id, now);
-        return mapper.toView(reservation, now);
+        insertUsage(reservation.getId(), now);
     }
 
     /**
