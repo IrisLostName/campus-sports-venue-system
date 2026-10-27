@@ -21,7 +21,9 @@
     "test:e2e:tools": "vitest run --config tests/e2e/vitest.e2e.config.ts --project tools"
   },
   "dependencies": {
+    "jsqr": "1.4.0",
     "pinia": "^4.0.3",
+    "qrcode-generator": "2.0.4",
     "vue": "^3.5.43",
     "vue-router": "^5.3.1"
   },

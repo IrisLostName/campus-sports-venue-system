@@ -9,6 +9,7 @@ import { useRoute } from 'vue-router'
 import { APP_NAME, pageTitleOf } from '../../router/titles'
 import { useAuthStore } from '../../stores/auth'
 import type { AdminNavItem } from '../../utils/adminNav'
+import BrandMark from '../BrandMark.vue'
 import LogoutButton from '../LogoutButton.vue'
 import UiIcon from '../ui/UiIcon.vue'
 
@@ -34,7 +35,7 @@ const pageTitle = computed(() => pageTitleOf(route))
     <aside class="sidebar ui-glass">
       <div class="brand-block">
         <span class="logo">
-          <UiIcon name="court" />
+          <BrandMark />
         </span>
         <div class="brand-text">
           <p class="brand">
@@ -129,17 +130,12 @@ const pageTitle = computed(() => pageTitleOf(route))
   border-bottom: 1px solid var(--color-separator);
 }
 
+/* P2-1c：A2 网站图标（蓝底 + 黄绿网球），图形自带蓝色底块。 */
 .logo {
   display: inline-flex;
   flex: none;
-  align-items: center;
-  justify-content: center;
   width: 28px;
   height: 28px;
-  border-radius: var(--radius-sm);
-  background: var(--color-accent-fill);
-  color: var(--on-accent);
-  font-size: 18px;
 }
 
 .brand-text {

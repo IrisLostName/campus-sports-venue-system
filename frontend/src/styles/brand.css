@@ -1,0 +1,12 @@
+/* P2-1c：品牌图形（A2，与 public/favicon.svg 相同）、签到二维码与扫码取景框的固定颜色，不随深浅色与表面变化。
+   单独成文件：tokens.css 的既有内容与追加块由 UI-2a / UI-2b 的测试逐字锁定，这里不改动它。
+   二维码在深色模式下仍是白底深色模块（扫码要求），取景框画在摄像头画面（深色）之上。 */
+:root {
+  --brand-tile: #165dff;
+  --brand-ball: #c6f432;
+  --qr-paper: #ffffff;
+  --qr-ink: #1d2129;
+  --scan-stage: #1d2129;
+  --scan-frame: rgba(255, 255, 255, 0.85);
+  --scan-laser: #6aa1ff;
+}
