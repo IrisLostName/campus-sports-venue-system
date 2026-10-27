@@ -149,11 +149,11 @@ class ReservationCheckOutApiTest extends UsageApiTestBase {
     }
 
     @Test
-    @DisplayName("ACC-M3-05 签到后签退的完整流程：签到 IN_USE → 签退 CHECKED_OUT")
+    @DisplayName("ACC-M3-05 签到后签退的完整流程：管理员扫码签到 IN_USE → 本人签退 CHECKED_OUT")
     void checkInThenCheckOut() throws Exception {
         long id = todaySlot(zhangsan);
         clock.setLocal(today(9, 25, 0));
-        assertThat(json(checkIn(zhangsan, id)).get("displayStatus").asText()).isEqualTo("IN_USE");
+        assertThat(json(scanIn(id)).get("displayStatus").asText()).isEqualTo("IN_USE");
 
         clock.setLocal(today(10, 45, 0));
         JsonNode body = json(checkOut(zhangsan, id));

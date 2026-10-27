@@ -17,7 +17,8 @@ import org.springframework.test.web.servlet.MvcResult;
  * TEST-1 K7 边界时刻（FE-3 审计第 11 节第 3 条、台账 ACC-M3-12 第 5 节第 2 条）：今天 09:30–11:00 的时段，
  * 取消截止 07:30、签到窗口 [09:15, 09:45]、结束 11:00、签退宽限截止 11:30（不含），各取“前一秒 / 正好 / 后一秒”。
  * 每行：按签到记录状态（NONE 无、IN 09:20 签到、OUT 09:20 签到 10:30 签退）造预约，时钟只来自可调 Clock；
- * 断言 GET 详情的 status（有效状态）与 displayStatus、对应接口的结果（成功时返回的 displayStatus），
+ * 断言 GET 详情的 status（有效状态）与 displayStatus、对应接口的结果（成功时返回的 displayStatus；签到自契约 v1.1 起
+ * 由系统管理员扫码 POST /admin/check-ins，返回 AdminReservation），
  * 最后运行一次清扫，断言库中状态与有效状态一致。
  */
 @DisplayName("ACC-M3-05 边界时刻")
@@ -37,7 +38,7 @@ class BoundaryMomentApiTest extends UsageApiTestBase {
     private MvcResult act(String action, long id) throws Exception {
         return switch (action) {
             case "cancel" -> cancel(zhangsan, id, null);
-            case "check-in" -> checkIn(zhangsan, id);
+            case "check-in" -> scanIn(id);
             case "check-out" -> checkOut(zhangsan, id);
             default -> throw new IllegalArgumentException(action);
         };

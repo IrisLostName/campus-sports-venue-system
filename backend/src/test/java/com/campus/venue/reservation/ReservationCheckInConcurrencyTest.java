@@ -15,7 +15,8 @@ import org.junit.jupiter.api.RepeatedTest;
 import org.springframework.test.web.servlet.MvcResult;
 
 /**
- * ACC-M3-05 并发签到（BE-4 I3、T3）：真实线程 + CountDownLatch + 真实 PostgreSQL，经完整的 HTTP 栈同时提交。
+ * ACC-M3-05 并发签到（BE-4 I3、T3）：真实线程 + CountDownLatch + 真实 PostgreSQL，经完整的 HTTP 栈同时提交
+ * （契约 v1.1 起签到只能由管理员扫码，POST /admin/check-ins）。
  * 预约行锁使第二个请求看到第一个的使用记录；uq_usage_record_reservation 的 23505 兜底转换为 ALREADY_CHECKED_IN。
  * 重复多次以提高真正交错的概率。
  */
@@ -53,13 +54,14 @@ class ReservationCheckInConcurrencyTest extends UsageApiTestBase {
     }
 
     @RepeatedTest(10)
-    @DisplayName("ACC-M3-05 同一预约两个签到请求同时提交：恰好 1 个 200、1 个 ALREADY_CHECKED_IN，使用记录 1 条")
+    @DisplayName("ACC-M3-05 同一个签到码被两次扫码同时提交：恰好 1 个 200、1 个 ALREADY_CHECKED_IN，使用记录 1 条")
     void twoSimultaneousCheckInsYieldExactlyOneUsageRecord() throws Exception {
         long id = todaySlot(zhangsan);
         clock.setLocal(today(9, 20, 0));
-        String authorization = userBearer(zhangsan);
+        String authorization = scannerBearer();
+        String code = codeOf(id);
 
-        List<String> outcomes = runTogether(() -> checkIn(authorization, id));
+        List<String> outcomes = runTogether(() -> scan(authorization, code));
 
         assertThat(outcomes).containsExactlyInAnyOrder("200", "409 ALREADY_CHECKED_IN");
         assertThat(usageCount(id)).isEqualTo(1);

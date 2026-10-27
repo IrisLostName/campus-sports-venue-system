@@ -3,6 +3,7 @@ package com.campus.venue.reservation;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.campus.venue.common.error.ErrorCode;
+import com.campus.venue.reservation.service.CheckInCodes;
 import com.campus.venue.reservation.service.ReservationSweepService;
 import com.campus.venue.reservation.service.ReservationSweepService.SweepResult;
 import com.campus.venue.user.domain.Role;
@@ -11,6 +12,7 @@ import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -23,7 +25,7 @@ import org.springframework.test.web.servlet.MvcResult;
 /**
  * TEST-1 S2 状态迁移（docs/03 第 4.2、4.3 节）：每一条允许的迁移与每一条被拒的迁移。时钟 2026-10-12 08:30:15。
  * 被拒：库中四种终态，以及“有效状态已是终态”的 CONFIRMED（越过未到场判定点未签到 → NO_SHOW；已签到且已结束 → COMPLETED），
- * 对用户取消、签到、签退、管理员取消、资源改派、人员改派六个动作都得 INVALID_STATE {status: 有效状态}，预约、使用记录、日志不变；
+ * 对用户取消、签发签到码、扫码签到（契约 v1.1）、签退、管理员取消、资源改派、人员改派七个动作都得 INVALID_STATE {status: 有效状态}，预约、使用记录、日志不变；
  * 随后清扫把有效终态落库、库中终态不动（终态一旦进入不再变化）。今天 06:30–08:00 的时段已过签退宽限（08:30:00）。
  */
 @DisplayName("TEST-1 预约状态迁移")
@@ -41,8 +43,9 @@ class StateTransitionMatrixTest extends AdminReservationApiTestBase {
         Map<String, Action> map = new LinkedHashMap<>();
         map.put("用户取消", id -> send(HttpMethod.POST, "/api/v1/reservations/{id}/cancel", null, zhangsan, Role.USER,
                 id));
-        map.put("签到", id -> send(HttpMethod.POST, "/api/v1/reservations/{id}/check-in", null, zhangsan, Role.USER,
-                id));
+        map.put("签发签到码", id -> send(HttpMethod.GET, "/api/v1/reservations/{id}/check-in-code", null, zhangsan,
+                Role.USER, id));
+        map.put("扫码签到", id -> asSys(HttpMethod.POST, "/api/v1/admin/check-ins", body("code", codeOf(id))));
         map.put("签退", id -> send(HttpMethod.POST, "/api/v1/reservations/{id}/check-out", null, zhangsan, Role.USER,
                 id));
         map.put("管理员取消", id -> asSys(HttpMethod.POST, CANCEL, body("reason", "调整"), id));
@@ -50,6 +53,13 @@ class StateTransitionMatrixTest extends AdminReservationApiTestBase {
                 TOMORROW.toString(), "startTime", "11:00", "reason", "调整"), id));
         map.put("人员改派", id -> asSys(HttpMethod.POST, REASSIGN_USER, body("userId", lisi, "reason", "调整"), id));
         return map;
+    }
+
+    /** 预约人的签到码（签到标识不映射到实体，直接查库）。 */
+    private String codeOf(long reservationId) {
+        UUID uuid = jdbc.queryForObject("select u.check_in_uuid from reservation r join app_user u on u.id = r.user_id"
+                + " where r.id = ?", UUID.class, reservationId);
+        return CheckInCodes.format(uuid, reservationId);
     }
 
     /** 名称、库中状态、开始时间（今天）、是否有签到记录、有效状态。 */
@@ -65,7 +75,7 @@ class StateTransitionMatrixTest extends AdminReservationApiTestBase {
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("refused")
-    @DisplayName("被拒迁移：终态或有效终态 × 六个动作 → INVALID_STATE {status: 有效状态}；数据与日志不变；清扫只落库有效终态")
+    @DisplayName("被拒迁移：终态或有效终态 × 七个动作 → INVALID_STATE {status: 有效状态}；数据与日志不变；清扫只落库有效终态")
     void terminalStatesRefuseEveryAction(String name, String stored, String start, boolean checkedIn,
             String effective) throws Exception {
         long id = fixtures.reservation(zhangsan, court1, TODAY, start, stored);

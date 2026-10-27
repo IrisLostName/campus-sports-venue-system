@@ -87,18 +87,14 @@ public class ReservationController {
         return cancelService.cancel(user, id, request);
     }
 
-    /** 契约 v1.1：本人预约的签到码，供管理员扫码签到（POST /admin/check-ins）。 */
+    /**
+     * 契约 v1.1：本人预约的签到码，供管理员扫码签到（POST /admin/check-ins）。自助签到 POST /{id}/check-in 已删除
+     * （只允许扫码签到），该路径按不存在处理（NOT_FOUND）。
+     */
     @GetMapping("/{id}/check-in-code")
     @PreAuthorize("hasRole('USER')")
     public CheckInCode checkInCode(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable long id) {
         return checkInCodeService.issue(user, id);
-    }
-
-    /** 无请求体（带了也忽略，BE-4 I1）。 */
-    @PostMapping("/{id}/check-in")
-    @PreAuthorize("hasRole('USER')")
-    public ReservationView checkIn(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable long id) {
-        return usageService.checkIn(user, id);
     }
 
     /** 无请求体（带了也忽略，BE-4 O1）。 */

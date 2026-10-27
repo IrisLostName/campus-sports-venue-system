@@ -33,15 +33,6 @@ abstract class UsageApiTestBase extends ReservationApiTestBase {
         return fixtures.reservation(userId, court1, TODAY, SLOT, "CONFIRMED");
     }
 
-    MvcResult checkIn(String authorization, Object id) throws Exception {
-        return mockMvc.perform(post(RESERVATIONS + "/" + id + "/check-in")
-                .header(HttpHeaders.AUTHORIZATION, authorization)).andReturn();
-    }
-
-    MvcResult checkIn(long userId, long id) throws Exception {
-        return checkIn(userBearer(userId), id);
-    }
-
     /** 用户的随机签到标识（实体不映射该列，直接查库）。 */
     UUID checkInUuid(long userId) {
         return jdbc.queryForObject("select check_in_uuid from app_user where id = ?", UUID.class, userId);

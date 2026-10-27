@@ -11,6 +11,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -178,5 +179,174 @@ class AdminCheckInApiTest extends UsageApiTestBase {
         // SA 不受范围限制，走到业务检查
         assertThat(assertError(scan(sys(), codeOf(cancelledOutOfScope)), ErrorCode.INVALID_STATE)
                 .get("details").get("status").asText()).isEqualTo("CANCELLED");
+    }
+
+    // ---- 以下由原 ReservationCheckInApiTest（用户自助签到，契约 v1.1 删除）迁移而来，规则不变，改为扫码驱动 ----
+
+    @Test
+    @DisplayName("ACC-M3-05 窗口开启时刻正好（开始前 15 分钟）签到成功：IN_USE、checkInAt 取时钟、写入使用记录")
+    void checkInExactlyWhenTheWindowOpens() throws Exception {
+        long id = todaySlot(zhangsan);
+        clock.setLocal(today(9, 15, 0));
+
+        JsonNode body = scannedOk(scan(sys(), codeOf(id)));
+
+        assertThat(body.get("id").asLong()).isEqualTo(id);
+        assertThat(body.get("status").asText()).isEqualTo("CONFIRMED");
+        assertThat(body.get("displayStatus").asText()).isEqualTo("IN_USE");
+        assertThat(body.get("checkInAt").asText()).isEqualTo("2026-10-12T09:15:00");
+        assertThat(body.get("checkOutAt").isNull()).isTrue();
+        assertThat(jdbc.queryForObject("select check_in_at::text from usage_record where reservation_id = ?"
+                + " and check_out_at is null", String.class, id)).isEqualTo("2026-10-12 09:15:00");
+        assertThat(status(id)).isEqualTo("CONFIRMED");
+    }
+
+    @Test
+    @DisplayName("ACC-M3-05 窗口开启前 1 秒：CHECKIN_WINDOW_CLOSED，details 带 opensAt、closesAt，不写使用记录")
+    void oneSecondBeforeTheWindowOpensIsClosed() throws Exception {
+        long id = todaySlot(zhangsan);
+        clock.setLocal(today(9, 14, 59));
+
+        JsonNode body = assertError(scan(sys(), codeOf(id)), ErrorCode.CHECKIN_WINDOW_CLOSED);
+
+        assertThat(body.get("details").get("opensAt").asText()).isEqualTo("2026-10-12T09:15:00");
+        assertThat(body.get("details").get("closesAt").asText()).isEqualTo("2026-10-12T09:45:00");
+        assertThat(usageCount(id)).isZero();
+    }
+
+    @Test
+    @DisplayName("ACC-M3-05 窗口关闭时刻正好（开始后 15 分钟）签到成功")
+    void checkInExactlyWhenTheWindowCloses() throws Exception {
+        long id = todaySlot(zhangsan);
+        clock.setLocal(today(9, 45, 0));
+
+        JsonNode body = scannedOk(scan(va(), codeOf(id)));
+
+        assertThat(body.get("displayStatus").asText()).isEqualTo("IN_USE");
+        assertThat(body.get("checkInAt").asText()).isEqualTo("2026-10-12T09:45:00");
+        assertThat(usageCount(id)).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("ACC-M3-05 I2：窗口关闭后 1 秒有效状态为 NO_SHOW → INVALID_STATE {status: NO_SHOW}，库中不变")
+    void oneSecondAfterTheWindowClosesIsNoShow() throws Exception {
+        long id = todaySlot(zhangsan);
+        clock.setLocal(today(9, 45, 1));
+
+        JsonNode body = assertError(scan(sys(), codeOf(id)), ErrorCode.INVALID_STATE);
+
+        assertThat(body.get("details").get("status").asText()).isEqualTo("NO_SHOW");
+        assertThat(usageCount(id)).isZero();
+        assertThat(status(id)).isEqualTo("CONFIRMED");
+    }
+
+    @Test
+    @DisplayName("ACC-M3-05 同一个码在窗口内再次使用：ALREADY_CHECKED_IN，使用记录仍为 1 条且签到时间不变")
+    void secondCheckInInsideTheWindowIsAlreadyCheckedIn() throws Exception {
+        long id = todaySlot(zhangsan);
+        clock.setLocal(today(9, 20, 0));
+        String code = codeOf(id);
+        scannedOk(scan(sys(), code));
+        clock.setLocal(today(9, 25, 0));
+
+        assertError(scan(sys(), code), ErrorCode.ALREADY_CHECKED_IN);
+        assertError(scan(va(), code), ErrorCode.ALREADY_CHECKED_IN);
+        assertThat(usageCount(id)).isEqualTo(1);
+        assertThat(jdbc.queryForObject("select check_in_at::text from usage_record where reservation_id = ?",
+                String.class, id)).isEqualTo("2026-10-12 09:20:00");
+    }
+
+    @Test
+    @DisplayName("ACC-M3-05 顺序：已签到后在窗口外（结束前）再扫码，窗口检查先于已签到 → CHECKIN_WINDOW_CLOSED")
+    void secondCheckInOutsideTheWindowIsWindowClosed() throws Exception {
+        long id = checkedIn(zhangsan, court1, TODAY, SLOT, today(9, 20, 0));
+        clock.setLocal(today(9, 50, 0));
+
+        JsonNode body = assertError(scan(sys(), codeOf(id)), ErrorCode.CHECKIN_WINDOW_CLOSED);
+
+        assertThat(body.get("details").get("opensAt").asText()).isEqualTo("2026-10-12T09:15:00");
+        assertThat(body.get("details").get("closesAt").asText()).isEqualTo("2026-10-12T09:45:00");
+    }
+
+    @Test
+    @DisplayName("ACC-M3-05 已签到且已结束：有效状态 COMPLETED → INVALID_STATE")
+    void checkedInAndEndedIsInvalidState() throws Exception {
+        long id = checkedIn(zhangsan, court1, TODAY, SLOT, today(9, 20, 0));
+        clock.setLocal(today(11, 0, 0));
+
+        assertThat(assertError(scan(sys(), codeOf(id)), ErrorCode.INVALID_STATE)
+                .get("details").get("status").asText()).isEqualTo("COMPLETED");
+    }
+
+    @Test
+    @DisplayName("ACC-M3-05 INVALID_STATE：已取消、管理员取消、NO_SHOW（窗口内也拒绝），details.status 为该状态")
+    void terminalStatusesAreInvalidState() throws Exception {
+        long cancelled = fixtures.reservation(zhangsan, court1, TODAY, SLOT, "CANCELLED");
+        long adminCancelled = fixtures.reservation(zhangsan, court1, TODAY, SLOT, "ADMIN_CANCELLED");
+        long noShow = fixtures.reservation(zhangsan, court2, TODAY, SLOT, "NO_SHOW");
+        clock.setLocal(today(9, 20, 0));
+
+        assertThat(assertError(scan(sys(), codeOf(cancelled)), ErrorCode.INVALID_STATE)
+                .get("details").get("status").asText()).isEqualTo("CANCELLED");
+        assertThat(assertError(scan(sys(), codeOf(adminCancelled)), ErrorCode.INVALID_STATE)
+                .get("details").get("status").asText()).isEqualTo("ADMIN_CANCELLED");
+        assertThat(assertError(scan(va(), codeOf(noShow)), ErrorCode.INVALID_STATE)
+                .get("details").get("status").asText()).isEqualTo("NO_SHOW");
+        assertThat(jdbc.queryForObject("select count(*) from usage_record", Integer.class)).isZero();
+    }
+
+    @Test
+    @DisplayName("ACC-M3-05 认证 → 格式 → 角色（USER 为 FORBIDDEN）→ 签到码（预约不存在为 CHECKIN_CODE_INVALID）")
+    void authenticationFormatRoleThenCodeInvalid() throws Exception {
+        long id = todaySlot(zhangsan);
+        clock.setLocal(today(9, 20, 0));
+
+        assertError(mockMvc.perform(post(ADMIN_CHECK_INS).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"code\":\"" + codeOf(id) + "\"}")).andReturn(), ErrorCode.AUTH_REQUIRED);
+        assertError(scan(sys(), "abc"), ErrorCode.VALIDATION_ERROR);
+        assertError(scan(userBearer(zhangsan), codeOf(id)), ErrorCode.FORBIDDEN);
+        assertError(scan(sys(), checkInUuid(zhangsan) + ".999999"), ErrorCode.CHECKIN_CODE_INVALID);
+        assertError(scan(va(), checkInUuid(zhangsan) + ".999999"), ErrorCode.CHECKIN_CODE_INVALID);
+        assertThat(usageCount(id)).isZero();
+    }
+
+    @Test
+    @DisplayName("ACC-M3-05 契约 v1.1 删除的自助签到 POST /reservations/{id}/check-in 按不存在处理：NOT_FOUND，不写使用记录")
+    void removedSelfCheckInIsNotFound() throws Exception {
+        long id = todaySlot(zhangsan);
+        clock.setLocal(today(9, 20, 0));
+
+        for (String authorization : new String[] {userBearer(zhangsan), sys(), va()}) {
+            assertError(mockMvc.perform(post(RESERVATIONS + "/{id}/check-in", id)
+                    .header(HttpHeaders.AUTHORIZATION, authorization)).andReturn(), ErrorCode.NOT_FOUND);
+        }
+        assertThat(usageCount(id)).isZero();
+    }
+
+    @Test
+    @DisplayName("ACC-M3-05 签到码不符先于状态与窗口：他人标识拼本人的待签到、已签到、窗口未开的预约")
+    void codeMismatchPrecedesStateAndWindow() throws Exception {
+        long open = todaySlot(zhangsan);
+        long taken = checkedIn(zhangsan, court2, TODAY, SLOT, today(9, 16, 0));
+        long future = fixtures.reservation(zhangsan, court1, TOMORROW, SLOT, "CONFIRMED");
+        clock.setLocal(today(9, 20, 0));
+        UUID lisiUuid = checkInUuid(lisi);
+
+        assertError(scan(sys(), lisiUuid + "." + open), ErrorCode.CHECKIN_CODE_INVALID);
+        assertError(scan(sys(), lisiUuid + "." + taken), ErrorCode.CHECKIN_CODE_INVALID);
+        assertError(scan(sys(), lisiUuid + "." + future), ErrorCode.CHECKIN_CODE_INVALID);
+        assertThat(usageCount(open)).isZero();
+    }
+
+    @Test
+    @DisplayName("ACC-M3-05 I1：请求体中 code 以外的字段被忽略，签到时间仍取时钟")
+    void extraFieldsAreIgnored() throws Exception {
+        long id = todaySlot(zhangsan);
+        clock.setLocal(today(9, 30, 0));
+
+        JsonNode body = scannedOk(scanBody(sys(), "{\"code\":\"" + codeOf(id)
+                + "\",\"checkInAt\":\"2026-10-12T08:00:00\",\"reservationId\":1}"));
+
+        assertThat(body.get("checkInAt").asText()).isEqualTo("2026-10-12T09:30:00");
     }
 }
