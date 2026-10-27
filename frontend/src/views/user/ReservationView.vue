@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+// 签到码浮层（P2-1c）按需异步加载：第一次点“出示签到码”后才挂载，二维码库随之只在那时下载。
+import { defineAsyncComponent, onMounted } from 'vue'
 
 import CancelDialog from '../../components/reservation/CancelDialog.vue'
 import ReservationCardView from '../../components/reservation/ReservationCard.vue'
@@ -10,10 +11,13 @@ import UiGlassCard from '../../components/ui/UiGlassCard.vue'
 import { useReservationBoard } from '../../composables/reservationBoard'
 import { PATHS } from '../../router/paths'
 
+const CheckInCodeSheet = defineAsyncComponent(() => import('../../components/reservation/CheckInCodeSheet.vue'))
+
 const {
   phase, cards, isBusy, isEmpty, busyId, loadError, rulesError, pageFeedback, cancelTarget, cancelReason,
-  feedbackFor, trigger, confirmCancel, dismissCancel, load, cancelLockedIds, cancelLockedNote,
+  feedbackFor, trigger, confirmCancel, dismissCancel, load, cancelLockedIds, cancelLockedNote, sheet,
 } = useReservationBoard()
+const { isOpen: sheetOpen, everOpened: sheetMounted, tickets, startIndex, entryOf } = sheet
 
 onMounted(() => {
   void load()
@@ -95,6 +99,16 @@ onMounted(() => {
       :busy="isBusy"
       @confirm="confirmCancel()"
       @dismiss="dismissCancel()"
+    />
+
+    <CheckInCodeSheet
+      v-if="sheetMounted"
+      :open="sheetOpen"
+      :tickets="tickets"
+      :start-index="startIndex"
+      :entry-of="entryOf"
+      @close="sheet.close()"
+      @retry="sheet.retry($event)"
     />
   </section>
 </template>

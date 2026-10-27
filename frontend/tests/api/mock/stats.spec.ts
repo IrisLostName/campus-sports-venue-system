@@ -1,7 +1,7 @@
 // 统计总览与大屏聚合（docs/12 第 5.10 节；口径 docs/03 第 4.5、8 节；规划裁决 A14）。
 import { describe, expect, it } from 'vitest'
 
-import { book, createHarness, expectApiError, travel, TODAY, TOMORROW, type Harness } from '../support/harness'
+import { book, checkInByScan, createHarness, expectApiError, type Harness, TODAY, TOMORROW, travel } from '../support/harness'
 
 // 每天的开放时段：网球馆 4 场地 × 8 = 32，羽毛球馆 6 × 8 = 48，游泳馆 6 × 8 = 48。
 const PER_DAY = { tennis: 32, badminton: 48, pool: 48 }
@@ -55,7 +55,7 @@ describe('统计总览：区间与口径', () => {
   it('未到场率 = NO_SHOW ÷（NO_SHOW + COMPLETED）', async () => {
     const h = await as('zhangsan')
     await travel(h, `${TOMORROW}T08:00:00`, 'zhangsan')
-    await h.api.checkIn(1)
+    await checkInByScan(h.api, await h.clientFor('sysadmin'), 1)
     await travel(h, `${TOMORROW}T12:00:00`, 'sysadmin')
     const stats = await h.api.adminGetStatsOverview({ dateFrom: TOMORROW, dateTo: TOMORROW })
     expect(stats.noShowRate).toBe(0.5)
@@ -64,7 +64,7 @@ describe('统计总览：区间与口径', () => {
   it('当前使用 = 当前时刻在预约区间内且已签到未签退', async () => {
     const h = await as('zhangsan')
     await travel(h, `${TOMORROW}T08:00:00`, 'zhangsan')
-    await h.api.checkIn(1)
+    await checkInByScan(h.api, await h.clientFor('sysadmin'), 1)
     await h.loginAs('sysadmin')
     expect((await h.api.adminGetStatsOverview()).currentInUse).toBe(1)
     h.clock.set(`${TOMORROW}T09:30:00`)
@@ -176,7 +176,7 @@ describe('大屏与管理端口径一致（03 第 8 节末句）', () => {
   it('利用率与当前使用：大屏与管理端同一区间取值相同', async () => {
     const h = await as('zhangsan')
     await travel(h, `${TOMORROW}T08:00:00`, 'zhangsan')
-    await h.api.checkIn(1)
+    await checkInByScan(h.api, await h.clientFor('sysadmin'), 1)
     await h.loginAs('sysadmin')
     const overview = await h.api.adminGetStatsOverview({ dateFrom: TOMORROW, dateTo: TOMORROW })
     const summary = await h.api.getDisplaySummary()
@@ -217,7 +217,7 @@ describe('场地实时状态（03 第 4.5 节）', () => {
   it('已签到未签退 → IN_USE，计入 currentInUse 与 resourcesReservedNow', async () => {
     const h = createHarness()
     await travel(h, `${TOMORROW}T08:00:00`, 'zhangsan')
-    await h.api.checkIn(1)
+    await checkInByScan(h.api, await h.clientFor('sysadmin'), 1)
     expect(await stateOf(h, 1)).toBe('IN_USE')
     const summary = await h.api.getDisplaySummary()
     expect(summary.currentInUse).toBe(1)

@@ -13,7 +13,7 @@ export interface RouteViews {
   reservation: View
   booking: View
   me: View
-  venueAdmin: View            // 场馆管理员外壳（AdminShell + 场馆选择），其余 6 个是它的子页面
+  venueAdmin: View            // 场馆管理员外壳（AdminShell + 场馆选择），其余是它的子页面
   venueAdminOverview: View
   venueAdminReservations: View
   venueAdminResources: View
@@ -21,6 +21,7 @@ export interface RouteViews {
   venueAdminAnnouncements: View
   venueAdminRepairs: View
   venueAdminLogs: View
+  checkInScan: View          // P2-1c 扫码签到：两类管理端共用同一个页面
   sysAdmin: View              // 系统管理员外壳（AdminShell + 场馆选择），其余是它的子页面；场馆运营五页复用 venueAdmin* 视图
   sysAdminVenues: View
   sysAdminAdmins: View
@@ -54,6 +55,8 @@ export function buildRoutes(views: RouteViews): RouteRecordRaw[] {
       children: [
         { path: '', name: 'venue-admin', component: views.venueAdminOverview, meta: { title: '概览' } },
         { path: PATHS.venueAdminReservations, name: 'venue-admin-reservations', component: views.venueAdminReservations, meta: { title: '预约管理' } },
+        // P2-1c：扫码范围由后端按授权裁决，外壳在这一页不显示场馆选择器（meta.hideVenueSelect）。
+        { path: PATHS.venueAdminCheckIn, name: 'venue-admin-check-in', component: views.checkInScan, meta: { title: '扫码签到', hideVenueSelect: true } },
         { path: PATHS.venueAdminResources, name: 'venue-admin-resources', component: views.venueAdminResources, meta: { title: '场地与开放规则' } },
         { path: PATHS.venueAdminOccupancy, name: 'venue-admin-occupancy', component: views.venueAdminOccupancy, meta: { title: '场地占用总览' } },
         { path: PATHS.venueAdminAnnouncements, name: 'venue-admin-announcements', component: views.venueAdminAnnouncements, meta: { title: '公告' } },
@@ -78,6 +81,8 @@ export function buildRoutes(views: RouteViews): RouteRecordRaw[] {
         { path: PATHS.sysAdminLogs, name: 'sys-admin-logs', component: views.venueAdminLogs, meta: { venueScope: 'venue-or-all', title: '操作记录' } },
         // 场馆运营五页直接复用场馆管理员端的页面组件（FE-6 S2），场馆上下文由系统管理员外壳提供。
         { path: PATHS.sysAdminReservations, name: 'sys-admin-reservations', component: views.venueAdminReservations, meta: { venueScope: 'venue-or-all', title: '预约管理' } },
+        // P2-1c：系统管理员可扫任何场馆的码，不需要场馆上下文。
+        { path: PATHS.sysAdminCheckIn, name: 'sys-admin-check-in', component: views.checkInScan, meta: { venueScope: 'none', title: '扫码签到' } },
         { path: PATHS.sysAdminResources, name: 'sys-admin-resources', component: views.venueAdminResources, meta: { venueScope: 'venue', title: '场地与开放规则' } },
         { path: PATHS.sysAdminOccupancy, name: 'sys-admin-occupancy', component: views.venueAdminOccupancy, meta: { venueScope: 'venue', title: '场地占用总览' } },
         { path: PATHS.sysAdminVenueAnnouncements, name: 'sys-admin-venue-announcements', component: views.venueAdminAnnouncements, meta: { venueScope: 'venue', title: '场馆公告' } },

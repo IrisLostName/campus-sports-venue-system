@@ -9,6 +9,7 @@ import { at, loginAs, type UserContext } from '../reservations/harness'
 import { seedCancelledHistory } from '../reservations/history'
 import { useApiClient } from './apiSwap'
 import { mountWithApp, texts } from './support'
+import { checkInByScan } from '../api/support/harness'
 
 vi.mock('../../src/api/index', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../src/api/index')>()
@@ -119,7 +120,7 @@ describe('M2 历史预约', () => {
     const { page, ctx } = await openPage({
       prepare: async (prepared) => {
         await prepared.travelTo(at('07:50'))
-        await prepared.h.api.checkIn(1)
+        await checkInByScan(prepared.h.api, await prepared.h.clientFor('sysadmin'), 1)
         await prepared.travelTo(at('09:40'))
       },
     })
@@ -138,7 +139,7 @@ describe('M2 历史预约', () => {
     const { page, ctx } = await openPage({
       prepare: async (prepared) => {
         await prepared.travelTo(at('07:50'))
-        await prepared.h.api.checkIn(1)
+        await checkInByScan(prepared.h.api, await prepared.h.clientFor('sysadmin'), 1)
         await prepared.travelTo(at('09:40'))
       },
     })
@@ -177,14 +178,14 @@ describe('FE-8 L2 历史里不提供“取消”', () => {
     expect((await ctx.h.api.getReservation(1)).status).toBe('CONFIRMED')
   })
 
-  it('同一份数据里已进入签到窗口的预约仍有“签到”按钮（只排除取消）', async () => {
+  it('同一份数据里已进入签到窗口的预约在历史里没有“出示签到码”（P2-1c：排除取消与出示签到码）', async () => {
     const { page } = await openPage({
       wrap: (api) => ({ ...api, listMyReservations: () => api.listMyReservations({ scope: 'CURRENT' }) }),
       prepare: async (ctx) => { await ctx.travelTo(at('07:50')) },
     })
 
     expect(history(page).find('article .badge').text()).toBe('可签到')
-    expect(history(page).findAll('article button').map((button) => button.text())).toEqual(['签到'])
+    expect(history(page).findAll('article button').map((button) => button.text())).toEqual([])
   })
 })
 

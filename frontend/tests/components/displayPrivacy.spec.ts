@@ -1,7 +1,7 @@
 // UI-2a-rulings 第 4 节（ACC-M2-09）：挂载后的大屏页面（文字与属性，含图表的 aria-label）里没有任何用户的用户名或姓名。
 import { describe, expect, it, vi } from 'vitest'
 
-import { book, createHarness, setTime, TOMORROW } from '../api/support/harness'
+import { book, checkInByScan, createHarness, setTime, TOMORROW } from '../api/support/harness'
 import { installDisplayEnvironment, installIntervalClock, mountDisplay } from './displaySupport'
 
 vi.mock('../../src/api/index', async (importOriginal) => {
@@ -23,7 +23,7 @@ describe('不含个人信息', () => {
     const users = await h.api.adminListUsers({ pageSize: 100 })
     setTime(h, TOMORROW, '08:00')
     await h.loginAs('zhangsan')
-    await h.api.checkIn(1)
+    await checkInByScan(h.api, await h.clientFor('sysadmin'), 1)
     h.logout()
     const summary = await h.api.getDisplaySummary()
 

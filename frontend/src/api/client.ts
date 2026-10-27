@@ -1,14 +1,14 @@
-// ApiClient：http 与 mock 两种实现共用的接口，逐条覆盖 docs/12 第 5 节的全部 42 个接口（ADR-0006）。
+// ApiClient：http 与 mock 两种实现共用的接口，逐条覆盖 docs/12 第 5 节的全部 43 个接口（v1.1）（ADR-0006）。
 // 页面只依赖 api/index.ts 导出的实例。
 import type {
-  Announcement, BookingRules, ImpactChangeResponse, OperationLog, Page, RepairReport, Reservation,
+  Announcement, BookingRules, CheckInCode, ImpactChangeResponse, OperationLog, Page, RepairReport, Reservation,
   Resource, VenueSlots, VenueSummary, UserProfile,
 } from './types'
 import type {
   AdminReservation, Closure, DisplaySummary, LoginResponse, Occupancy, StatsOverview, WeeklyWindow,
 } from './typesSection5'
 import type {
-  AddClosureRequest, AdminAnnouncementsQuery, AdminCancelRequest, AdminRepairsQuery,
+  AddClosureRequest, AdminAnnouncementsQuery, AdminCancelRequest, AdminCheckInRequest, AdminRepairsQuery,
   AdminReservationsQuery, AdminUsersQuery, AnnouncementQuery, AvailabilityRulesResponse,
   CancelReservationRequest, CreateAnnouncementRequest, CreateRepairRequest,
   CreateReservationRequest, CreateUserRequest, CreateVenueRequest, LoginRequest, LogsQuery,
@@ -39,7 +39,7 @@ export interface ApiClient {
   listMyReservations(query?: MyReservationsQuery): Promise<Page<Reservation>>
   getReservation(id: number): Promise<Reservation>
   cancelReservation(id: number, request?: CancelReservationRequest): Promise<Reservation>
-  checkIn(id: number): Promise<Reservation>
+  getCheckInCode(id: number): Promise<CheckInCode>   // v1.1；自助签到接口已删除，签到只能由管理员扫码
   checkOut(id: number): Promise<Reservation>
 
   // 5.4 报修
@@ -65,6 +65,7 @@ export interface ApiClient {
 
   // 5.7 管理端：预约管理
   adminListReservations(query?: AdminReservationsQuery): Promise<Page<AdminReservation>>
+  adminCheckIn(request: AdminCheckInRequest): Promise<AdminReservation>   // v1.1 扫码签到
   adminCancelReservation(id: number, request: AdminCancelRequest): Promise<Reservation>
   adminReassignResource(id: number, request: ReassignResourceRequest): Promise<Reservation>
   adminReassignUser(id: number, request: ReassignUserRequest): Promise<Reservation>
@@ -90,12 +91,12 @@ export interface ApiClient {
 export const API_CLIENT_METHODS = [
   'register', 'login', 'getMe', 'getBookingRules',
   'listVenues', 'getVenueSlots', 'listAnnouncements',
-  'createReservation', 'listMyReservations', 'getReservation', 'cancelReservation', 'checkIn', 'checkOut',
+  'createReservation', 'listMyReservations', 'getReservation', 'cancelReservation', 'getCheckInCode', 'checkOut',
   'createRepair', 'listMyRepairs', 'adminListRepairs', 'adminUpdateRepair',
   'adminListVenues', 'adminCreateVenue', 'adminUpdateVenue', 'adminListResources',
   'adminSetResourceCount', 'adminUpdateResource', 'adminGetOccupancy',
   'adminGetAvailabilityRules', 'adminReplaceWeeklyRules', 'adminAddClosure', 'adminRemoveClosure',
-  'adminListReservations', 'adminCancelReservation', 'adminReassignResource', 'adminReassignUser',
+  'adminListReservations', 'adminCheckIn', 'adminCancelReservation', 'adminReassignResource', 'adminReassignUser',
   'adminListAnnouncements', 'adminCreateAnnouncement', 'adminArchiveAnnouncement',
   'adminListUsers', 'adminCreateUser', 'adminUpdateUser', 'adminSetVenueScope',
   'adminGetStatsOverview', 'adminListLogs', 'getDisplaySummary',

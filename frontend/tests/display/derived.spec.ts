@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import { areaPath, donutSegments, smoothLinePath } from '../../src/components/display/chartGeometry'
 import { buildDisplayBoardView } from '../../src/utils/displayModel'
-import { createHarness, setTime, TOMORROW } from '../api/support/harness'
+import { checkInByScan, createHarness, setTime, TOMORROW } from '../api/support/harness'
 import { makeSummary } from './support'
 
 describe('开放场地 X/Y', () => {
@@ -63,7 +63,7 @@ describe('场地实时状态计数', () => {
     await h.api.adminUpdateResource(4, { operationalStatus: 'DISABLED' })
     setTime(h, TOMORROW, '08:00')
     await h.loginAs('zhangsan')
-    await h.api.checkIn(1)
+    await checkInByScan(h.api, await h.clientFor('sysadmin'), 1)
     h.logout()
     const summary = await h.api.getDisplaySummary()
     const view = buildDisplayBoardView(summary)

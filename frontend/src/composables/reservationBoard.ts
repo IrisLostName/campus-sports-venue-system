@@ -1,14 +1,16 @@
-// “预约”页的全部逻辑（FE-3 规划裁决 P1、B2、B3）：拉取本人 CURRENT 预约、签到、签退、取消。
+// “预约”页的全部逻辑（FE-3 规划裁决 P1、B2、B3）：拉取本人 CURRENT 预约、出示签到码（P2-1c 浮层）、签退、取消。
 // 页面只负责渲染；所有需登录的调用都经 ApiCaller（callApi），登录失效时由它回到登录页（N-1）。
 import { computed, onBeforeUnmount, onMounted, ref, type Ref } from 'vue'
 
 import type { ApiClient } from '../api/client'
 import { api } from '../api/index'
-import type { BookingRules } from '../api/types'
+import type { BookingRules, UserProfile } from '../api/types'
+import { useAuthStore } from '../stores/auth'
 import { useReferenceStore, type ReferenceStore } from '../stores/reference'
 import { cancelLockedNote, isCancelLocked } from '../utils/cancelDeadline'
 import { buildCard } from '../utils/reservationDisplay'
 import { nowShanghai } from '../utils/shanghaiTime'
+import { createCheckInSheet } from './checkInSheet'
 import { createReservationActions } from './reservationActions'
 import { createReservationList } from './reservationList'
 import { useSession, type ApiCaller } from './session'
@@ -19,6 +21,8 @@ export interface BoardDeps {
   reference: ReferenceStore
   // 客户端“现在”（场馆本地时间戳），只用于取消按钮置灰（TEST-2 K3）；缺省取创建时刻，页面里每 30 秒刷新。
   now?: Ref<string>
+  // 当前登录人（签到码卡片上的“预约人 姓名（用户名）”）；缺省时卡片只显示预约里的姓名。
+  booker?: () => Pick<UserProfile, 'displayName' | 'username'> | null
 }
 
 const NOW_REFRESH_MS = 30 * 1000
@@ -60,15 +64,21 @@ export function createReservationBoard(deps: BoardDeps) {
   const data = createBoardData(deps)
   const now = deps.now ?? ref(nowShanghai())
   const lock = createCancelLock(data, now)
+  const sheet = createCheckInSheet({
+    api: deps.api, call: deps.call, items: data.items, cards: data.cards, rules: data.rules,
+    booker: deps.booker ?? (() => null), refresh: data.fetchList,
+  })
   const actions = createReservationActions(deps, {
     items: data.items, cards: data.cards, replace: data.replace, refresh: data.fetchList,
     isLocked: (id, action) => action === 'CANCEL' && lock.cancelLockedIds.value.has(id),
+    showCode: sheet.open,
   })
   return {
     phase: data.phase, loadError: data.loadError, rulesError: data.rulesError, rules: data.rules,
     cards: data.cards, isEmpty: data.isEmpty, load: data.load, now,
     ...lock,
     ...actions,
+    sheet,
   }
 }
 
@@ -83,5 +93,8 @@ export function useReservationBoard(): ReservationBoard {
     }, NOW_REFRESH_MS)
   })
   onBeforeUnmount(() => clearInterval(timer))
-  return createReservationBoard({ api, call: useSession().caller(), reference: useReferenceStore(), now })
+  const auth = useAuthStore()
+  return createReservationBoard({
+    api, call: useSession().caller(), reference: useReferenceStore(), now, booker: () => auth.user,
+  })
 }

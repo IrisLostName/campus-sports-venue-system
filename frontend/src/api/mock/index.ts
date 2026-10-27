@@ -2,6 +2,7 @@
 // mock 只是前端在后端未就绪阶段的替身，不是交付的后端。时间通过注入的 Clock 获取。
 import type { ApiClient, ApiClientOptions } from '../client'
 import type { BookingRules } from '../types'
+import { adminCheckInApi } from './adminCheckInService'
 import { adminReservationApi } from './adminReservationService'
 import { authApi } from './authService'
 import { MOCK_BOOKING_RULES } from './bookingRules'
@@ -41,6 +42,7 @@ export function createMockHandle(options: MockClientOptions): MockHandle {
     ...venueApi(context),
     ...reservationApi(context),
     ...adminReservationApi(context),
+    ...adminCheckInApi(context),
     ...resourceApi(context),
     ...ruleApi(context),
     ...contentApi(context),

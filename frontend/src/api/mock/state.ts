@@ -8,6 +8,7 @@ import type { Clock } from './clock'
 export interface UserRecord {
   id: number; username: string; password: string; displayName: string
   role: Role; userType: UserType; phone: string | null; status: AccountStatus
+  checkInUuid: string   // v1.1：随机签到标识（docs/13 第 3.1 节 check_in_uuid），只用于签到码
 }
 
 export interface VenueRecord {

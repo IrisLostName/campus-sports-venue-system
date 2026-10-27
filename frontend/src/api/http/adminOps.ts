@@ -3,7 +3,7 @@ import type { ApiClient } from '../client'
 import type { Transport } from './transport'
 
 export type AdminOpsApi = Pick<ApiClient,
-  | 'adminListReservations' | 'adminCancelReservation' | 'adminReassignResource' | 'adminReassignUser'
+  | 'adminListReservations' | 'adminCheckIn' | 'adminCancelReservation' | 'adminReassignResource' | 'adminReassignUser'
   | 'adminListAnnouncements' | 'adminCreateAnnouncement' | 'adminArchiveAnnouncement'
   | 'adminListUsers' | 'adminCreateUser' | 'adminUpdateUser' | 'adminSetVenueScope'
   | 'adminGetStatsOverview' | 'adminListLogs' | 'getDisplaySummary'>
@@ -12,6 +12,7 @@ export function adminOpsApi(t: Transport): AdminOpsApi {
   return {
     // 5.7
     adminListReservations: (query) => t.request({ method: 'GET', path: '/admin/reservations', query }),
+    adminCheckIn: (body) => t.request({ method: 'POST', path: '/admin/check-ins', body }),
     adminCancelReservation: (id, body) =>
       t.request({ method: 'POST', path: `/admin/reservations/${id}/cancel`, body }),
     adminReassignResource: (id, body) =>

@@ -33,6 +33,7 @@ export const SYS_ADMIN_NAV: readonly SysNavEntry[] = [
   { label: '全局统计', path: PATHS.sysAdminStats, group: GLOBAL_GROUP, icon: 'barChart' },
   { label: '操作记录', path: PATHS.sysAdminLogs, group: GLOBAL_GROUP, icon: 'history' },
   { label: '预约管理', path: PATHS.sysAdminReservations, group: OPERATION_GROUP, icon: 'calendarCheck' },
+  { label: '扫码签到', path: PATHS.sysAdminCheckIn, group: OPERATION_GROUP, icon: 'scan' },
   { label: '场地与开放规则', path: PATHS.sysAdminResources, group: OPERATION_GROUP, icon: 'court' },
   { label: '场地占用总览', path: PATHS.sysAdminOccupancy, group: OPERATION_GROUP, icon: 'grid' },
   { label: '场馆公告', path: PATHS.sysAdminVenueAnnouncements, group: OPERATION_GROUP, icon: 'megaphone' },

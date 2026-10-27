@@ -34,8 +34,8 @@ describe('P5 displayStatus 中文名', () => {
 
 describe('ACC-M2-06 按钮显示规则表（每一行）', () => {
   it.each<[string, DisplayStatus, string | null, string | null, ReservationAction[]]>([
-    ['UPCOMING → 取消', 'UPCOMING', null, null, ['CANCEL']],
-    ['CHECKIN_OPEN → 签到', 'CHECKIN_OPEN', null, null, ['CHECK_IN']],
+    ['UPCOMING → 出示签到码、取消', 'UPCOMING', null, null, ['SHOW_CODE', 'CANCEL']],
+    ['CHECKIN_OPEN → 出示签到码', 'CHECKIN_OPEN', null, null, ['SHOW_CODE']],
     ['IN_USE → 签退', 'IN_USE', CHECKED_IN, null, ['CHECK_OUT']],
     ['COMPLETED 已签到未签退 → 签退', 'COMPLETED', CHECKED_IN, null, ['CHECK_OUT']],
     ['COMPLETED 已签到已签退 → 无', 'COMPLETED', CHECKED_IN, CHECKED_OUT, []],
@@ -61,7 +61,7 @@ describe('P4 说明文案的参数来自 BookingRules', () => {
 
   it('取消说明与签到说明使用规则里的数字，换一组规则文案跟着变', () => {
     expect(cancelNote(RULES)).toBe('开始前至少 90 分钟可取消')
-    expect(checkInNote(RULES)).toBe('开始前 10 分钟至开始后 20 分钟可签到；结束后 45 分钟内可签退')
+    expect(checkInNote(RULES)).toBe('开始前 10 分钟至开始后 20 分钟内，向工作人员出示签到码签到；结束后 45 分钟内可签退')
     expect(cancelNote({ ...RULES, cancelDeadlineMinutes: 30 })).toBe('开始前至少 30 分钟可取消')
   })
 
@@ -84,9 +84,9 @@ describe('P3 详情卡片字段', () => {
       id: 7, place: '网球馆 · 网球场2', dateText: '2026-10-13 周二', timeText: '09:30–11:00',
       userDisplayName: '张三', statusLabel: '待使用', displayStatus: 'UPCOMING',
       purpose: null, adminNote: null,
-      checkInNote: '开始前 15 分钟至开始后 15 分钟可签到；结束后 30 分钟内可签退',
+      checkInNote: '开始前 15 分钟至开始后 15 分钟内，向工作人员出示签到码签到；结束后 30 分钟内可签退',
       cancelNote: '开始前至少 120 分钟可取消',
-      actions: ['CANCEL'],
+      actions: ['SHOW_CODE', 'CANCEL'],
     })
   })
 

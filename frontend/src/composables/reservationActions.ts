@@ -1,4 +1,5 @@
-// 预约卡片上的操作（FE-3 B2、B3；FE-4 M2 起“预约”页与“我的”历史列表共用）：签到、签退、取消。
+// 预约卡片上的操作（FE-3 B2、B3；FE-4 M2 起“预约”页与“我的”历史列表共用）：出示签到码、签退、取消。
+// v1.1（P2-1c）起用户不能自行签到：“出示签到码”只交给 source.showCode 打开浮层，不调用接口。
 // 按钮是否出现由 buildCard 里的 actionsFor 决定，这里只执行；所有调用都经 ApiCaller（X1）。
 import { computed, ref, type ComputedRef, type Ref } from 'vue'
 
@@ -20,6 +21,8 @@ export interface ActionSource {
   refresh(): Promise<void>
   // 卡片上提供了该动作、但按钮已置灰（TEST-2 K3 取消截止）：不执行。缺省不置灰。
   isLocked?(id: number, action: ReservationAction): boolean
+  // “出示签到码”：打开签到码浮层（只有“预约”页提供）。
+  showCode?(id: number): void
 }
 
 interface CardFeedback {
@@ -27,7 +30,7 @@ interface CardFeedback {
   text: string
 }
 
-// 操作：签到、签退、取消（取消须二次确认，可填可选的 reason）。
+// 操作：出示签到码、签退、取消（取消须二次确认，可填可选的 reason）。
 export function createReservationActions(deps: ActionDeps, source: ActionSource) {
   const feedback = ref<CardFeedback | null>(null)
   const busyId = ref<number | null>(null)
@@ -87,11 +90,13 @@ export function createReservationActions(deps: ActionDeps, source: ActionSource)
     if (!isOffered(id, action) || source.isLocked?.(id, action) === true) {
       return
     }
-    if (action === 'CANCEL') {
+    if (action === 'SHOW_CODE') {
+      source.showCode?.(id)
+    } else if (action === 'CANCEL') {
       cancelTargetId.value = id
       cancelReason.value = ''
     } else {
-      await perform(id, () => (action === 'CHECK_IN' ? deps.api.checkIn(id) : deps.api.checkOut(id)))
+      await perform(id, () => deps.api.checkOut(id))
     }
   }
 

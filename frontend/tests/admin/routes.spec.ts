@@ -15,13 +15,13 @@ async function visit(h: AuthHarness, path: string): Promise<string> {
 }
 
 describe('S2 场馆管理员路由', () => {
-  it('七项导航对应七个互不相同的路径，都在 /venue-admin 下，概览就是 /venue-admin', () => {
+  it('八项导航对应八个互不相同的路径，都在 /venue-admin 下，概览就是 /venue-admin（P2-1c 增加“扫码签到”）', () => {
     const paths = VENUE_ADMIN_NAV.map((entry) => entry.path)
 
     expect(VENUE_ADMIN_NAV.map((entry) => entry.label)).toEqual([
-      '概览', '预约管理', '场地与开放规则', '场地占用总览', '公告', '报修', '操作记录',
+      '概览', '预约管理', '扫码签到', '场地与开放规则', '场地占用总览', '公告', '报修', '操作记录',
     ])
-    expect(new Set(paths).size).toBe(7)
+    expect(new Set(paths).size).toBe(8)
     expect(paths[0]).toBe(PATHS.venueAdmin)
     expect(paths.every((path) => path === PATHS.venueAdmin || path.startsWith(`${PATHS.venueAdmin}/`))).toBe(true)
   })
@@ -45,7 +45,7 @@ describe('S2 场馆管理员路由', () => {
     }
 
     expect(names).toEqual([
-      'venue-admin', 'venue-admin-reservations', 'venue-admin-resources', 'venue-admin-occupancy',
+      'venue-admin', 'venue-admin-reservations', 'venue-admin-check-in', 'venue-admin-resources', 'venue-admin-occupancy',
       'venue-admin-announcements', 'venue-admin-repairs', 'venue-admin-logs',
     ])
   })

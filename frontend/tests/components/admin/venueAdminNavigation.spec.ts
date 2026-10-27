@@ -1,5 +1,5 @@
 // ACC-M2-07 场馆管理员端：概览、预约管理、场地与开放规则、场地占用总览、公告、报修、操作记录可切换。
-// 同时覆盖 S1–S4：外壳与七项导航、场馆选择器与 venueId 查询参数、桌面管理端表面。
+// 同时覆盖 S1–S4：外壳与八项导航（P2-1c 增加“扫码签到”）、场馆选择器与 venueId 查询参数、桌面管理端表面。
 import { flushPromises } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 
@@ -12,10 +12,10 @@ vi.mock('../../../src/api/index', async (importOriginal) => {
   return { ...actual, api: swappedApi() }
 })
 
-const SECTIONS = ['概览', '预约管理', '场地与开放规则', '场地占用总览', '公告', '报修', '操作记录']
+const SECTIONS = ['概览', '预约管理', '扫码签到', '场地与开放规则', '场地占用总览', '公告', '报修', '操作记录']
 
-describe('ACC-M2-07 七个部分可切换', () => {
-  it('侧栏按顺序有七项；逐项点击后页面标题随之切换，当前项高亮', async () => {
+describe('ACC-M2-07 八个部分可切换', () => {
+  it('侧栏按顺序有八项；逐项点击后页面标题随之切换，当前项高亮', async () => {
     const { root, router } = await openAdminApp('/venue-admin')
     const links = () => root.findAll('nav a')
     expect(links().map((link) => link.text())).toEqual(SECTIONS)
@@ -47,7 +47,7 @@ describe('S3 场馆选择器与 venueId', () => {
     expect(root.get('header select').findAll('option').map((option) => option.text())).toEqual(['网球馆'])
     expect(router.currentRoute.value.fullPath).toBe('/venue-admin?venueId=1')
     expect(root.findAll('nav a').map((link) => link.attributes('href'))).toEqual([
-      '/venue-admin?venueId=1', '/venue-admin/reservations?venueId=1', '/venue-admin/resources?venueId=1',
+      '/venue-admin?venueId=1', '/venue-admin/reservations?venueId=1', '/venue-admin/check-in?venueId=1', '/venue-admin/resources?venueId=1',
       '/venue-admin/occupancy?venueId=1', '/venue-admin/announcements?venueId=1', '/venue-admin/repairs?venueId=1',
       '/venue-admin/logs?venueId=1',
     ])

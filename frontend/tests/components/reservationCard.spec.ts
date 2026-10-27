@@ -45,8 +45,8 @@ const CHECKED_OUT = '2026-10-13T09:20:00'
 
 // FE-3-rulings 第 2 节的每一行（以及“其他”里的每个状态）。
 const BUTTON_TABLE: [string, Partial<Reservation>, string[]][] = [
-  ['UPCOMING → 取消', { displayStatus: 'UPCOMING' }, ['取消预约']],
-  ['CHECKIN_OPEN → 签到（不显示取消，B1）', { displayStatus: 'CHECKIN_OPEN' }, ['签到']],
+  ['UPCOMING → 出示签到码、取消', { displayStatus: 'UPCOMING' }, ['出示签到码', '取消预约']],
+  ['CHECKIN_OPEN → 出示签到码（不显示取消，B1）', { displayStatus: 'CHECKIN_OPEN' }, ['出示签到码']],
   ['IN_USE → 签退', { displayStatus: 'IN_USE', checkInAt: CHECKED_IN }, ['签退']],
   ['COMPLETED 且已签到未签退 → 签退', { displayStatus: 'COMPLETED', checkInAt: CHECKED_IN }, ['签退']],
   ['COMPLETED 且未签到 → 无', { displayStatus: 'COMPLETED' }, []],
@@ -79,12 +79,12 @@ describe('ACC-M2-06 按钮表：实际渲染的按钮', () => {
     const upcoming = mountCard(reservation({ displayStatus: 'UPCOMING' }))
     await buttonByText(upcoming, '取消预约').trigger('click')
     const open = mountCard(reservation({ displayStatus: 'CHECKIN_OPEN' }))
-    await buttonByText(open, '签到').trigger('click')
+    await buttonByText(open, '出示签到码').trigger('click')
     const inUse = mountCard(reservation({ displayStatus: 'IN_USE', checkInAt: CHECKED_IN }))
     await buttonByText(inUse, '签退').trigger('click')
 
     expect(upcoming.emitted('action')).toEqual([['CANCEL']])
-    expect(open.emitted('action')).toEqual([['CHECK_IN']])
+    expect(open.emitted('action')).toEqual([['SHOW_CODE']])
     expect(inUse.emitted('action')).toEqual([['CHECK_OUT']])
   })
 })
@@ -113,7 +113,7 @@ describe('操作进行中：按钮不可用', () => {
   it('别的卡片在操作：本卡片保持原文字，但也不可用', () => {
     const card = mountCard(reservation({ displayStatus: 'UPCOMING' }), { busy: true, working: false })
 
-    expect(texts(card, 'button')).toEqual(['取消预约'])
+    expect(texts(card, 'button')).toEqual(['出示签到码', '取消预约'])
     expect(card.find('button').attributes('disabled')).toBeDefined()
   })
 })
@@ -157,7 +157,7 @@ describe('卡片的其余字段（P3、P4）', () => {
 
   it('签到与取消说明的数字来自规则；规则尚未取得时不显示说明', () => {
     expect(texts(mountCard(reservation()), '.notes li')).toEqual([
-      '签到：开始前 15 分钟至开始后 15 分钟可签到；结束后 30 分钟内可签退',
+      '签到：开始前 15 分钟至开始后 15 分钟内，向工作人员出示签到码签到；结束后 30 分钟内可签退',
       '取消：开始前至少 120 分钟可取消',
     ])
     expect(mountCard(reservation(), { rules: null }).find('.notes').exists()).toBe(false)

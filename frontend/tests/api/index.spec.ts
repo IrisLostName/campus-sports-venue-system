@@ -31,7 +31,7 @@ describe('resolveMode', () => {
 })
 
 describe('selectApi', () => {
-  it.each(['mock', 'http'] as const)('%s 模式暴露同一组 42 个方法', (mode) => {
+  it.each(['mock', 'http'] as const)('%s 模式暴露同一组 43 个方法', (mode) => {
     const client = selectApi(mode, deps())
     expect(Object.keys(client).sort()).toEqual([...API_CLIENT_METHODS].sort())
   })

@@ -20,6 +20,7 @@ export const router = createAppRouter({
     venueAdminAnnouncements: () => import('../views/venue-admin/AnnouncementsView.vue'),
     venueAdminRepairs: () => import('../views/venue-admin/RepairsView.vue'),
     venueAdminLogs: () => import('../views/venue-admin/LogsView.vue'),
+    checkInScan: () => import('../views/venue-admin/CheckInScanView.vue'),
     sysAdmin: () => import('../views/sys-admin/SysAdminShell.vue'),
     sysAdminVenues: () => import('../views/sys-admin/SysVenuesView.vue'),
     sysAdminAdmins: () => import('../views/sys-admin/SysAdminsView.vue'),

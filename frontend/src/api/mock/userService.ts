@@ -3,6 +3,7 @@ import type { ApiClient } from '../client'
 import type { Page, UserProfile } from '../types'
 import type { AdminUsersQuery, CreateUserRequest, SetVenueScopeRequest, UpdateUserRequest } from '../requests'
 import { passwordProblem, usernameProblem } from './authService'
+import { randomUuid } from './checkInCodes'
 import { ACCOUNT_STATUSES, ROLES, USER_TYPES } from './enums'
 import { fail } from './fail'
 import { authenticate, requireRole, toProfile } from './guards'
@@ -66,7 +67,7 @@ function createUser(ctx: MockContext, request: CreateUserRequest): UserProfile {
   const user: UserRecord = {
     id: nextId(ctx.state, 'user'), username: request.username, password: request.password,
     displayName: request.displayName, role: request.role, userType: request.userType ?? 'STUDENT',
-    phone: blankToNull(request.phone), status: 'ACTIVE',
+    phone: blankToNull(request.phone), status: 'ACTIVE', checkInUuid: randomUuid(),
   }
   ctx.state.users.push(user)
   ctx.state.scopes[user.id] = request.role === 'VENUE_ADMIN' ? [...(request.venueIds ?? [])] : []

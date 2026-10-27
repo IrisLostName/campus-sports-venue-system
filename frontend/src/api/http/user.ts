@@ -6,7 +6,7 @@ export type UserApi = Pick<ApiClient,
   | 'register' | 'login' | 'getMe' | 'getBookingRules'
   | 'listVenues' | 'getVenueSlots' | 'listAnnouncements'
   | 'createReservation' | 'listMyReservations' | 'getReservation'
-  | 'cancelReservation' | 'checkIn' | 'checkOut'
+  | 'cancelReservation' | 'getCheckInCode' | 'checkOut'
   | 'createRepair' | 'listMyRepairs' | 'adminListRepairs' | 'adminUpdateRepair'>
 
 export function userApi(t: Transport): UserApi {
@@ -27,7 +27,7 @@ export function userApi(t: Transport): UserApi {
     getReservation: (id) => t.request({ method: 'GET', path: `/reservations/${id}` }),
     cancelReservation: (id, body) =>
       t.request({ method: 'POST', path: `/reservations/${id}/cancel`, body: body ?? {} }),
-    checkIn: (id) => t.request({ method: 'POST', path: `/reservations/${id}/check-in` }),
+    getCheckInCode: (id) => t.request({ method: 'GET', path: `/reservations/${id}/check-in-code` }),
     checkOut: (id) => t.request({ method: 'POST', path: `/reservations/${id}/check-out` }),
     // 5.4
     createRepair: (body) => t.request({ method: 'POST', path: '/repairs', body }),

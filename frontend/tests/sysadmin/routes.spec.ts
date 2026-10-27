@@ -16,33 +16,33 @@ async function visit(h: AuthHarness, path: string): Promise<string> {
 }
 
 describe('S2 两组导航', () => {
-  it('全局六项在前、场馆运营五项在后，顺序与文案固定（ACC-M2-08）', () => {
+  it('全局六项在前、场馆运营六项在后，顺序与文案固定（ACC-M2-08；P2-1c 增加“扫码签到”）', () => {
     expect(SYS_ADMIN_NAV.filter((entry) => entry.group === GLOBAL_GROUP).map((entry) => entry.label)).toEqual([
       '场馆资料与开关', '管理员与授权', '用户', '系统公告', '全局统计', '操作记录',
     ])
     expect(SYS_ADMIN_NAV.filter((entry) => entry.group === OPERATION_GROUP).map((entry) => entry.label)).toEqual([
-      '预约管理', '场地与开放规则', '场地占用总览', '场馆公告', '报修',
+      '预约管理', '扫码签到', '场地与开放规则', '场地占用总览', '场馆公告', '报修',
     ])
     expect(SYS_ADMIN_NAV.map((entry) => entry.group)).toEqual([
-      ...Array<string>(6).fill(GLOBAL_GROUP), ...Array<string>(5).fill(OPERATION_GROUP),
+      ...Array<string>(6).fill(GLOBAL_GROUP), ...Array<string>(6).fill(OPERATION_GROUP),
     ])
   })
 
-  it('十一个路径互不相同，都在 /sys-admin 下；/sys-admin 本身是场馆资料与开关', () => {
+  it('十二个路径互不相同，都在 /sys-admin 下；/sys-admin 本身是场馆资料与开关', () => {
     const paths = SYS_ADMIN_NAV.map((entry) => entry.path)
 
-    expect(new Set(paths).size).toBe(11)
+    expect(new Set(paths).size).toBe(12)
     expect(paths[0]).toBe(PATHS.sysAdmin)
     expect(paths.every((path) => path === PATHS.sysAdmin || path.startsWith(`${PATHS.sysAdmin}/`))).toBe(true)
   })
 
-  it('S4：只有预约管理与操作记录可以选“全部场馆”；运营页面必须选定场馆；其余全局页面不要场馆', () => {
+  it('S4：只有预约管理与操作记录可以选“全部场馆”；运营页面必须选定场馆（扫码签到除外）；其余全局页面不要场馆', () => {
     const { router } = createAuthHarness()
     const scopes = Object.fromEntries(SYS_ADMIN_NAV.map((entry) => [entry.label, scopeOfRoute(router.resolve(entry.path))]))
 
     expect(scopes).toEqual({
       场馆资料与开关: 'none', 管理员与授权: 'none', 用户: 'none', 系统公告: 'none', 全局统计: 'none',
-      操作记录: 'venue-or-all', 预约管理: 'venue-or-all',
+      操作记录: 'venue-or-all', 预约管理: 'venue-or-all', 扫码签到: 'none',
       场地与开放规则: 'venue', 场地占用总览: 'venue', 场馆公告: 'venue', 报修: 'venue',
     })
     expect(scopeOfRoute(router.resolve('/sys-admin/nope'))).toBe('none')
@@ -94,7 +94,7 @@ describe('S3 路由', () => {
 
     expect(names).toEqual([
       'sys-admin', 'sys-admin-admins', 'sys-admin-users', 'sys-admin-announcements', 'sys-admin-stats', 'sys-admin-logs',
-      'sys-admin-reservations', 'sys-admin-resources', 'sys-admin-occupancy', 'sys-admin-venue-announcements', 'sys-admin-repairs',
+      'sys-admin-reservations', 'sys-admin-check-in', 'sys-admin-resources', 'sys-admin-occupancy', 'sys-admin-venue-announcements', 'sys-admin-repairs',
     ])
   })
 
