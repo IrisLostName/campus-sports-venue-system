@@ -4,10 +4,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request;
 
 import com.campus.venue.common.error.ErrorCode;
+import com.campus.venue.reservation.service.CheckInCodes;
 import com.campus.venue.support.ImpactApiTestBase;
 import com.campus.venue.user.domain.Role;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,7 +26,8 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
  * VENUE_ADMIN、SYS_ADMIN），每行至少一例。admin_tennis 只授权网球馆（id 1）；羽毛球馆（id 2）上的对象用于越权
  * FORBIDDEN_SCOPE 与 SA 全局。期望为状态码（成功）或错误码；成功只断言状态码（业务结果由各接口的测试负责）。
  * 路径与请求体中的占位符：:mine（zhangsan 在网球馆的预约）、:other（lisi 在网球馆的预约）、:bad（lisi 在羽毛球馆的预约）、
- * :badClosure（羽毛球馆的关闭规则）、:court1、:badCourt（场地 id）、:zhangsan（用户 id）。
+ * :badClosure（羽毛球馆的关闭规则）、:court1、:badCourt（场地 id）、:zhangsan（用户 id）、:mineCode 与 :badCode
+ * （:mine、:bad 的签到码，契约 v1.1）。预约都在明天，扫码走到业务检查时得 CHECKIN_WINDOW_CLOSED。
  */
 class BookingAndVenuePermissionMatrixTest extends ImpactApiTestBase {
 
@@ -37,6 +40,8 @@ class BookingAndVenuePermissionMatrixTest extends ImpactApiTestBase {
     private long other;
     private long bad;
     private long badClosure;
+    private String mineCode;
+    private String badCode;
 
     @BeforeEach
     void seedObjects() {
@@ -44,6 +49,14 @@ class BookingAndVenuePermissionMatrixTest extends ImpactApiTestBase {
         other = reservation(lisi, court2, TOMORROW, "09:30");
         bad = reservation(lisi, badmintonCourt, TOMORROW, "09:30");
         badClosure = fixtures.closure(badminton, null, TOMORROW.plusDays(5), TOMORROW.plusDays(5));
+        mineCode = codeOf(mine);
+        badCode = codeOf(bad);
+    }
+
+    private String codeOf(long reservationId) {
+        UUID uuid = jdbc.queryForObject("select u.check_in_uuid from reservation r join app_user u on u.id = r.user_id"
+                + " where r.id = ?", UUID.class, reservationId);
+        return CheckInCodes.format(uuid, reservationId);
     }
 
     private static Arguments row(String capability, String method, String path, String body, String role,
@@ -67,11 +80,12 @@ class BookingAndVenuePermissionMatrixTest extends ImpactApiTestBase {
         return all;
     }
 
-    /** 查看用户端开放的场馆、场地、时段；创建预约；查看/取消自己的预约、签到、签退。 */
+    /** 查看用户端开放的场馆、场地、时段；创建预约；查看/取消自己的预约、出示签到码、签退；扫用户的签到码为其签到（v1.1）。 */
     static List<Arguments> userSideRows() {
         String browse = "查看用户端开放的场馆、场地、时段";
         String create = "创建预约";
-        String own = "查看/取消自己的预约、签到、签退";
+        String own = "查看/取消自己的预约、出示签到码、签退";
+        String scan = "扫用户的签到码为其签到";
         String booking = "{\"resourceId\"::court1,\"serviceDate\":\"" + DAY + "\",\"startTime\":\"11:00\"}";
         return concat(List.of(
                 four(browse, "GET", "/api/v1/venues", null, "200", "200", "200"),
@@ -79,10 +93,13 @@ class BookingAndVenuePermissionMatrixTest extends ImpactApiTestBase {
                 four(create, "POST", "/api/v1/reservations", booking, "201", "FORBIDDEN", "FORBIDDEN"),
                 four(own, "GET", "/api/v1/reservations/me", null, "200", "FORBIDDEN", "FORBIDDEN"),
                 four(own, "POST", "/api/v1/reservations/:mine/cancel", null, "200", "FORBIDDEN", "FORBIDDEN"),
-                four(own, "POST", "/api/v1/reservations/:mine/check-in", null, "CHECKIN_WINDOW_CLOSED", "FORBIDDEN",
-                        "FORBIDDEN"),
+                four(own, "GET", "/api/v1/reservations/:mine/check-in-code", null, "200", "FORBIDDEN", "FORBIDDEN"),
                 four(own, "POST", "/api/v1/reservations/:mine/check-out", null, "NOT_CHECKED_IN", "FORBIDDEN",
-                        "FORBIDDEN")));
+                        "FORBIDDEN"),
+                four(scan, "POST", "/api/v1/admin/check-ins", "{\"code\":\":mineCode\"}", "FORBIDDEN",
+                        "CHECKIN_WINDOW_CLOSED", "CHECKIN_WINDOW_CLOSED"),
+                four(scan, "POST", "/api/v1/admin/check-ins", "{\"code\":\":badCode\"}", "FORBIDDEN",
+                        "FORBIDDEN_SCOPE", "CHECKIN_WINDOW_CLOSED")));
     }
 
     /** 查看预约明细（含预约人）：USER 仅自己的、VA 范围内、SA 全局；场地占用总览。 */
@@ -175,7 +192,8 @@ class BookingAndVenuePermissionMatrixTest extends ImpactApiTestBase {
     }
 
     private String resolve(String text) {
-        return text.replace(":mine", String.valueOf(mine)).replace(":other", String.valueOf(other))
+        return text.replace(":mineCode", mineCode).replace(":badCode", badCode)
+                .replace(":mine", String.valueOf(mine)).replace(":other", String.valueOf(other))
                 .replace(":badClosure", String.valueOf(badClosure)).replace(":badCourt", String.valueOf(badmintonCourt))
                 .replace(":bad", String.valueOf(bad)).replace(":court1", String.valueOf(court1))
                 .replace(":zhangsan", String.valueOf(zhangsan));

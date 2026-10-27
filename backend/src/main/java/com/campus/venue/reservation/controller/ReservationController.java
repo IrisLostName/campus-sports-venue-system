@@ -3,8 +3,10 @@ package com.campus.venue.reservation.controller;
 import com.campus.venue.common.ApiPaths;
 import com.campus.venue.common.dto.PageView;
 import com.campus.venue.reservation.dto.CancelReservationRequest;
+import com.campus.venue.reservation.dto.CheckInCode;
 import com.campus.venue.reservation.dto.CreateReservationRequest;
 import com.campus.venue.reservation.dto.ReservationView;
+import com.campus.venue.reservation.service.CheckInCodeService;
 import com.campus.venue.reservation.service.ReservationCancelService;
 import com.campus.venue.reservation.service.ReservationQueryService;
 import com.campus.venue.reservation.service.ReservationQueryService.Scope;
@@ -39,13 +41,16 @@ public class ReservationController {
     private final ReservationQueryService queryService;
     private final ReservationCancelService cancelService;
     private final ReservationUsageService usageService;
+    private final CheckInCodeService checkInCodeService;
 
     public ReservationController(ReservationService reservationService, ReservationQueryService queryService,
-            ReservationCancelService cancelService, ReservationUsageService usageService) {
+            ReservationCancelService cancelService, ReservationUsageService usageService,
+            CheckInCodeService checkInCodeService) {
         this.reservationService = reservationService;
         this.queryService = queryService;
         this.cancelService = cancelService;
         this.usageService = usageService;
+        this.checkInCodeService = checkInCodeService;
     }
 
     @PostMapping
@@ -82,11 +87,14 @@ public class ReservationController {
         return cancelService.cancel(user, id, request);
     }
 
-    /** 无请求体（带了也忽略，BE-4 I1）。 */
-    @PostMapping("/{id}/check-in")
+    /**
+     * 契约 v1.1：本人预约的签到码，供管理员扫码签到（POST /admin/check-ins）。自助签到 POST /{id}/check-in 已删除
+     * （只允许扫码签到），该路径按不存在处理（NOT_FOUND）。
+     */
+    @GetMapping("/{id}/check-in-code")
     @PreAuthorize("hasRole('USER')")
-    public ReservationView checkIn(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable long id) {
-        return usageService.checkIn(user, id);
+    public CheckInCode checkInCode(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable long id) {
+        return checkInCodeService.issue(user, id);
     }
 
     /** 无请求体（带了也忽略，BE-4 O1）。 */

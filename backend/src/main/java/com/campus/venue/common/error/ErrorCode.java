@@ -3,7 +3,7 @@ package com.campus.venue.common.error;
 import org.springframework.http.HttpStatus;
 
 /**
- * 错误码枚举，与 docs/12 第 3 节表格逐行一致（29 个）。
+ * 错误码枚举，与 docs/12 第 3 节表格逐行一致（30 个；CHECKIN_CODE_INVALID 为契约 v1.1 新增）。
  * 默认文案取表格第三列原文；仅 RULE_INVALID 与 HAS_HISTORY 按 BE-0 裁决 R1 取简化文案。
  */
 public enum ErrorCode {
@@ -29,6 +29,7 @@ public enum ErrorCode {
     CANCEL_DEADLINE_PASSED(HttpStatus.CONFLICT, "已超过可取消时间"),
     ALREADY_CHECKED_IN(HttpStatus.CONFLICT, "已签到"),
     CHECKIN_WINDOW_CLOSED(HttpStatus.CONFLICT, "当前不在签到时间内"),
+    CHECKIN_CODE_INVALID(HttpStatus.BAD_REQUEST, "签到码无效"),
     NOT_CHECKED_IN(HttpStatus.CONFLICT, "尚未签到"),
     ALREADY_CHECKED_OUT(HttpStatus.CONFLICT, "已签退"),
     USER_NOT_ELIGIBLE(HttpStatus.CONFLICT, "目标用户不可被分配预约"),

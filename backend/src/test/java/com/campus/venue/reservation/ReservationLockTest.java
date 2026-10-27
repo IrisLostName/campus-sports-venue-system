@@ -71,14 +71,16 @@ class ReservationLockTest extends UsageApiTestBase {
     }
 
     @Test
-    @DisplayName("ACC-M3-05 签到等待预约行锁；持锁方置 CANCELLED 并提交后，签到得 INVALID_STATE {status: CANCELLED}，无使用记录")
+    @DisplayName("ACC-M3-05 扫码签到等待预约行锁；持锁方置 CANCELLED 并提交后，签到得 INVALID_STATE {status: CANCELLED}，无使用记录")
     void checkInWaitsForConcurrentUserCancel() throws Exception {
         long id = todaySlot(zhangsan);
         holder.lockRow("reservation", id);
         holder.execute("update reservation set status = 'CANCELLED', cancelled_at = ?, cancelled_by = ? where id = ?",
                 Timestamp.valueOf(today(9, 19, 0)), zhangsan, id);
 
-        Future<MvcResult> checkIn = pool.submit(() -> checkIn(zhangsan, id));
+        String authorization = scannerBearer();
+        String code = codeOf(id);
+        Future<MvcResult> checkIn = pool.submit(() -> scan(authorization, code));
         holder.awaitBlocked(checkIn);
         holder.commit();
 
