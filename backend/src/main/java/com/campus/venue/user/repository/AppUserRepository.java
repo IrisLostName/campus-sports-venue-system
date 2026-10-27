@@ -3,6 +3,7 @@ package com.campus.venue.user.repository;
 import com.campus.venue.user.domain.AppUser;
 import jakarta.persistence.LockModeType;
 import java.util.Optional;
+import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Lock;
@@ -24,4 +25,11 @@ public interface AppUserRepository extends JpaRepository<AppUser, Long>, JpaSpec
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select u from AppUser u where u.id = :id")
     Optional<AppUser> lockById(@Param("id") Long id);
+
+    /**
+     * 用户的随机签到标识（docs/13 第 3.1 节 check_in_uuid，P2-1b）。实体不映射该列，所以它不会随任何视图返回；
+     * 该列建立后不再修改，读取不加锁。
+     */
+    @Query(value = "select check_in_uuid from app_user where id = :id", nativeQuery = true)
+    Optional<UUID> findCheckInUuidById(@Param("id") long id);
 }

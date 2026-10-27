@@ -1,9 +1,12 @@
 package com.campus.venue.reservation;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
+import com.campus.venue.reservation.service.CheckInCodes;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.UUID;
 import org.springframework.http.HttpHeaders;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -31,6 +34,26 @@ abstract class UsageApiTestBase extends ReservationApiTestBase {
 
     MvcResult checkIn(long userId, long id) throws Exception {
         return checkIn(userBearer(userId), id);
+    }
+
+    /** 用户的随机签到标识（实体不映射该列，直接查库）。 */
+    UUID checkInUuid(long userId) {
+        return jdbc.queryForObject("select check_in_uuid from app_user where id = ?", UUID.class, userId);
+    }
+
+    /** 预约人的签到码，与签发接口的结果相同。 */
+    String codeOf(long reservationId) {
+        long owner = jdbc.queryForObject("select user_id from reservation where id = ?", Long.class, reservationId);
+        return CheckInCodes.format(checkInUuid(owner), reservationId);
+    }
+
+    MvcResult issueCode(String authorization, Object id) throws Exception {
+        return mockMvc.perform(get(RESERVATIONS + "/" + id + "/check-in-code")
+                .header(HttpHeaders.AUTHORIZATION, authorization)).andReturn();
+    }
+
+    MvcResult issueCode(long userId, long id) throws Exception {
+        return issueCode(userBearer(userId), id);
     }
 
     MvcResult checkOut(String authorization, Object id) throws Exception {
