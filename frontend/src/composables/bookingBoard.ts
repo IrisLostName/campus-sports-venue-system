@@ -1,4 +1,4 @@
-// “订场”页的全部逻辑（FE-4 B1–B9，ACC-M2-04）：浏览（场馆 → 日期 → 时段）由 bookingBrowse 负责，
+// “订场”页的全部逻辑（FE-4 B1–B9，ACC-M2-04；UI-3 增加月历步骤 dates）：浏览（场馆 → 日期 → 时段）由 bookingBrowse 负责，
 // 这里负责选中时段、确认步骤、提交与结果。页面只渲染；步骤由数据决定，不靠模板碰巧。
 import { computed, ref } from 'vue'
 
@@ -19,7 +19,7 @@ export interface BookingDeps {
   today: () => string
 }
 
-export type BookingStep = 'venues' | 'slots' | 'confirm' | 'done'
+export type BookingStep = 'venues' | 'dates' | 'slots' | 'confirm' | 'done'
 
 export interface SlotSelection {
   resourceId: number
@@ -127,7 +127,10 @@ export function createBookingBoard(deps: BookingDeps) {
     if (picked.selection.value !== null) {
       return 'confirm'
     }
-    return browse.venueId.value === null ? 'venues' : 'slots'
+    if (browse.venueId.value === null) {
+      return 'venues'
+    }
+    return browse.date.value === null ? 'dates' : 'slots'
   })
 
   async function selectVenue(id: number): Promise<void> {
@@ -151,6 +154,12 @@ export function createBookingBoard(deps: BookingDeps) {
     submission.error.value = null
   }
 
+  // UI-3：从时段层逐层返回月历层。
+  function backToDates(): void {
+    backToSlots()
+    browse.clearDate()
+  }
+
   function backToVenues(): void {
     backToSlots()
     browse.clearVenue()
@@ -167,7 +176,7 @@ export function createBookingBoard(deps: BookingDeps) {
     ...browse, step, groups: picked.groups, selection: picked.selection, confirmation: picked.confirmation,
     purpose: submission.purpose, submitting: submission.submitting, submitError: submission.error,
     result: submission.result, submit: submission.submit,
-    selectVenue, selectDate, selectSlot, backToSlots, backToVenues, restart,
+    selectVenue, selectDate, selectSlot, backToSlots, backToDates, backToVenues, restart,
   }
 }
 

@@ -64,6 +64,7 @@ describe('B2 未开放预约的场馆不能进入', () => {
       getVenueSlots: (venueId, date) => { calls.push('getVenueSlots'); return base.getVenueSlots(venueId, date) },
       listAnnouncements: (query) => { calls.push('listAnnouncements'); return base.listAnnouncements(query) },
     }))
+    calls.length = 0                                     // UI-3：load 还会取各场馆的置顶公告，这里只看 selectVenue 之后的请求
 
     await board.selectVenue(id)
 
@@ -89,7 +90,8 @@ describe('B4 日期选项', () => {
       '2026-10-12', '2026-10-13', '2026-10-14', '2026-10-15', '2026-10-16', '2026-10-17', '2026-10-18',
     ])
     expect(board.dates.value.map((option) => option.weekdayText)).toEqual(['周一', '周二', '周三', '周四', '周五', '周六', '周日'])
-    expect(board.date.value).toBe(TODAY)
+    expect(board.date.value).toBeNull()                  // UI-3：日期由用户在月历里选定，不默认选中
+    expect(board.step.value).toBe('dates')
   })
 
   it('数量取自 BookingRules.advanceDays，不写死：规则为 3 天时只有 3 个', async () => {
@@ -127,8 +129,8 @@ describe('B4 日期选项', () => {
     await board.selectDate('2026-10-19')
     await board.selectDate('2026-10-11')
 
-    expect(board.date.value).toBe(TODAY)
-    expect(calls).toEqual([TODAY])
+    expect(board.date.value).toBeNull()                  // UI-3：选定场馆后不默认选中日期、不自动加载时段
+    expect(calls).toEqual([])
   })
 
   it('BookingRules 取不到：没有日期选项并给出错误文案，不会写死 7 天', async () => {
@@ -167,6 +169,7 @@ describe('B5 时段按场地分组，状态只取接口返回值', () => {
   it('今天 09:00：已开始的时段是 PAST、不可选，之后的 AVAILABLE', async () => {
     const { board } = await openBooking()
     await board.selectVenue(1)
+    await board.selectDate(TODAY)
 
     const cells = cellsOf(board, '网球场1')
     expect(cells.slice(0, 2)).toMatchObject([
@@ -180,6 +183,7 @@ describe('B5 时段按场地分组，状态只取接口返回值', () => {
     const admin = await ctx.h.clientFor('sysadmin')
     await admin.adminUpdateResource(3, { operationalStatus: 'MAINTENANCE' })
     await ctx.board.selectVenue(1)
+    await ctx.board.selectDate(TODAY)
     ctx.board.selectSlot(1, '08:00')                     // 今天 08:00 → PAST
     expect(ctx.board.step.value).toBe('slots')
     await ctx.board.selectDate(TOMORROW)
@@ -242,6 +246,7 @@ describe('B6 场馆公告', () => {
     }))
     const poolAdmin = await ctx.h.clientFor('admin_pool')
     await poolAdmin.adminCreateAnnouncement({ scope: 'VENUE', venueId: 3, title: '游泳馆检修', content: '本周停开' })
+    queries.length = 0                                   // UI-3：load 还会取各场馆的置顶公告，这里只看 selectVenue 之后的请求
 
     await ctx.board.selectVenue(1)
 

@@ -6,7 +6,7 @@ import type { Reservation } from '../../src/api/types'
 import ReservationView from '../../src/views/user/ReservationView.vue'
 import { FREE_SLOT, TOMORROW } from '../booking/harness'
 import { deferred } from '../display/support'
-import { openPage, pickFreeSlot, pinToday, slotButton, unpinToday } from './bookingSupport'
+import { changeDate, openPage, pickFreeSlot, pinToday, slotButton, unpinToday } from './bookingSupport'
 import { buttonByText, mountWithApp, texts } from './support'
 
 vi.mock('../../src/api/index', async (importOriginal) => {
@@ -131,8 +131,7 @@ describe('失败文案（B8）', () => {
     expect(page.find('[role="alert"]').text()).toBe('该时段刚刚被别人预约了，请重新选择')
     const requestsBefore = slotRequests
 
-    await page.find(`[data-date="${TOMORROW}"]`).trigger('click')
-    await flushPromises()
+    await changeDate(page, TOMORROW)                    // UI-3：经“更改日期”回到月历再选同一天
 
     expect(page.find('[role="alert"]').exists()).toBe(false)
     expect(page.find('[aria-label="确认预约"]').exists()).toBe(false)

@@ -30,7 +30,7 @@ async function brokenRulesBoard() {
 }
 
 describe('FE-8 L4 BookingRules 取不到时就地重试', () => {
-  it('重试成功：补出日期选项（从今天起 advanceDays 个）、选中第一个并加载时段，错误文案清除', async () => {
+  it('重试成功：补出日期选项（从今天起 advanceDays 个）、错误文案清除；日期待用户选定（UI-3），选定后加载时段', async () => {
     const { board, state } = await brokenRulesBoard()
     expect(board.dates.value).toEqual([])
     expect(board.rulesError.value).toBe('服务器开小差了，请稍后再试')
@@ -42,7 +42,11 @@ describe('FE-8 L4 BookingRules 取不到时就地重试', () => {
     expect(board.rulesError.value).toBeNull()
     expect(board.dates.value).toHaveLength(7)
     expect(board.dates.value[0]?.value).toBe(TODAY)
-    expect(board.date.value).toBe(TODAY)
+    expect(board.date.value).toBeNull()
+    expect(state.slotDates).toEqual([])
+    expect(board.slotsPhase.value).toBe('idle')
+
+    await board.selectDate(TODAY)
     expect(state.slotDates).toEqual([TODAY])
     expect(board.slotsPhase.value).toBe('ready')
     expect(board.groups.value.length).toBeGreaterThan(0)

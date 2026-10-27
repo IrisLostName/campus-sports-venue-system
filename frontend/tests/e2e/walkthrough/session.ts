@@ -70,12 +70,29 @@ export async function loginUi(walk: Walk, username: string, viewport: Viewport, 
   await page.waitFor('location.pathname !== "/login"', `${username} 登录后离开登录页`)
 }
 
-// 用户端：从订场页选场馆与日期（明天），等到该场馆的时段表出现。
-export async function openVenueSlots(walk: Walk, venueName: string, firstResource: string): Promise<void> {
+// UI-3：订场的各层以弹出动画出现；等动画走完再点，避免点到移动中的元素。
+const ANIMATIONS_DONE = 'document.getAnimations().every((animation) => animation.playState !== "running")'
+
+// 用户端：在订场页点场馆，等月历层（“选择日期”）弹出并停稳。
+export async function openVenueCalendar(walk: Walk, venueName: string): Promise<void> {
   const { page } = walk
   await page.clickText(venueName, { selector: 'button', exact: false })
+  await page.waitFor('document.querySelector(\'[role="dialog"][aria-label="选择日期"]\')', '月历层出现')
+  await page.waitFor(ANIMATIONS_DONE, '月历层动画结束')
+}
+
+// 用户端：在月历层选明天，等到该场馆的时段层出现并停稳。
+export async function pickTomorrow(walk: Walk, firstResource: string): Promise<void> {
+  const { page } = walk
   await page.clickCss(`[data-date="${walk.tomorrow}"]`)
   await page.waitFor(`document.querySelector('section[aria-label="${firstResource}"] button')`, `${firstResource} 的时段出现`)
+  await page.waitFor(ANIMATIONS_DONE, '时段层动画结束')
+}
+
+// 用户端：从订场页选场馆与日期（明天），等到该场馆的时段表出现。
+export async function openVenueSlots(walk: Walk, venueName: string, firstResource: string): Promise<void> {
+  await openVenueCalendar(walk, venueName)
+  await pickTomorrow(walk, firstResource)
 }
 
 export async function pickSlot(walk: Walk, resourceName: string, startTime: string): Promise<void> {

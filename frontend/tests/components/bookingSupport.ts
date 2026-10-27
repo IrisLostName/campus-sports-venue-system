@@ -53,7 +53,15 @@ export function slotButton(page: VueWrapper, resourceName: string, startTime: st
   return found
 }
 
-// 进入网球馆、选定日期。
+// UI-3：在时段层点“更改日期”回到月历层，再选另一天（时段层压在月历层上时，月历是 inert 的，不能直接点）。
+export async function changeDate(page: VueWrapper, date: string): Promise<void> {
+  await page.get('.change-date').trigger('click')
+  await flushPromises()
+  await dateButton(page, date).trigger('click')
+  await flushPromises()
+}
+
+// 进入网球馆（弹出月历层）、选定日期（进入时段层）。
 export async function enterTennis(page: VueWrapper, date: string = TOMORROW): Promise<void> {
   await venueButton(page, '网球馆').trigger('click')
   await flushPromises()

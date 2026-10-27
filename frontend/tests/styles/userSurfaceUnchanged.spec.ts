@@ -1,5 +1,6 @@
 // UI-2b-rulings 第 0 节第 3、4 条、第 3 节与计划闸门第 2 条：用户端（手机）没有任何样式文件被修改。
 // 1. 用户端页面与组件逐字不变（与 c3865f9 的 SHA-256 相同，换行统一为 LF）；登录页只改标题文字，样式块不变。
+//    UI-3（订场页重新设计，UI-3 裁决第 0 节第 1 条）改了 BookingView.vue、VenueList.vue，删除了 DateStrip.vue，三者移出清单；其余仍逐字不变。
 // 2. 共用 Ui* 组件只允许把写死的值包成 var(--x, 原值)（原值逐字不变），其余逐行相同；用户端不设这些变量，取原值。
 //    fixtures/ui2b-baseline/ui/*.vue.txt 是 c3865f9 的原样副本（加 .txt 后缀，不参与构建与 lint）。
 import { createHash } from 'node:crypto'
@@ -43,8 +44,8 @@ function isHookWrap(before: string, after: string): boolean {
 describe('用户端页面与组件逐字不变', () => {
   const entries = Object.entries(HASHES).filter(([key]) => !key.includes('#'))
 
-  it('清单覆盖用户端五个视图与用户端组件', () => {
-    expect(entries.filter(([path]) => path.startsWith('src/views/user/'))).toHaveLength(5)
+  it('清单覆盖用户端四个视图（UI-3 移出 BookingView）与用户端组件', () => {
+    expect(entries.filter(([path]) => path.startsWith('src/views/user/'))).toHaveLength(4)
     expect(entries.length).toBeGreaterThan(15)
   })
 

@@ -1,27 +1,39 @@
 <script setup lang="ts">
+// “订场”页（FE-4；UI-3 改为三层叠放）：场馆 → 日期（弹出月历）→ 时段，后一层压在前一层上，可逐层返回。
+// 步骤由 bookingBoard 的数据决定；确认与成功两步沿用原来的页面步骤，整体替换三层（UI-3 裁决第 1 节）。
 import { computed, onMounted } from 'vue'
 
+import BookingLayer from '../../components/booking/BookingLayer.vue'
 import BookingResult from '../../components/booking/BookingResult.vue'
 import ConfirmPanel from '../../components/booking/ConfirmPanel.vue'
-import DateStrip from '../../components/booking/DateStrip.vue'
-import SlotGrid from '../../components/booking/SlotGrid.vue'
+import MonthCalendar from '../../components/booking/MonthCalendar.vue'
+import SlotsLayer from '../../components/booking/SlotsLayer.vue'
 import VenueList from '../../components/booking/VenueList.vue'
-import VenueNotices from '../../components/booking/VenueNotices.vue'
 import UiBanner from '../../components/ui/UiBanner.vue'
 import UiButton from '../../components/ui/UiButton.vue'
 import UiEmptyState from '../../components/ui/UiEmptyState.vue'
 import UiGlassCard from '../../components/ui/UiGlassCard.vue'
 import { useBookingBoard } from '../../composables/bookingBoard'
-import {
-  hasNoSlots, NO_SLOTS_DESCRIPTION, NO_SLOTS_TITLE, NO_VENUES_DESCRIPTION, NO_VENUES_TITLE,
-} from '../../utils/bookingDisplay'
+import { calendarDays } from '../../utils/bookingCalendar'
+import { NO_VENUES_DESCRIPTION, NO_VENUES_TITLE } from '../../utils/bookingDisplay'
+import { formatServiceDate } from '../../utils/reservationDisplay'
 
 const board = useBookingBoard()
 const {
-  step, venues, venuesPhase, venuesError, rulesError, venue, dates, date, slotsPhase, slotsError, groups,
+  step, venues, venuesPhase, venuesError, rulesError, venue, dates, date, slotsPhase, slotsError, groups, pinned,
   announcementItems, announcementError, confirmation, purpose, submitting, submitError, result,
 } = board
-const noSlots = computed(() => hasNoSlots(groups.value))
+
+const browsing = computed(() => step.value === 'venues' || step.value === 'dates' || step.value === 'slots')
+const LAYER_DEPTH = { venues: 0, dates: 1, slots: 2 } as const
+const baseDepth = computed(() => (step.value === 'dates' || step.value === 'slots' ? LAYER_DEPTH[step.value] : 0))
+
+// 31 格月历：第一天是今天（dates 的第一项），可选天数 = dates 的个数 = advanceDays（规则没取到时没有日期）。
+const days = computed(() => {
+  const first = dates.value[0]
+  return first === undefined ? [] : calendarDays(first.value, dates.value.length)
+})
+const dateText = computed(() => (date.value === null ? '' : formatServiceDate(date.value)))
 
 onMounted(() => {
   void board.load()
@@ -30,147 +42,153 @@ onMounted(() => {
 
 <template>
   <section class="page">
-    <h1 class="page-title">
-      订场
-    </h1>
-
-    <template v-if="step === 'venues'">
-      <p
-        v-if="venuesPhase === 'loading'"
-        class="hint"
+    <template v-if="browsing">
+      <BookingLayer
+        base
+        :depth="baseDepth"
       >
-        加载中…
-      </p>
-      <UiBanner
-        v-if="venuesError !== null"
-        class="error"
-        tone="danger"
-        role="alert"
-      >
-        <p>{{ venuesError }}</p>
-        <UiButton
-          variant="plain"
-          @click="board.load()"
+        <h1 class="page-title">
+          订场
+        </h1>
+        <p
+          v-if="venuesPhase === 'loading'"
+          class="hint"
         >
-          重试
-        </UiButton>
-      </UiBanner>
-      <UiGlassCard
-        v-if="venuesPhase === 'ready' && venues.length === 0"
-        tag="section"
-      >
-        <UiEmptyState
-          :title="NO_VENUES_TITLE"
-          :description="NO_VENUES_DESCRIPTION"
+          加载中…
+        </p>
+        <UiBanner
+          v-if="venuesError !== null"
+          class="error"
+          tone="danger"
+          role="alert"
+        >
+          <p>{{ venuesError }}</p>
+          <UiButton
+            variant="plain"
+            @click="board.load()"
+          >
+            重试
+          </UiButton>
+        </UiBanner>
+        <UiGlassCard
+          v-if="venuesPhase === 'ready' && venues.length === 0"
+          tag="section"
+        >
+          <UiEmptyState
+            :title="NO_VENUES_TITLE"
+            :description="NO_VENUES_DESCRIPTION"
+          />
+        </UiGlassCard>
+        <VenueList
+          :venues="venues"
+          :pinned="pinned"
+          @select="board.selectVenue($event)"
         />
-      </UiGlassCard>
-      <VenueList
-        :venues="venues"
-        @select="board.selectVenue($event)"
-      />
+      </BookingLayer>
+
+      <BookingLayer
+        :open="(step === 'dates' || step === 'slots') && venue !== null"
+        :depth="step === 'slots' ? 1 : 0"
+        label="选择日期"
+        @close="board.backToVenues()"
+      >
+        <header class="layer-head">
+          <div>
+            <h2>选择日期</h2>
+            <p class="layer-sub">
+              {{ venue?.name }}
+            </p>
+          </div>
+          <UiButton
+            variant="plain"
+            @click="board.backToVenues()"
+          >
+            重选场馆
+          </UiButton>
+        </header>
+        <UiBanner
+          v-if="rulesError !== null"
+          class="error"
+          tone="danger"
+          role="alert"
+        >
+          <p>无法取得可预约的日期范围：{{ rulesError }}</p>
+          <UiButton
+            variant="plain"
+            @click="board.retryRules()"
+          >
+            重试
+          </UiButton>
+        </UiBanner>
+        <MonthCalendar
+          v-if="days.length > 0"
+          :days="days"
+          :selected="date"
+          :advance-days="dates.length"
+          @select="board.selectDate($event)"
+        />
+      </BookingLayer>
+
+      <BookingLayer
+        :open="step === 'slots' && venue !== null"
+        :depth="0"
+        size="tall"
+        :label="`${venue?.name ?? ''} ${dateText} 时段`"
+        @close="board.backToDates()"
+      >
+        <SlotsLayer
+          :venue-name="venue?.name ?? ''"
+          :date-text="dateText"
+          :announcement-items="announcementItems"
+          :announcement-error="announcementError"
+          :submit-error="submitError"
+          :slots-phase="slotsPhase"
+          :slots-error="slotsError"
+          :groups="groups"
+          @back="board.backToDates()"
+          @retry="board.loadSlots()"
+          @select="(resourceId, startTime) => board.selectSlot(resourceId, startTime)"
+        />
+      </BookingLayer>
     </template>
 
-    <template v-else-if="step === 'slots' && venue !== null">
-      <UiButton
-        variant="plain"
-        class="back"
-        @click="board.backToVenues()"
-      >
-        ← 重选场馆
-      </UiButton>
-      <h2>{{ venue.name }}</h2>
-      <VenueNotices
-        :items="announcementItems"
-        :error="announcementError"
+    <template v-else>
+      <h1 class="page-title">
+        订场
+      </h1>
+      <ConfirmPanel
+        v-if="step === 'confirm' && confirmation !== null"
+        v-model:purpose="purpose"
+        :confirmation="confirmation"
+        :submitting="submitting"
+        :error="submitError"
+        @submit="board.submit()"
+        @back="board.backToSlots()"
       />
-      <UiBanner
-        v-if="rulesError !== null"
-        class="error"
-        tone="danger"
-        role="alert"
-      >
-        <p>无法取得可预约的日期范围：{{ rulesError }}</p>
-        <UiButton
-          variant="plain"
-          @click="board.retryRules()"
-        >
-          重试
-        </UiButton>
-      </UiBanner>
-      <DateStrip
-        :dates="dates"
-        :selected="date"
-        @select="board.selectDate($event)"
-      />
-      <UiBanner
-        v-if="submitError !== null"
-        class="error banner"
-        tone="danger"
-        role="alert"
-      >
-        {{ submitError }}
-      </UiBanner>
-      <p
-        v-if="slotsPhase === 'loading'"
-        class="hint"
-      >
-        加载中…
-      </p>
-      <UiBanner
-        v-else-if="slotsError !== null"
-        class="error"
-        tone="danger"
-        role="alert"
-      >
-        <p>{{ slotsError }}</p>
-        <UiButton
-          variant="plain"
-          @click="board.loadSlots()"
-        >
-          重试
-        </UiButton>
-      </UiBanner>
-      <UiGlassCard
-        v-else-if="slotsPhase === 'ready' && noSlots"
-        tag="section"
-      >
-        <UiEmptyState
-          :title="NO_SLOTS_TITLE"
-          :description="NO_SLOTS_DESCRIPTION"
-        />
-      </UiGlassCard>
-      <SlotGrid
-        v-else
-        :groups="groups"
-        @select="(resourceId, startTime) => board.selectSlot(resourceId, startTime)"
+
+      <BookingResult
+        v-else-if="step === 'done' && result !== null"
+        :result="result"
+        @again="board.restart()"
       />
     </template>
-
-    <ConfirmPanel
-      v-else-if="step === 'confirm' && confirmation !== null"
-      v-model:purpose="purpose"
-      :confirmation="confirmation"
-      :submitting="submitting"
-      :error="submitError"
-      @submit="board.submit()"
-      @back="board.backToSlots()"
-    />
-
-    <BookingResult
-      v-else-if="step === 'done' && result !== null"
-      :result="result"
-      @again="board.restart()"
-    />
   </section>
 </template>
 
 <style scoped>
+.layer-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
 h2 {
-  padding-inline: var(--space-1);
   font: var(--font-title);
 }
 
-.back {
-  align-self: flex-start;
+.layer-sub {
+  color: var(--color-text-secondary);
+  font: var(--font-callout);
 }
 </style>

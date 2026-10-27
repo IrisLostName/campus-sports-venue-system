@@ -8,6 +8,7 @@ import { dateOptions, type DateOption } from '../utils/bookingDisplay'
 import { buildAnnouncement } from '../utils/reservationDisplay'
 import type { ReferenceStore } from '../stores/reference'
 import type { ListPhase } from './reservationList'
+import { createPinnedNotices } from './bookingPinned'
 import type { ApiCaller } from './session'
 
 export interface BrowseDeps {
@@ -131,6 +132,13 @@ export function createBookingBrowse(deps: BrowseDeps) {
   const date = ref<string | null>(null)
   const slotLoader = createSlotLoader(deps, venueId, date)
   const notices = createVenueNotices(deps)
+  const pinned = createPinnedNotices(deps)
+
+  // 进入页面：拉取场馆列表与 BookingRules，再按场馆列表取各场馆的置顶公告（UI-3）。
+  async function load(): Promise<void> {
+    await catalog.load()
+    await pinned.load(catalog.venues.value.map((item) => item.id))
+  }
 
   const venue = computed(() => catalog.venues.value.find((item) => item.id === venueId.value) ?? null)
 
@@ -142,11 +150,11 @@ export function createBookingBrowse(deps: BrowseDeps) {
     notices.reset()
   }
 
-  // 日期选项为 [今天, 今天 + advanceDays)（B4）；规则没取到（ready 为 false）就没有选项，不写死天数。默认选中第一个。
+  // 日期选项为 [今天, 今天 + advanceDays)（B4），规则没取到就没有选项、不写死天数；UI-3 起不默认选中（UI-3 裁决第 4 节第 2 条）。
   function applyDates(ready: boolean): void {
     const advanceDays = deps.reference.bookingRules?.advanceDays ?? 0
     dates.value = ready ? dateOptions(deps.today(), advanceDays) : []
-    date.value = dates.value[0]?.value ?? null
+    date.value = null
   }
 
   // B2：bookable=false 的场馆不能进入。可选日期需要 BookingRules.advanceDays；之前取失败则这里再取一次。
@@ -158,10 +166,10 @@ export function createBookingBrowse(deps: BrowseDeps) {
     clearVenue()
     venueId.value = id
     applyDates(deps.reference.bookingRules !== null || await catalog.fetchRules())
-    await Promise.all([slotLoader.load(), notices.load(id)])
+    await notices.load(id)
   }
 
-  // FE-8 L4：已选场馆但 BookingRules 没取到时，就地重试；成功后补出日期并加载时段。期间换了场馆则放弃。
+  // FE-8 L4：已选场馆但 BookingRules 没取到时，就地重试；成功后补出日期（仍待用户选定）。期间换了场馆则放弃。
   async function retryRules(): Promise<void> {
     const id = venueId.value
     if (id === null) {
@@ -172,7 +180,12 @@ export function createBookingBrowse(deps: BrowseDeps) {
       return
     }
     applyDates(ready)
-    await slotLoader.load()
+  }
+
+  // UI-3：从时段层返回月历层，清掉所选日期与时段。
+  function clearDate(): void {
+    date.value = null
+    slotLoader.reset()
   }
 
   // 越出选项的日期不接受；越界仍以后端 DATE_OUT_OF_RANGE 为准（B4）。
@@ -189,7 +202,7 @@ export function createBookingBrowse(deps: BrowseDeps) {
     venueId, venue, dates, date,
     slots: slotLoader.slots, slotsPhase: slotLoader.phase, slotsError: slotLoader.error,
     announcementItems: notices.items, announcementError: notices.error,
-    load: catalog.load, selectVenue, retryRules, selectDate, loadSlots: slotLoader.load, clearVenue,
+    pinned: pinned.items, load, selectVenue, retryRules, selectDate, loadSlots: slotLoader.load, clearVenue, clearDate,
   }
 }
 
