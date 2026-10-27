@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { ApiClient } from '../../src/api/client'
 import { ApiError } from '../../src/api/errors'
-import { openPage, pinToday, unpinToday, venueButton } from './bookingSupport'
+import { dateButton, openPage, pinToday, unpinToday, venueButton } from './bookingSupport'
 import { texts } from './support'
 
 vi.mock('../../src/api/index', async (importOriginal) => {
@@ -82,7 +82,12 @@ describe('FE-8 L4 BookingRules 取不到时就地重试', () => {
     await flushPromises()
 
     expect(page.find('[role="alert"]').exists()).toBe(false)
-    expect(page.findAll('[data-date]')).toHaveLength(7)
+    expect(page.findAll('[data-date]')).toHaveLength(31)                    // UI-3：31 格月历，其中 7 个可选
+    expect(page.findAll('[data-date]:not([aria-disabled])')).toHaveLength(7)
+    expect(page.findAll('.cell')).toHaveLength(0)                          // UI-3：选定日期后才加载时段
+
+    await dateButton(page, '2026-10-12').trigger('click')
+    await flushPromises()
     expect(page.findAll('.cell').length).toBeGreaterThan(0)
   })
 

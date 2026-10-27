@@ -25,10 +25,8 @@ export async function openBooking(username = 'zhangsan', api?: (base: ApiClient)
   return { ...ctx, board, other: (name) => ctx.h.clientFor(name) }
 }
 
-// 进入网球馆（id 1）并选定日期，返回时段已加载的控制器。
+// 进入网球馆（id 1）并选定日期，返回时段已加载的控制器。UI-3 起选定场馆后不默认选中日期，今天也要显式选定。
 export async function enterTennis(board: BookingBoard, date: string = TOMORROW): Promise<void> {
   await board.selectVenue(1)
-  if (date !== TODAY) {
-    await board.selectDate(date)
-  }
+  await board.selectDate(date)
 }

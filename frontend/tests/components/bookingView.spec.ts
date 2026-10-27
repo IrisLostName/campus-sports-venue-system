@@ -6,7 +6,7 @@ import BookingView from '../../src/views/user/BookingView.vue'
 import { TOMORROW } from '../booking/harness'
 import { useApiClient } from './apiSwap'
 import {
-  dateButton, enterTennis, openPage, pinToday, slotButton, unpinToday, venueButton,
+  changeDate, enterTennis, openPage, pinToday, slotButton, unpinToday, venueButton,
 } from './bookingSupport'
 import { mountWithApp, texts } from './support'
 
@@ -60,17 +60,19 @@ describe('场馆列表与未开放预约', () => {
 })
 
 describe('日期选项', () => {
-  it('恰好 7 个，从今天（2026-10-12）开始，选中项高亮', async () => {
+  it('月历 31 格从今天（2026-10-12）开始，恰好 7 个可选（10-12 至 10-18），一开始没有选中项', async () => {
     const { page } = await openPage()
     await venueButton(page, '网球馆').trigger('click')
     await flushPromises()
 
-    const days = page.findAll('.day')
-    expect(days.map((node) => node.attributes('data-date'))).toEqual([
+    const days = page.findAll('[data-date]')
+    expect(days).toHaveLength(31)
+    expect(days[0]?.attributes('data-date')).toBe('2026-10-12')
+    expect(days[0]?.attributes('aria-label')).toBe('10月12日 周一')
+    expect(page.findAll('[data-date]:not([aria-disabled])').map((node) => node.attributes('data-date'))).toEqual([
       '2026-10-12', '2026-10-13', '2026-10-14', '2026-10-15', '2026-10-16', '2026-10-17', '2026-10-18',
     ])
-    expect(days[0]?.text()).toBe('10-12周一')
-    expect(days.map((node) => node.classes('active'))).toEqual([true, false, false, false, false, false, false])
+    expect(page.findAll('[data-date].selected')).toHaveLength(0)
   })
 
   it('个数取自 BookingRules.advanceDays：规则为 3 天时只有 3 个', async () => {
@@ -80,7 +82,7 @@ describe('日期选项', () => {
     await venueButton(page, '网球馆').trigger('click')
     await flushPromises()
 
-    expect(page.findAll('.day').map((node) => node.attributes('data-date'))).toEqual(['2026-10-12', '2026-10-13', '2026-10-14'])
+    expect(page.findAll('[data-date]:not([aria-disabled])').map((node) => node.attributes('data-date'))).toEqual(['2026-10-12', '2026-10-13', '2026-10-14'])
   })
 })
 
@@ -96,8 +98,7 @@ describe('时段渲染（B5）', () => {
     expect(pastCell.find('.label').text()).toBe('已过')
     expect(pastCell.attributes('disabled')).toBeDefined()
 
-    await dateButton(page, TOMORROW).trigger('click')
-    await flushPromises()
+    await changeDate(page, TOMORROW)
     const mine = slotButton(page, '网球场1', '08:00')
     const booked = slotButton(page, '网球场2', '09:30')
     const closed = slotButton(page, '网球场3', '08:00')
@@ -131,13 +132,12 @@ describe('场馆公告（B6）', () => {
     const { page, ctx } = await openPage()
     const poolAdmin = await ctx.h.clientFor('admin_pool')
     await poolAdmin.adminCreateAnnouncement({ scope: 'VENUE', venueId: 3, title: '游泳馆检修', content: '本周停开' })
-    await venueButton(page, '网球馆').trigger('click')
-    await flushPromises()
+    await enterTennis(page)                              // UI-3：场馆公告在时段层（选定日期之后）
 
     const notices = page.find('section[aria-label="场馆公告"]')
     expect(notices.exists()).toBe(true)
     expect(texts(page, 'section[aria-label="场馆公告"] h3')).toEqual(['场地保养：每周一 08:00–09:30 视情况关闭 1 片球场'])
-    expect(page.text()).not.toContain('游泳馆检修')
+    expect(notices.text()).not.toContain('游泳馆检修')         // UI-3：第一层的游泳馆卡片上有它的置顶公告，这里只看时段层
     expect(page.text()).not.toContain('欢迎使用校园场馆预约系统')
   })
 

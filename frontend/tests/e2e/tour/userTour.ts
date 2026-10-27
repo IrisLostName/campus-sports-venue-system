@@ -7,7 +7,7 @@ import { expect } from 'vitest'
 import { IPHONE16, MOBILE } from '../browser/pageDriver'
 import { E2E } from '../support/e2eEnv'
 import { makeHttpTarget } from '../support/httpTarget'
-import { openVenueSlots, pickSlot } from '../walkthrough/session'
+import { openVenueCalendar, openVenueSlots, pickSlot, pickTomorrow } from '../walkthrough/session'
 import { capture, go, login, type Theme, type Tour } from './tourSession'
 
 const BOTH: Theme[] = ['light', 'dark']
@@ -24,15 +24,17 @@ export async function userLoginAndEmpty(tour: Tour): Promise<void> {
   })
 }
 
-// 订场：场馆列表（羽毛球馆、游泳馆“暂未开放预约”，点了不进入时段步骤）→ 网球馆明天的时段与场馆公告 → 确认 → 成功。
+// 订场：场馆列表（羽毛球馆、游泳馆“暂未开放预约”，点了不进入时段步骤）→ 网球馆的月历层（UI-3）→ 明天的时段与场馆公告 → 确认 → 成功。
 export async function userBooking(tour: Tour): Promise<void> {
   const { page } = tour
   await page.clickText('去订场')
   await page.waitForText('网球馆')
   await page.clickText('羽毛球馆', { selector: 'button', exact: false })
-  expect(await page.text(), '未开放场馆不进入时段步骤').not.toContain('← 重选场馆')
+  expect(await page.evaluate<boolean>('document.querySelector(\'[role="dialog"]\') === null'), '未开放场馆不弹出月历层').toBe(true)
   await capture(tour, '03-user-booking-venues', { surface: 'user', expect: ['订场', '网球馆', '暂未开放预约'], themes: BOTH })
-  await openVenueSlots(tour, '网球馆', '网球场1')
+  await openVenueCalendar(tour, '网球馆')
+  await capture(tour, '03b-user-booking-calendar', { surface: 'user', expect: ['选择日期', '重选场馆', '其余日期暂不可预约'], themes: BOTH })
+  await pickTomorrow(tour, '网球场1')
   await capture(tour, '04-user-booking-slots', { surface: 'user', expect: ['网球馆', '场馆公告', '网球场1', '已被预约'], themes: BOTH })
   await pickSlot(tour, '网球场3', '11:00')
   await page.fill('用途（可选）', '周末约练（演示）')

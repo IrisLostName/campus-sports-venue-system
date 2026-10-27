@@ -1,11 +1,10 @@
 // FE-8 L3（FE-4 N-3）：订场页的空状态——没有场馆、所选日期没有场地或时段。是否为空只看接口返回的数组。
-import { flushPromises } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { ApiClient } from '../../src/api/client'
 import { ApiError } from '../../src/api/errors'
-import { TOMORROW } from '../booking/harness'
-import { dateButton, enterTennis, openPage, pinToday, unpinToday } from './bookingSupport'
+import { TODAY, TOMORROW } from '../booking/harness'
+import { changeDate, enterTennis, openPage, pinToday, unpinToday } from './bookingSupport'
 import { texts } from './support'
 
 vi.mock('../../src/api/index', async (importOriginal) => {
@@ -55,7 +54,7 @@ describe('所选日期没有场地或时段', () => {
     expect(page.get('.ui-empty-state .title').text()).toBe(NO_SLOTS)
     expect(page.get('.ui-empty-state .description').text()).toBe('换一个日期试试。')
     expect(page.findAll('.cell')).toHaveLength(0)
-    expect(dateButton(page, TOMORROW).exists()).toBe(true)
+    expect(page.find('.change-date').exists()).toBe(true)        // UI-3：经“更改日期”回到月历换日期
   })
 
   it('场地都没有时段（例如整天关闭）：同样显示空状态，不渲染空的场地分组', async () => {
@@ -88,12 +87,10 @@ describe('所选日期没有场地或时段', () => {
     expect(page.find('.ui-empty-state').exists()).toBe(false)
     expect(page.findAll('.cell').length).toBeGreaterThan(0)
 
-    await page.findAll('[data-date]').find((node) => node.attributes('data-date') !== TOMORROW)?.trigger('click')
-    await flushPromises()
+    await changeDate(page, TODAY)
     expect(page.get('.ui-empty-state .title').text()).toBe(NO_SLOTS)
 
-    await dateButton(page, TOMORROW).trigger('click')
-    await flushPromises()
+    await changeDate(page, TOMORROW)
     expect(page.find('.ui-empty-state').exists()).toBe(false)
     expect(texts(page, '.cell .time').length).toBeGreaterThan(0)
   })
