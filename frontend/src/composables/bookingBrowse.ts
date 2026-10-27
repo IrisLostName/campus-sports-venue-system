@@ -140,7 +140,7 @@ export function createBookingBrowse(deps: BrowseDeps) {
     await pinned.load(catalog.venues.value.map((item) => item.id))
   }
 
-  const venue =computed(() => catalog.venues.value.find((item) => item.id === venueId.value) ?? null)
+  const venue = computed(() => catalog.venues.value.find((item) => item.id === venueId.value) ?? null)
 
   function clearVenue(): void {
     venueId.value = null

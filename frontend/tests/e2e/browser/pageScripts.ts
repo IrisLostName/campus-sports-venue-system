@@ -84,11 +84,15 @@ export function setControl(args: { label: string; value: string; within: string 
 
 // TEST-2 布局测量（ACC-M2-10、docs/17 第 9 节）：横向溢出、滚到底时最后一项与 Dock 的关系、可见文字的最小字号。
 // 用户端的内容区（main.content）自己滚动：先滚到底测最后一项的底边，再恢复原来的滚动位置，截图不受影响。
+// UI-3（裁决第 6 节 F1）：[inert] 子树不可交互，不参与“被 Dock 压住”的判定；订场的叠放层是 role="dialog"、不加 aria-modal、
+// 层内滚动——打开时以最上层（未 inert 的）弹层的底边作为“最后一项”，层内的内容按层内口径（由层自己的滚动保证）、
+// 弹层的底板（父元素，同模态浮层的处理）都不再逐个计入。
+// 页面上没有 [inert] 与这种叠放层时，结果与改动前完全相同。
 export interface LayoutReport {
   pageOverflowX: number          // document 的 scrollWidth - clientWidth
   contentOverflowX: number       // 用户端内容区的 scrollWidth - clientWidth（没有内容区为 0）
   dockTop: number | null         // 用户端 Dock 顶边（没有 Dock 为 null）
-  lastBottom: number | null      // 内容区滚到底后，内容区内可见元素的最大底边（不含打开着的模态浮层）
+  lastBottom: number | null      // 内容区滚到底后，内容区内可见元素的最大底边（不含打开着的模态浮层与 [inert] 子树；叠放层只计最上层的底边）
   modalBottom: number | null     // 打开着的模态浮层（aria-modal）的底边；浮层盖在 Dock 之上是设计，单独判断不超出视口
   viewportHeight: number
   minFontPx: number              // 有直接文字的可见元素中最小的计算字号
@@ -106,12 +110,19 @@ export function layoutProbe(): LayoutReport {
   const modal = document.querySelector('[aria-modal="true"]')
   const inOverlay = (el: Element): boolean => modal !== null && (el.contains(modal) || modal.contains(el)
     || (modal.parentElement !== null && modal.parentElement.contains(el)))
+  const inert = (el: Element): boolean => el.closest('[inert]') !== null
+  const layers = [...document.querySelectorAll('[role="dialog"]:not([aria-modal="true"])')].filter((el) => visible(el) && !inert(el))
+  const topLayer = layers[layers.length - 1] ?? null
+  const layerHosts = [...document.querySelectorAll('[role="dialog"]:not([aria-modal="true"])')].map((el): Element | null => el.parentElement)
+  const inLayer = (el: Element): boolean => el.closest('[role="dialog"]:not([aria-modal="true"])') !== null || layerHosts.includes(el)
   let lastBottom: number | null = null
   if (content !== null) {
     const saved = content.scrollTop
     content.scrollTop = content.scrollHeight
-    lastBottom = Math.max(0, ...[...content.querySelectorAll('*')].filter((el) => visible(el) && !inOverlay(el))
-      .map((el) => Math.round(el.getBoundingClientRect().bottom)))
+    lastBottom = Math.max(0, ...[...content.querySelectorAll('*')]
+      .filter((el) => visible(el) && !inOverlay(el) && !inert(el) && !inLayer(el))
+      .map((el) => Math.round(el.getBoundingClientRect().bottom)),
+    ...(topLayer === null ? [] : [Math.round(topLayer.getBoundingClientRect().bottom)]))
     content.scrollTop = saved
   }
   const ownText = (el: Element): boolean => [...el.childNodes]
@@ -160,6 +171,7 @@ export function panelProbe(args: { selector: string }): PanelReport {
 
 // TEST-2 可点击元素：数量、小于 minSize 的（docs/17 第 4 节触控 44×44）、互相重叠的。
 // 表单控件以包住它的 <label> 为触控区域；嵌套关系（一个包含另一个）不算重叠；Dock 与内容区之间的遮挡由 layoutProbe 判断。
+// UI-3（裁决第 6 节 F1）：[inert] 子树里的元素不可点，不计入（订场叠放层下面的层）；没有 [inert] 的页面结果与改动前相同。
 export interface TargetReport {
   count: number
   small: string[]
@@ -178,7 +190,7 @@ export function targetProbe(args: { minSize: number }): TargetReport {
   const modal = document.querySelector('[aria-modal="true"]')
   const targets = [...new Set([...document.querySelectorAll(selector)].map(area))]
     .filter((el) => getComputedStyle(el).visibility !== 'hidden' && inViewport(el.getBoundingClientRect())
-      && (modal === null || modal.contains(el)))
+      && (modal === null || modal.contains(el)) && el.closest('[inert]') === null)
   const small = targets.filter((el) => {
     const rect = el.getBoundingClientRect()
     return rect.width < args.minSize - 0.5 || rect.height < args.minSize - 0.5
