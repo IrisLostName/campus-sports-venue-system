@@ -53,7 +53,7 @@ class DemoSeedTest {
         flyway.migrate();
         assertThat(jdbc.queryForObject("select count(*) from venue", Integer.class)).isZero();
         assertThat(jdbc.queryForList("select version from flyway_schema_history order by installed_rank",
-                String.class)).containsExactly("1");
+                String.class)).containsExactly("1", "101");
     }
 
     private List<String> rows(String sql) {
@@ -115,6 +115,13 @@ class DemoSeedTest {
                         "5|admin_tennis|网球馆管理员|VENUE_ADMIN|OTHER|ACTIVE|NULL",
                         "6|admin_pool|游泳羽毛球馆管理员|VENUE_ADMIN|OTHER|ACTIVE|NULL",
                         "7|sysadmin|系统管理员|SYS_ADMIN|OTHER|ACTIVE|NULL");
+    }
+
+    @Test
+    void accountsSeededBeforeTheCheckInUuidMigrationEachGotADistinctUuid() {
+        // V100 先于 V101 执行：演示账号是加列时的“已有用户”，由列默认值逐行生成签到标识（P2-1b）
+        assertThat(rows("select check_in_uuid::text from app_user")).hasSize(7).doesNotContainNull()
+                .doesNotHaveDuplicates();
     }
 
     @Test

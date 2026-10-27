@@ -8,7 +8,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-/** M1（ACC-M3-01）：V1__init_schema.sql 的表与列逐一对应 docs/13 第 3 节（类型、可空、默认值、标识列）。 */
+/**
+ * M1（ACC-M3-01）：结构迁移（V1__init_schema.sql 与 P2-1b 的 V101__check_in_uuid.sql）的表与列逐一对应 docs/13 第 3 节
+ * （类型、可空、默认值、标识列）。
+ */
 @IntegrationTest
 class MigrationSchemaTest {
 
@@ -20,7 +23,7 @@ class MigrationSchemaTest {
             "app_user.display_name|character varying(50)|NO|", "app_user.role|character varying(20)|NO|",
             "app_user.user_type|character varying(20)|NO|'STUDENT'", "app_user.phone|character varying(20)|YES|",
             "app_user.status|character varying(20)|NO|'ACTIVE'", "app_user.created_at|" + TS + "|NO|now()",
-            "app_user.updated_at|" + TS + "|NO|now()",
+            "app_user.updated_at|" + TS + "|NO|now()", "app_user.check_in_uuid|uuid|NO|gen_random_uuid()",
             "venue.id|bigint|NO|", "venue.name|character varying(50)|NO|",
             "venue.venue_type|character varying(20)|NO|", "venue.location|character varying(100)|YES|",
             "venue.description|character varying(500)|YES|",
@@ -117,10 +120,10 @@ class MigrationSchemaTest {
     }
 
     @Test
-    void flywayAppliedOnlyTheStructureMigration() {
+    void flywayAppliedOnlyTheStructureMigrations() {
         List<String> versions = jdbc.queryForList(
                 "select version from flyway_schema_history where success order by installed_rank", String.class);
 
-        assertThat(versions).containsExactly("1");
+        assertThat(versions).containsExactly("1", "101");
     }
 }

@@ -33,8 +33,9 @@ class MigrationConstraintTest {
 
     @Test
     void uniqueConstraintsMatchTheDesign() {
-        assertThat(constraintNames('u')).containsExactlyInAnyOrder("uq_app_user_username", "uq_venue_name",
-                "uq_resource_venue_name", "uq_usage_record_reservation", "uq_admin_venue_scope_admin_venue");
+        assertThat(constraintNames('u')).containsExactlyInAnyOrder("uq_app_user_username",
+                "uq_app_user_check_in_uuid", "uq_venue_name", "uq_resource_venue_name", "uq_usage_record_reservation",
+                "uq_admin_venue_scope_admin_venue");
     }
 
     @Test
@@ -81,7 +82,8 @@ class MigrationConstraintTest {
                 "pk_app_user", "pk_venue", "pk_resource", "pk_availability_rule", "pk_reservation",
                 "pk_usage_record", "pk_announcement", "pk_repair_report", "pk_admin_venue_scope",
                 "pk_admin_operation_log",
-                "uq_app_user_username", "uq_venue_name", "uq_resource_venue_name", "uq_usage_record_reservation",
+                "uq_app_user_username", "uq_app_user_check_in_uuid", "uq_venue_name", "uq_resource_venue_name",
+                "uq_usage_record_reservation",
                 "uq_admin_venue_scope_admin_venue", "uq_reservation_active_slot",
                 "idx_resource_venue_sort", "idx_availability_rule_venue_type_status",
                 "idx_reservation_user_date", "idx_reservation_resource_date", "idx_reservation_status_date",
