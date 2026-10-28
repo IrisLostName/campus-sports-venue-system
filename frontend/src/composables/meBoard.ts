@@ -1,11 +1,11 @@
 // “我的”页的历史预约（FE-4 规划裁决 M2）：scope=HISTORY、每页 20 条、“加载更多”分页；
-// 卡片构造与 actionsFor、签到/签退/取消的操作流程都复用“预约”页的（已完成但未签退的预约在这里仍可签退）。
+// 卡片构造与 actionsFor、签退/取消的操作流程都复用“预约”页的（已完成但未签退的预约在这里仍可签退）。
 // 历史筛选属 C 级，本包不做。
 import { computed } from 'vue'
 
 import type { ApiClient } from '../api/client'
 import { api } from '../api/index'
-import { buildCard, type ReservationCard } from '../utils/reservationDisplay'
+import { buildCard, type ReservationAction, type ReservationCard } from '../utils/reservationDisplay'
 import { createReservationActions } from './reservationActions'
 import { createReservationList } from './reservationList'
 import { useSession, type ApiCaller } from './session'
@@ -16,8 +16,11 @@ export interface MeDeps {
 }
 
 // 历史里不提供“取消”（FE-8 L2）：历史预约不会是 UPCOMING。只从 actionsFor 的结果里排除 CANCEL，仍然只依据字段，不做时间运算。
+// 也不提供“出示签到码”（P2-1c 裁决第 6 节第 1 条）：签到码浮层只在“预约”页。
+const HISTORY_HIDDEN: readonly ReservationAction[] = ['CANCEL', 'SHOW_CODE']
+
 function historyCard(card: ReservationCard): ReservationCard {
-  return { ...card, actions: card.actions.filter((action) => action !== 'CANCEL') }
+  return { ...card, actions: card.actions.filter((action) => !HISTORY_HIDDEN.includes(action)) }
 }
 
 export function createMeBoard(deps: MeDeps) {

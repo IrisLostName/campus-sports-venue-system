@@ -36,7 +36,7 @@ const STUB = { render: () => null }
 export const STUB_VIEWS: RouteViews = {
   login: STUB, clientShell: STUB, home: STUB, reservation: STUB, booking: STUB, me: STUB,
   venueAdmin: STUB, venueAdminOverview: STUB, venueAdminReservations: STUB, venueAdminResources: STUB,
-  venueAdminOccupancy: STUB, venueAdminAnnouncements: STUB, venueAdminRepairs: STUB, venueAdminLogs: STUB,
+  venueAdminOccupancy: STUB, venueAdminAnnouncements: STUB, venueAdminRepairs: STUB, venueAdminLogs: STUB, checkInScan: STUB,
   sysAdmin: STUB, sysAdminVenues: STUB, sysAdminAdmins: STUB, sysAdminUsers: STUB, sysAdminAnnouncements: STUB, sysAdminStats: STUB,
   display: STUB,
 }

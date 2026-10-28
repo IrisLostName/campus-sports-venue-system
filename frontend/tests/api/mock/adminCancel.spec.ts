@@ -2,7 +2,7 @@
 // 管理员取消不受用户取消期限限制；预约须为 CONFIRMED 且 end_time 在未来；必须填写原因。
 import { describe, expect, it } from 'vitest'
 
-import { createHarness, expectApiError, travel, TOMORROW, type Harness } from '../support/harness'
+import { checkInByScan, createHarness, expectApiError, type Harness, TOMORROW, travel } from '../support/harness'
 
 async function asAdmin(username = 'admin_tennis'): Promise<Harness> {
   const h = createHarness()
@@ -44,7 +44,7 @@ describe('管理员取消：成功', () => {
   it('已签到但 end_time 在未来时仍可取消', async () => {
     const h = await asAdmin()
     await travel(h, `${TOMORROW}T08:00:00`, 'zhangsan')
-    await h.api.checkIn(1)
+    await checkInByScan(h.api, await h.clientFor('sysadmin'), 1)
     await h.loginAs('admin_tennis')
     await expect(h.api.adminCancelReservation(1, { reason: '设备故障' })).resolves.toMatchObject({ status: 'ADMIN_CANCELLED' })
   })
@@ -95,7 +95,7 @@ describe('管理员取消：错误码与阶段顺序', () => {
   it('预约已结束（COMPLETED、NO_SHOW）→ INVALID_STATE', async () => {
     const h = await asAdmin()
     await travel(h, `${TOMORROW}T08:00:00`, 'zhangsan')
-    await h.api.checkIn(1)
+    await checkInByScan(h.api, await h.clientFor('sysadmin'), 1)
     await travel(h, `${TOMORROW}T09:46:00`, 'admin_tennis')
     await expectApiError(h.api.adminCancelReservation(1, { reason: 'x' }), 'INVALID_STATE', { status: 'COMPLETED' })
     await expectApiError(h.api.adminCancelReservation(2, { reason: 'x' }), 'INVALID_STATE', { status: 'NO_SHOW' })

@@ -5,8 +5,9 @@ import type { ApiClient } from '../../src/api/client'
 import type { Reservation } from '../../src/api/types'
 import { actionsFor, buildCard } from '../../src/utils/reservationDisplay'
 import { at, loginAs, TOMORROW } from './harness'
+import { checkInByScan } from '../api/support/harness'
 
-const FIRST_NOTE = '开始前 15 分钟至开始后 15 分钟可签到；结束后 30 分钟内可签退'
+const FIRST_NOTE = '开始前 15 分钟至开始后 15 分钟内，向工作人员出示签到码签到；结束后 30 分钟内可签退'
 const CANCEL_NOTE = '开始前至少 120 分钟可取消'
 
 describe('ACC-M2-05 详情卡片', () => {
@@ -21,7 +22,7 @@ describe('ACC-M2-05 详情卡片', () => {
       id: 1, place: '网球馆 · 网球场1', dateText: '2026-10-13 周二', timeText: '08:00–09:30',
       userDisplayName: '张三', statusLabel: '待使用', displayStatus: 'UPCOMING',
       purpose: null, adminNote: null,
-      checkInNote: FIRST_NOTE, cancelNote: CANCEL_NOTE, actions: ['CANCEL'],
+      checkInNote: FIRST_NOTE, cancelNote: CANCEL_NOTE, actions: ['SHOW_CODE', 'CANCEL'],
     }])
     expect(rules).toMatchObject({ cancelDeadlineMinutes: 120, checkInOpenBeforeMinutes: 15 })
   })
@@ -47,7 +48,7 @@ describe('ACC-M2-05 详情卡片', () => {
     const board = reservationBoard()
     await board.load()
 
-    expect(board.cards.value[0]).toMatchObject({ place: '网球馆 · 网球场3', adminNote: '场地维修，已改派到网球场3', actions: ['CANCEL'] })
+    expect(board.cards.value[0]).toMatchObject({ place: '网球馆 · 网球场3', adminNote: '场地维修，已改派到网球场3', actions: ['SHOW_CODE', 'CANCEL'] })
   })
 
   it('管理员取消后：卡片显示“管理员已取消”与 adminNote，没有按钮；不再属于 CURRENT 列表', async () => {
@@ -66,43 +67,44 @@ describe('ACC-M2-05 详情卡片', () => {
 })
 
 // 在 07:50（签到窗口内）以 zhangsan 的身份做准备操作，再把时钟拨到 timestamp 读取预约。
-async function actionsAt(timestamp: string, prepare: (api: ApiClient) => Promise<void>) {
+// v1.1（P2-1c）起签到只能由管理员扫码：admin 是共享同一份 mock 数据的系统管理员客户端。
+async function actionsAt(timestamp: string, prepare: (api: ApiClient, admin: ApiClient) => Promise<void>) {
   const ctx = await loginAs('zhangsan', '/reservation')
   await ctx.travelTo(at('07:50'))
-  await prepare(ctx.h.api)
+  await prepare(ctx.h.api, await ctx.h.clientFor('sysadmin'))
   ctx.h.clock.set(timestamp)
   const reservation: Reservation = await ctx.h.api.getReservation(1)
   return { reservation, actions: actionsFor(reservation), card: buildCard(reservation, null) }
 }
 
 describe('ACC-M2-06 按钮随 displayStatus 显示（推进注入时钟）', () => {
-  it('UPCOMING（开始前一天）→ 取消', async () => {
+  it('UPCOMING（开始前一天）→ 出示签到码、取消', async () => {
     const { reservationBoard } = await loginAs('zhangsan', '/reservation')
     const board = reservationBoard()
     await board.load()
 
-    expect(board.cards.value[0]).toMatchObject({ displayStatus: 'UPCOMING', actions: ['CANCEL'] })
+    expect(board.cards.value[0]).toMatchObject({ displayStatus: 'UPCOMING', actions: ['SHOW_CODE', 'CANCEL'] })
   })
 
-  it('CHECKIN_OPEN（07:45，窗口恰好开启）→ 只有签到，没有取消（B1）', async () => {
+  it('CHECKIN_OPEN（07:45，窗口恰好开启）→ 只有出示签到码，没有取消（B1）', async () => {
     const ctx = await loginAs('zhangsan', '/reservation')
     await ctx.travelTo(at('07:45'))
     const board = ctx.reservationBoard()
     await board.load()
 
-    expect(board.cards.value[0]).toMatchObject({ displayStatus: 'CHECKIN_OPEN', statusLabel: '可签到', actions: ['CHECK_IN'] })
+    expect(board.cards.value[0]).toMatchObject({ displayStatus: 'CHECKIN_OPEN', statusLabel: '可签到', actions: ['SHOW_CODE'] })
   })
 
   it('IN_USE（已签到，未到结束）→ 签退', async () => {
-    const { actions, reservation } = await actionsAt(at('08:30'), async (api) => { await api.checkIn(1) })
+    const { actions, reservation } = await actionsAt(at('08:30'), async (api, admin) => { await checkInByScan(api, admin, 1) })
 
     expect(reservation.displayStatus).toBe('IN_USE')
     expect(actions).toEqual(['CHECK_OUT'])
   })
 
   it('CHECKED_OUT（已签退，未到结束）→ 无', async () => {
-    const { actions, reservation } = await actionsAt(at('08:45'), async (api) => {
-      await api.checkIn(1)
+    const { actions, reservation } = await actionsAt(at('08:45'), async (api, admin) => {
+      await checkInByScan(api, admin, 1)
       await api.checkOut(1)
     })
 
@@ -111,7 +113,7 @@ describe('ACC-M2-06 按钮随 displayStatus 显示（推进注入时钟）', () 
   })
 
   it('COMPLETED 已签到未签退（09:45，结束后宽限内）→ 签退', async () => {
-    const { actions, reservation } = await actionsAt(at('09:45'), async (api) => { await api.checkIn(1) })
+    const { actions, reservation } = await actionsAt(at('09:45'), async (api, admin) => { await checkInByScan(api, admin, 1) })
 
     expect(reservation).toMatchObject({ displayStatus: 'COMPLETED', checkOutAt: null })
     expect(reservation.checkInAt).not.toBeNull()
@@ -119,8 +121,8 @@ describe('ACC-M2-06 按钮随 displayStatus 显示（推进注入时钟）', () 
   })
 
   it('COMPLETED 已签到且已签退 → 无', async () => {
-    const { actions, reservation } = await actionsAt(at('09:45'), async (api) => {
-      await api.checkIn(1)
+    const { actions, reservation } = await actionsAt(at('09:45'), async (api, admin) => {
+      await checkInByScan(api, admin, 1)
       await api.checkOut(1)
     })
 

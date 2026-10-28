@@ -8,17 +8,17 @@ import { ICONS } from '../../src/utils/icons'
 const ALL = [...VENUE_ADMIN_NAV, ...SYS_ADMIN_NAV]
 
 describe('导航图标数据', () => {
-  it('场馆管理员端 7 项、系统管理员端 11 项都声明了图标，且图标都存在', () => {
-    expect(VENUE_ADMIN_NAV).toHaveLength(7)
-    expect(SYS_ADMIN_NAV).toHaveLength(11)
+  it('场馆管理员端 8 项、系统管理员端 12 项都声明了图标，且图标都存在（P2-1c 增加“扫码签到”）', () => {
+    expect(VENUE_ADMIN_NAV).toHaveLength(8)
+    expect(SYS_ADMIN_NAV).toHaveLength(12)
     for (const entry of ALL) {
       expect(Object.keys(ICONS), entry.label).toContain(entry.icon)
     }
   })
 
-  it('场馆管理员端七项的图标互不相同，系统管理员端十一项的图标互不相同', () => {
-    expect(new Set(VENUE_ADMIN_NAV.map((entry) => entry.icon)).size).toBe(7)
-    expect(new Set(SYS_ADMIN_NAV.map((entry) => entry.icon)).size).toBe(11)
+  it('场馆管理员端八项的图标互不相同，系统管理员端十二项的图标互不相同', () => {
+    expect(new Set(VENUE_ADMIN_NAV.map((entry) => entry.icon)).size).toBe(8)
+    expect(new Set(SYS_ADMIN_NAV.map((entry) => entry.icon)).size).toBe(12)
   })
 
   it('同名导航项在两端用同一个图标；“场馆公告”与场馆管理员端的“公告”同一个图标', () => {

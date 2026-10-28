@@ -1,9 +1,10 @@
-// “预约”页的签到、签退、取消（B2、B3）：成功后卡片用返回值更新；失败按错误码显示文案并重新拉取列表。
+// “预约”页的出示签到码（P2-1c）、签退、取消（B2、B3）：成功后卡片用返回值更新；失败按错误码显示文案并重新拉取列表。
 import { describe, expect, it } from 'vitest'
 
 import type { ApiClient } from '../../src/api/client'
 import type { Reservation } from '../../src/api/types'
 import { deferred } from '../display/support'
+import { checkInByScan } from '../api/support/harness'
 import { at, loginAs, type UserContext } from './harness'
 
 // 加载“预约”页；timestamp 之后才进入页面（07:45 起可签到）。
@@ -79,46 +80,41 @@ describe('取消：二次确认、可选原因', () => {
   })
 })
 
-describe('签到', () => {
-  it('成功：卡片更新为“使用中”，按钮换成签退', async () => {
+// v1.1（P2-1c）：用户不能自行签到。“出示签到码”只打开签到码浮层，不调用签到或签退接口。
+describe('出示签到码', () => {
+  it('UPCOMING 与 CHECKIN_OPEN 都提供“出示签到码”；点它打开浮层并定位到该预约，不改变预约', async () => {
     const ctx = await openAt(at('07:50'))
-    await ctx.board.trigger('CHECK_IN', 1)
+    expect(ctx.board.cards.value[0]).toMatchObject({ id: 1, displayStatus: 'CHECKIN_OPEN', actions: ['SHOW_CODE'] })
+    await ctx.board.trigger('SHOW_CODE', 1)
 
-    expect(ctx.board.cards.value[0]).toMatchObject({ statusLabel: '使用中', actions: ['CHECK_OUT'] })
-    expect((await reserved(ctx)).checkInAt).toBe(at('07:50'))
-  })
-
-  it('CHECKIN_WINDOW_CLOSED：页面显示可签到，但服务端认为不在窗口内（时钟有偏差）→ “当前不在签到时间内”，卡片按服务端状态刷新', async () => {
-    const ctx = await openAt(at('07:50'))
-    ctx.h.clock.set(at('07:40'))
-    await ctx.board.trigger('CHECK_IN', 1)
-
-    expect(ctx.board.feedbackFor(1)).toBe('当前不在签到时间内')
-    expect(ctx.board.cards.value[0]).toMatchObject({ id: 1, displayStatus: 'UPCOMING', actions: ['CANCEL'] })
-  })
-
-  it('INVALID_STATE：窗口关闭后未到场被置为 NO_SHOW，再点签到 → “当前状态不允许该操作”，卡片已不在 CURRENT 列表', async () => {
-    const ctx = await openAt(at('07:50'))
-    ctx.h.clock.set(at('08:16'))
-    await ctx.board.trigger('CHECK_IN', 1)
-
-    expect(ctx.board.pageFeedback.value).toBe('当前状态不允许该操作')
-    expect(ctx.board.cards.value).toEqual([])
-  })
-
-  it('页面上没有提供的动作不会触发：UPCOMING 的卡片点签到不调用接口', async () => {
-    const ctx = await openAt()
-    await ctx.board.trigger('CHECK_IN', 1)
-
+    expect(ctx.board.sheet.isOpen.value).toBe(true)
+    expect(ctx.board.sheet.tickets.value.map((ticket) => ticket.id)).toEqual([1])
+    expect(ctx.board.isBusy.value).toBe(false)
     expect((await reserved(ctx)).checkInAt).toBeNull()
+  })
+
+  it('页面上没有提供的动作不会触发：已签到（使用中）的卡片点“出示签到码”不打开浮层', async () => {
+    const ctx = await openAt(at('07:50'))
+    await checkInByScan(ctx.h.api, await ctx.h.clientFor('sysadmin'), 1)
+    await ctx.board.load()
+    await ctx.board.trigger('SHOW_CODE', 1)
+
+    expect(ctx.board.sheet.isOpen.value).toBe(false)
     expect(ctx.board.feedbackFor(1)).toBeNull()
   })
 })
 
+// 签退的前置“已签到”由系统管理员扫码完成（checkInByScan），再重新加载“预约”页。
+async function scannedAt(timestamp: string) {
+  const ctx = await openAt(timestamp)
+  await checkInByScan(ctx.h.api, await ctx.h.clientFor('sysadmin'), 1)
+  await ctx.board.load()
+  return ctx
+}
+
 describe('签退', () => {
   it('成功（使用中）：卡片更新为“已签退”', async () => {
-    const ctx = await openAt(at('07:50'))
-    await ctx.board.trigger('CHECK_IN', 1)
+    const ctx = await scannedAt(at('07:50'))
     ctx.h.clock.set(at('08:45'))
     await ctx.board.trigger('CHECK_OUT', 1)
 
@@ -127,8 +123,7 @@ describe('签退', () => {
   })
 
   it('结束后宽限内（09:45）仍可签退：卡片更新为“已完成”', async () => {
-    const ctx = await openAt(at('07:50'))
-    await ctx.board.trigger('CHECK_IN', 1)
+    const ctx = await scannedAt(at('07:50'))
     ctx.h.clock.set(at('09:45'))
     await ctx.board.trigger('CHECK_OUT', 1)
 
@@ -136,8 +131,7 @@ describe('签退', () => {
   })
 
   it('INVALID_STATE：超出签退宽限（10:00）→ “当前状态不允许该操作”', async () => {
-    const ctx = await openAt(at('07:50'))
-    await ctx.board.trigger('CHECK_IN', 1)
+    const ctx = await scannedAt(at('07:50'))
     ctx.h.clock.set(at('10:00'))
     await ctx.board.trigger('CHECK_OUT', 1)
 
@@ -147,18 +141,18 @@ describe('签退', () => {
 })
 
 describe('B3 操作进行中不可重复点击', () => {
-  it('同一张卡片连点签到：只发出一次请求，进行中 isBusy 为真，结束后恢复', async () => {
-    const ctx = await loginAs('zhangsan', '/reservation')
-    await ctx.travelTo(at('07:50'))
+  it('同一张卡片连点签退：只发出一次请求，进行中 isBusy 为真，结束后恢复', async () => {
+    const ctx = await scannedAt(at('07:50'))
+    ctx.h.clock.set(at('08:30'))
     let calls = 0
-    const counting: ApiClient = { ...ctx.h.api, checkIn: (id) => { calls += 1; return ctx.h.api.checkIn(id) } }
+    const counting: ApiClient = { ...ctx.h.api, checkOut: (id) => { calls += 1; return ctx.h.api.checkOut(id) } }
     const board = ctx.reservationBoard(counting)
     await board.load()
 
-    const first = board.trigger('CHECK_IN', 1)
+    const first = board.trigger('CHECK_OUT', 1)
     expect(board.isBusy.value).toBe(true)
     expect(board.busyId.value).toBe(1)
-    const second = board.trigger('CHECK_IN', 1)
+    const second = board.trigger('CHECK_OUT', 1)
     await Promise.all([first, second])
 
     expect(calls).toBe(1)

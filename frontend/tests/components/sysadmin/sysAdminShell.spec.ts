@@ -22,6 +22,7 @@ const GLOBAL_SECTIONS: [string, string][] = [
 ]
 const OPERATION_SECTIONS: [string, string][] = [
   ['预约管理', '预约管理'],
+  ['扫码签到', '扫码签到'],
   ['场地与开放规则', '场地与开放规则'],
   ['场地占用总览', '场地占用总览'],
   ['场馆公告', '公告'],
@@ -45,7 +46,7 @@ describe('ACC-M2-08 六个全局部分可切换', () => {
     }
   })
 
-  it('场馆运营五个部分（复用场馆管理员端的页面）同样可切换', async () => {
+  it('场馆运营六个部分（复用场馆管理员端的页面，含 P2-1c 扫码签到）同样可切换', async () => {
     const { root } = await openSysApp('/sys-admin')
     const links = () => root.findAll('nav a')
 

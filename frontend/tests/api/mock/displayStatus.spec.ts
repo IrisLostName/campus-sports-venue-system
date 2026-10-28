@@ -2,7 +2,7 @@
 // 种子预约 1：zhangsan，明天 08:00–09:30。
 import { describe, expect, it } from 'vitest'
 
-import { createHarness, travel, TODAY, TOMORROW } from '../support/harness'
+import { checkInByScan, createHarness, TODAY, TOMORROW, travel } from '../support/harness'
 
 const ID = 1
 const at = (time: string) => `${TOMORROW}T${time}`
@@ -38,7 +38,7 @@ describe('从未签到的预约', () => {
 describe('已签到的预约', () => {
   const checkIn = async (h: Awaited<ReturnType<typeof setup>>) => {
     await travel(h, at('08:00:00'), 'zhangsan')
-    await h.api.checkIn(ID)
+    await checkInByScan(h.api, await h.clientFor('sysadmin'), ID)
   }
 
   it.each([

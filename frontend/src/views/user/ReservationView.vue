@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+// 签到码浮层（P2-1c）按需异步加载：第一次点“出示签到码”后才挂载，二维码库随之只在那时下载。
+// 关闭浮层后列表按后端状态刷新，再由浮层把焦点放到该预约卡片上（原按钮可能已换成“签退”，审计 N4）。
+import { defineAsyncComponent, nextTick, onMounted, useTemplateRef } from 'vue'
 
 import CancelDialog from '../../components/reservation/CancelDialog.vue'
 import ReservationCardView from '../../components/reservation/ReservationCard.vue'
@@ -10,10 +12,20 @@ import UiGlassCard from '../../components/ui/UiGlassCard.vue'
 import { useReservationBoard } from '../../composables/reservationBoard'
 import { PATHS } from '../../router/paths'
 
+const CheckInCodeSheet = defineAsyncComponent(() => import('../../components/reservation/CheckInCodeSheet.vue'))
+
 const {
   phase, cards, isBusy, isEmpty, busyId, loadError, rulesError, pageFeedback, cancelTarget, cancelReason,
-  feedbackFor, trigger, confirmCancel, dismissCancel, load, cancelLockedIds, cancelLockedNote,
+  feedbackFor, trigger, confirmCancel, dismissCancel, load, cancelLockedIds, cancelLockedNote, sheet,
 } = useReservationBoard()
+const { isOpen: sheetOpen, everOpened: sheetMounted, tickets, startIndex, entryOf } = sheet
+const sheetView = useTemplateRef<{ settleFocus(): void }>('sheetView')
+
+async function closeSheet(): Promise<void> {
+  await sheet.close()
+  await nextTick()
+  sheetView.value?.settleFocus()
+}
 
 onMounted(() => {
   void load()
@@ -95,6 +107,17 @@ onMounted(() => {
       :busy="isBusy"
       @confirm="confirmCancel()"
       @dismiss="dismissCancel()"
+    />
+
+    <CheckInCodeSheet
+      v-if="sheetMounted"
+      ref="sheetView"
+      :open="sheetOpen"
+      :tickets="tickets"
+      :start-index="startIndex"
+      :entry-of="entryOf"
+      @close="closeSheet()"
+      @retry="sheet.retry($event)"
     />
   </section>
 </template>

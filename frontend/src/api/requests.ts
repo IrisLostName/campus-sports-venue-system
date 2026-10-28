@@ -76,6 +76,8 @@ export interface AdminReservationsQuery {
   venueId?: number; dateFrom?: string; dateTo?: string; status?: ReservationStatus
   keyword?: string; page?: number; pageSize?: number
 }
+// POST /admin/check-ins（v1.1 扫码签到）
+export interface AdminCheckInRequest { code: string }
 // POST /admin/reservations/{id}/cancel
 export interface AdminCancelRequest { reason: string }
 // POST /admin/reservations/{id}/reassign-resource

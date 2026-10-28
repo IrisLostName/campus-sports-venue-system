@@ -32,7 +32,7 @@ const ROWS: Row[] = [
   { label: 'listMyReservations', call: (a) => a.listMyReservations({ scope: 'CURRENT', page: 2 }), method: 'GET', url: `${V1}/reservations/me?scope=CURRENT&page=2` },
   { label: 'getReservation', call: (a) => a.getReservation(7), method: 'GET', url: `${V1}/reservations/7` },
   { label: 'cancelReservation', call: (a) => a.cancelReservation(7, { reason: 'r' }), method: 'POST', url: `${V1}/reservations/7/cancel`, body: { reason: 'r' } },
-  { label: 'checkIn', call: (a) => a.checkIn(7), method: 'POST', url: `${V1}/reservations/7/check-in` },
+  { label: 'getCheckInCode', call: (a) => a.getCheckInCode(7), method: 'GET', url: `${V1}/reservations/7/check-in-code` },
   { label: 'checkOut', call: (a) => a.checkOut(7), method: 'POST', url: `${V1}/reservations/7/check-out` },
   { label: 'createRepair', call: (a) => a.createRepair({ venueId: 1, description: 'd' }), method: 'POST', url: `${V1}/repairs`, body: { venueId: 1, description: 'd' } },
   { label: 'listMyRepairs', call: (a) => a.listMyRepairs(), method: 'GET', url: `${V1}/repairs/me` },
@@ -50,6 +50,7 @@ const ROWS: Row[] = [
   { label: 'adminAddClosure', call: (a) => a.adminAddClosure(1, { startDate: '2026-10-12', endDate: '2026-10-13' }), method: 'POST', url: `${V1}/admin/venues/1/closures`, body: { startDate: '2026-10-12', endDate: '2026-10-13' } },
   { label: 'adminRemoveClosure', call: (a) => a.adminRemoveClosure(4), method: 'DELETE', url: `${V1}/admin/closures/4` },
   { label: 'adminListReservations', call: (a) => a.adminListReservations({ venueId: 1, keyword: '张' }), method: 'GET', url: `${V1}/admin/reservations?venueId=1&keyword=${encodeURIComponent('张')}` },
+  { label: 'adminCheckIn', call: (a) => a.adminCheckIn({ code: '00000000-0000-4000-8000-000000000000.7' }), method: 'POST', url: `${V1}/admin/check-ins`, body: { code: '00000000-0000-4000-8000-000000000000.7' } },
   { label: 'adminCancelReservation', call: (a) => a.adminCancelReservation(7, { reason: 'r' }), method: 'POST', url: `${V1}/admin/reservations/7/cancel`, body: { reason: 'r' } },
   { label: 'adminReassignResource', call: (a) => a.adminReassignResource(7, { resourceId: 2, serviceDate: '2026-10-12', startTime: '08:00', reason: 'r' }), method: 'POST', url: `${V1}/admin/reservations/7/reassign-resource`, body: { resourceId: 2, serviceDate: '2026-10-12', startTime: '08:00', reason: 'r' } },
   { label: 'adminReassignUser', call: (a) => a.adminReassignUser(7, { userId: 2, reason: 'r' }), method: 'POST', url: `${V1}/admin/reservations/7/reassign-user`, body: { userId: 2, reason: 'r' } },
@@ -74,7 +75,7 @@ function clientWith(token: string | null) {
 describe('http.ts 覆盖 docs/12 第 5 节全部接口', () => {
   it('表格行数与 ApiClient 方法数一致，且方法名一一对应', () => {
     expect(ROWS.map((row) => row.label).sort()).toEqual([...API_CLIENT_METHODS].sort())
-    expect(ROWS).toHaveLength(42)
+    expect(ROWS).toHaveLength(43)
   })
 
   it.each(ROWS)('$label：方法、路径、查询与请求体', async (row) => {
@@ -120,7 +121,7 @@ describe('http.ts 请求头', () => {
   it('有请求体时带 JSON Content-Type，无请求体时不带', async () => {
     const { api, stub } = clientWith('t')
     await api.createReservation({ resourceId: 1, serviceDate: '2026-10-12', startTime: '08:00' })
-    await api.checkIn(1)
+    await api.checkOut(1)
     expect(stub.calls[0]?.headers['Content-Type']).toBe('application/json; charset=utf-8')
     expect(stub.calls[1]?.headers['Content-Type']).toBeUndefined()
     expect(stub.calls[1]?.body).toBeUndefined()

@@ -69,6 +69,8 @@ export async function venueAdminPages(tour: Tour): Promise<void> {
     { name: '24-va-announcements', path: '/venue-admin/announcements?venueId=1', heading: '公告', expect: ['发布场馆公告', '系统公告（只读）'] },
     { name: '25-va-repairs', path: '/venue-admin/repairs?venueId=1', heading: '报修', expect: ['网球场3 南侧灯光不亮（演示）'] },
     { name: '26-va-logs', path: '/venue-admin/logs?venueId=1', heading: '操作记录', expect: ['改派场地', REASSIGN_NOTE] },
+    // P2-1c：扫码签到页（未开启摄像头，不显示场馆选择器）
+    { name: '26a-va-check-in', path: '/venue-admin/check-in?venueId=1', heading: '扫码签到', expect: ['摄像头未开启', '等待扫码…'] },
   ])
 }
 
@@ -82,6 +84,7 @@ export async function sysAdminPages(tour: Tour): Promise<void> {
     { name: '31-sa-stats', path: '/sys-admin/stats', heading: '全局统计', expect: ['统计区间'], themes: BOTH },
     { name: '32-sa-logs', path: '/sys-admin/logs', heading: '操作记录', expect: ['改派场地'] },
     { name: '33-sa-reservations', path: '/sys-admin/reservations', heading: '预约管理', expect: ['赵六', '网球馆'] },
+    { name: '33a-sa-check-in', path: '/sys-admin/check-in', heading: '扫码签到', expect: ['摄像头未开启', '等待扫码…'] },
     { name: '34-sa-resources', path: '/sys-admin/resources?venueId=1', heading: '场地与开放规则', expect: ['网球场1'] },
     { name: '35-sa-occupancy', path: '/sys-admin/occupancy?venueId=1', heading: '场地占用总览', expect: ['网球场1'] },
     { name: '36-sa-venue-announcements', path: '/sys-admin/venue-announcements?venueId=1', heading: '公告', expect: ['发布场馆公告'] },

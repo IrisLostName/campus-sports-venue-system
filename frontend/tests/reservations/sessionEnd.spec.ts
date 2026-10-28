@@ -1,6 +1,8 @@
 // N-1：“预约”页、首页的调用遇到登录状态失效时，经 callApi 回到登录页（证明没有绕过 callApi）。
+import { flushPromises } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 
+import { checkInByScan } from '../api/support/harness'
 import type { UserContext } from './harness'
 import { at, loginAs, MINUTES_OVER_TOKEN_LIFETIME } from './harness'
 
@@ -37,24 +39,26 @@ describe('N-1 TOKEN_EXPIRED → 回到登录页（带返回地址与过期提示
     expect(board.feedbackFor(1)).toBeNull()
   })
 
-  it('预约页签到', async () => {
+  it('预约页取签到码（P2-1c 浮层）', async () => {
     const ctx = await loginAs('zhangsan', '/reservation')
     await ctx.travelTo(at('07:50'))
     const board = ctx.reservationBoard()
     await board.load()
     ctx.h.clock.advanceMinutes(MINUTES_OVER_TOKEN_LIFETIME)
-    await board.trigger('CHECK_IN', 1)
+    await board.trigger('SHOW_CODE', 1)
+    await flushPromises()
 
     expectBackAtLogin(ctx, '/reservation')
     expect(board.isBusy.value).toBe(false)
+    expect(board.sheet.entryOf(1)).toEqual({ state: 'loading' })
   })
 
   it('预约页签退', async () => {
     const ctx = await loginAs('zhangsan', '/reservation')
     await ctx.travelTo(at('07:50'))
     const board = ctx.reservationBoard()
+    await checkInByScan(ctx.h.api, await ctx.h.clientFor('sysadmin'), 1)
     await board.load()
-    await board.trigger('CHECK_IN', 1)
     ctx.h.clock.advanceMinutes(MINUTES_OVER_TOKEN_LIFETIME)
     await board.trigger('CHECK_OUT', 1)
 

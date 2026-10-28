@@ -32,6 +32,8 @@ export interface Harness extends MockHandle {
   clock: FakeClock
   loginAs(username: string): Promise<void>
   logout(): void
+  // 以指定账号登录的独立 mock 客户端（共享同一份 mock 数据、规则与时钟，不改变本实例的登录身份）。
+  clientFor(username: string): Promise<ApiClient>
 }
 
 export function createHarness(start: string = NOW): Harness {
@@ -47,7 +49,20 @@ export function createHarness(start: string = NOW): Harness {
     logout() {
       token = null
     },
+    async clientFor(username) {
+      let own: string | null = null
+      const client = createMockHandle({ clock, state: handle.context.state, rules: handle.context.rules, getToken: () => own }).api
+      own = (await client.login({ username, password: DEMO_PASSWORD })).token
+      return client
+    },
   }
+}
+
+// v1.1（P2-1c）起用户不能自行签到：以预约人身份取签到码，再由管理员客户端扫码提交（POST /admin/check-ins）。
+// 用于需要“已签到”前置状态的测试，替代原来的 api.checkIn(id)。
+export async function checkInByScan(owner: ApiClient, admin: ApiClient, id: number): Promise<void> {
+  const { code } = await owner.getCheckInCode(id)
+  await admin.adminCheckIn({ code })
 }
 
 // 创建一个预约并返回；调用前需已登录为 USER。

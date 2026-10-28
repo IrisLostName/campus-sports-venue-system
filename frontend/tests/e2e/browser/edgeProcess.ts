@@ -38,11 +38,12 @@ async function pageTarget(port: number): Promise<TargetInfo> {
   }
 }
 
-export async function launchEdge(edgePath: string, port: number): Promise<EdgeHandle> {
+// extraArgs（P2-1c）：额外的启动参数，例如模拟摄像头（--use-fake-device-for-media-stream 等）；缺省为空，行为不变。
+export async function launchEdge(edgePath: string, port: number, extraArgs: readonly string[] = []): Promise<EdgeHandle> {
   const profile = mkdtempSync(join(tmpdir(), 'be8-edge-'))
   const child = spawn(edgePath, [
     '--headless=new', `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`,
-    '--no-first-run', '--no-default-browser-check', '--disable-extensions', '--hide-scrollbars', 'about:blank',
+    '--no-first-run', '--no-default-browser-check', '--disable-extensions', '--hide-scrollbars', ...extraArgs, 'about:blank',
   ], { stdio: 'ignore' })
   const page = await CdpSession.connect((await pageTarget(port)).webSocketDebuggerUrl)
   return {

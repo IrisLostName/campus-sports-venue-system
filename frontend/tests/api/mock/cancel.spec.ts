@@ -2,7 +2,7 @@
 // 种子预约 1：zhangsan，明天 08:00–09:30，网球场1。取消期限 120 分钟，即 06:00:00 之前（含）可取消。
 import { describe, expect, it } from 'vitest'
 
-import { createHarness, expectApiError, travel, TOMORROW } from '../support/harness'
+import { checkInByScan, createHarness, expectApiError, TOMORROW, travel } from '../support/harness'
 
 const RESERVATION_ID = 1
 
@@ -76,7 +76,7 @@ describe('取消失败的错误码与顺序', () => {
   it('已签到 → ALREADY_CHECKED_IN（先于取消期限）', async () => {
     const h = createHarness()
     await travel(h, `${TOMORROW}T07:50:00`, 'zhangsan')
-    await h.api.checkIn(RESERVATION_ID)
+    await checkInByScan(h.api, await h.clientFor('sysadmin'), RESERVATION_ID)
     await expectApiError(h.api.cancelReservation(RESERVATION_ID), 'ALREADY_CHECKED_IN')
   })
 

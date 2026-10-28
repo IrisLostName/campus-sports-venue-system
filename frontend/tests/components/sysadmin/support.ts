@@ -13,6 +13,7 @@ import SysStatsView from '../../../src/views/sys-admin/SysStatsView.vue'
 import SysUsersView from '../../../src/views/sys-admin/SysUsersView.vue'
 import SysVenuesView from '../../../src/views/sys-admin/SysVenuesView.vue'
 import AnnouncementsView from '../../../src/views/venue-admin/AnnouncementsView.vue'
+import CheckInScanView from '../../../src/views/venue-admin/CheckInScanView.vue'
 import LogsView from '../../../src/views/venue-admin/LogsView.vue'
 import OccupancyView from '../../../src/views/venue-admin/OccupancyView.vue'
 import OverviewView from '../../../src/views/venue-admin/OverviewView.vue'
@@ -35,6 +36,7 @@ export const SYS_VIEWS: RouteViews = {
   venueAdminAnnouncements: AnnouncementsView,
   venueAdminRepairs: RepairsView,
   venueAdminLogs: LogsView,
+  checkInScan: CheckInScanView,
   sysAdmin: SysAdminShell,
   sysAdminVenues: SysVenuesView,
   sysAdminAdmins: SysAdminsView,

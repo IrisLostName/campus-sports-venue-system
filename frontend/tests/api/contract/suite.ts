@@ -232,10 +232,61 @@ function adminContract(label: string, makeTarget: () => ContractTarget): void {
   })
 }
 
+function checkInContract(label: string, makeTarget: () => ContractTarget): void {
+  // v1.1（P2-1b / P2-1c）：签到码与扫码签到。演示预约：zhangsan 明天 网球场1 08:00（mock 种子与后端 demo 种子一致）。
+  // 今天运行时明天的预约必在签到窗口之外，所以成功签到不在契约里核对（属于 mock 行为测试与 e2e 走查）。
+  async function zhangsanTomorrow(target: ContractTarget): Promise<number> {
+    const { tomorrow } = await serverDates(target)
+    await loginAs(target, 'zhangsan')
+    const mine = (await target.api.listMyReservations({ scope: 'CURRENT' })).items
+      .find((item) => item.serviceDate === tomorrow && item.venueId === 1 && item.displayStatus === 'UPCOMING')
+    expect(mine, 'zhangsan 明天应有一个网球馆的预约').toBeDefined()
+    return mine?.id ?? 0
+  }
+
+  describe(`${label}：签到码与扫码签到（v1.1）`, () => {
+    it('本人取码：格式为“签到标识.预约 id”且固定不变；他人 NOT_OWNER；管理员 FORBIDDEN', async () => {
+      const target = makeTarget()
+      const id = await zhangsanTomorrow(target)
+      const { code } = await target.api.getCheckInCode(id)
+      expect(code).toMatch(new RegExp(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\.${id}$`))
+      expect((await target.api.getCheckInCode(id)).code).toBe(code)
+      await loginAs(target, 'lisi')
+      await expectCode(target.api.getCheckInCode(id), 'NOT_OWNER')
+      await loginAs(target, 'sysadmin')
+      await expectCode(target.api.getCheckInCode(id), 'FORBIDDEN')
+    })
+
+    it('扫码：格式错误 VALIDATION_ERROR；普通用户 FORBIDDEN；伪造的码 CHECKIN_CODE_INVALID；范围外 FORBIDDEN_SCOPE', async () => {
+      const target = makeTarget()
+      const id = await zhangsanTomorrow(target)
+      const { code } = await target.api.getCheckInCode(id)
+      await expectCode(target.api.adminCheckIn({ code }), 'FORBIDDEN')
+      await loginAs(target, 'sysadmin')
+      const invalid = await expectCode(target.api.adminCheckIn({ code: 'not-a-code' }), 'VALIDATION_ERROR')
+      expect(Object.keys((invalid.details?.fields ?? {}) as object)).toEqual(['code'])
+      await expectCode(target.api.adminCheckIn({ code: `00000000-0000-4000-8000-000000000000.${id}` }), 'CHECKIN_CODE_INVALID')
+      await loginAs(target, 'admin_pool')
+      await expectCode(target.api.adminCheckIn({ code }), 'FORBIDDEN_SCOPE')
+    })
+
+    it('明天的预约不在签到窗口内：CHECKIN_WINDOW_CLOSED，details 含 opensAt / closesAt', async () => {
+      const target = makeTarget()
+      const id = await zhangsanTomorrow(target)
+      const { code } = await target.api.getCheckInCode(id)
+      await loginAs(target, 'admin_tennis')
+      const error = await expectCode(target.api.adminCheckIn({ code }), 'CHECKIN_WINDOW_CLOSED')
+      expect(typeof error.details?.opensAt).toBe('string')
+      expect(typeof error.details?.closesAt).toBe('string')
+    })
+  })
+}
+
 export function contractSuite(label: string, makeTarget: () => ContractTarget): void {
   authContract(label, makeTarget)
   catalogContract(label, makeTarget)
   reservationContract(label, makeTarget)
+  checkInContract(label, makeTarget)
   permissionContract(label, makeTarget)
   adminContract(label, makeTarget)
 }

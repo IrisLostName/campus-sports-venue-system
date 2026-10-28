@@ -5,6 +5,7 @@
 //   公告 publishedAt = 生成种子时的 mock 时钟；演示预约：zhangsan 明天 08:00 网球场1、lisi 明天 09:30 网球场2。
 // 种子相对注入的“今天”生成，所以演示预约永远在明天。
 import type { ResourceType, Role, UserType, VenueType } from '../types'
+import { randomUuid } from './checkInCodes'
 import type { Clock } from './clock'
 import { addDays, dateOf, endTimeOf } from './timeMath'
 import type {
@@ -44,6 +45,7 @@ const WEEKDAYS = [1, 2, 3, 4, 5, 6, 7]
 function seedUsers(): UserRecord[] {
   return USER_ROWS.map(([username, displayName, role, userType], index) => ({
     id: index + 1, username, password: DEMO_PASSWORD, displayName, role, userType, phone: null, status: 'ACTIVE',
+    checkInUuid: randomUuid(),
   }))
 }
 

@@ -3,6 +3,7 @@ import type { ApiClient } from '../client'
 import type { BookingRules, UserProfile } from '../types'
 import type { LoginRequest, RegisterRequest } from '../requests'
 import type { LoginResponse } from '../typesSection5'
+import { randomUuid } from './checkInCodes'
 import { USER_TYPES } from './enums'
 import { fail } from './fail'
 import { authenticate, toProfile } from './guards'
@@ -52,7 +53,7 @@ function register(ctx: MockContext, request: RegisterRequest): LoginResponse {
   const user: UserRecord = {
     id: nextId(ctx.state, 'user'), username: request.username, password: request.password,
     displayName: request.displayName, role: 'USER', userType: request.userType ?? 'STUDENT',
-    phone: blankToNull(request.phone), status: 'ACTIVE',
+    phone: blankToNull(request.phone), status: 'ACTIVE', checkInUuid: randomUuid(),
   }
   ctx.state.users.push(user)
   return issueSession(ctx, user)

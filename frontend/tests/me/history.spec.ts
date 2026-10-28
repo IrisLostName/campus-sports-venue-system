@@ -7,6 +7,7 @@ import type { MyReservationsQuery } from '../../src/api/requests'
 import { createMeBoard, type MeBoard } from '../../src/composables/meBoard'
 import { at, loginAs, type UserContext } from '../reservations/harness'
 import { seedCancelledHistory } from '../reservations/history'
+import { checkInByScan } from '../api/support/harness'
 
 function boardFor(ctx: UserContext, api: ApiClient = ctx.h.api): MeBoard {
   return createMeBoard({ api, call: ctx.call })
@@ -15,7 +16,7 @@ function boardFor(ctx: UserContext, api: ApiClient = ctx.h.api): MeBoard {
 // 张三的预约（明天 08:00–09:30）：07:50 签到，然后时间走到 timestamp（预约已结束，成为 HISTORY）。
 async function checkedInThenOver(ctx: UserContext, timestamp: string): Promise<void> {
   await ctx.travelTo(at('07:50'))
-  await ctx.h.api.checkIn(1)
+  await checkInByScan(ctx.h.api, await ctx.h.clientFor('sysadmin'), 1)
   await ctx.travelTo(timestamp)
 }
 
@@ -179,13 +180,13 @@ describe('FE-8 L2 历史里不提供“取消”', () => {
     expect(cancelCalls).toBe(0)
   })
 
-  it('只排除 CANCEL：同一份数据里可签到的预约仍有“签到”', async () => {
+  it('排除 CANCEL 与 SHOW_CODE（P2-1c）：同一份数据里可签到的预约在历史里没有“出示签到码”', async () => {
     const ctx = await loginAs('zhangsan', '/me')
     await ctx.travelTo(at('07:50'))
     const board = await historyShowing(ctx, () => undefined)
 
     await board.load()
 
-    expect(board.cards.value[0]).toMatchObject({ id: 1, displayStatus: 'CHECKIN_OPEN', actions: ['CHECK_IN'] })
+    expect(board.cards.value[0]).toMatchObject({ id: 1, displayStatus: 'CHECKIN_OPEN', actions: [] })
   })
 })

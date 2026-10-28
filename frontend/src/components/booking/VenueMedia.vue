@@ -1,12 +1,13 @@
 <script setup lang="ts">
 // 场馆封面或标志（UI-3）：按静态文件约定取图（utils/venueMedia），图片只作装饰（alt 为空，名称由卡片文字提供）。
 // 缺图时 <img> 触发 error，换成中性占位：封面是浅灰底加场地图标，标志是场馆名的第一个字。
+// 平面图（P2-1c）带内容，由调用方给出替代文字 alt；缺图占位是浅灰底加文字“暂无平面图”（可读）。
 import { computed, ref, watch } from 'vue'
 
 import { venueInitial, venueMediaUrl, type VenueMediaKind } from '../../utils/venueMedia'
 import UiIcon from '../ui/UiIcon.vue'
 
-const props = defineProps<{ venueId: number; venueName: string; kind: VenueMediaKind }>()
+const props = withDefaults(defineProps<{ venueId: number; venueName: string; kind: VenueMediaKind; alt?: string }>(), { alt: '' })
 
 const failed = ref(false)
 const src = computed(() => venueMediaUrl(props.venueId, props.kind))
@@ -22,10 +23,15 @@ watch(src, () => {
     class="media"
     :class="`media--${kind}`"
     :src="src"
-    alt=""
+    :alt="alt"
     decoding="async"
     @error="failed = true"
   >
+  <span
+    v-else-if="kind === 'floorplan'"
+    class="media placeholder media--floorplan"
+    data-placeholder="floorplan"
+  >暂无平面图</span>
   <span
     v-else
     class="media placeholder"
@@ -71,6 +77,13 @@ watch(src, () => {
   width: 44px;
   height: 44px;
   color: var(--color-text-tertiary);
+}
+
+.placeholder.media--floorplan {
+  aspect-ratio: 2 / 1;
+  height: auto;
+  background: color-mix(in srgb, var(--color-neutral) 12%, var(--color-surface));
+  font: var(--font-footnote);
 }
 
 .placeholder.media--logo {

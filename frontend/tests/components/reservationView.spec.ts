@@ -1,11 +1,13 @@
 // FE-3 “预约”页（挂载整页，数据来自 mock 与注入时钟）：按钮表在页面上的实际结果、操作进行中全部按钮禁用、取消确认层的打开/关闭/提交。
-import { flushPromises, type VueWrapper } from '@vue/test-utils'
+// P2-1c：“签到”改为“出示签到码”（打开签到码浮层）；已签到的前置状态由管理员扫码（checkInByScan）完成。
+import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 
 import type { ApiClient } from '../../src/api/client'
 import type { Reservation } from '../../src/api/types'
 import ReservationView from '../../src/views/user/ReservationView.vue'
 import { deferred } from '../display/support'
+import { checkInByScan } from '../api/support/harness'
 import { at, loginAs, type UserContext } from '../reservations/harness'
 import { useApiClient } from './apiSwap'
 import { buttonByText, mountWithApp, texts } from './support'
@@ -46,7 +48,7 @@ function badge(page: VueWrapper): string {
 }
 
 describe('页面上的按钮表（ACC-M2-06）', () => {
-  it('预约尚未开始、不在签到窗口：显示卡片内容与“取消预约”，没有签到、签退', async () => {
+  it('预约尚未开始、不在签到窗口：显示卡片内容、“出示签到码”与“取消预约”，没有签退', async () => {
     const { page } = await openPage()
 
     expect(page.find('h1').text()).toBe('预约')
@@ -54,34 +56,42 @@ describe('页面上的按钮表（ACC-M2-06）', () => {
     expect(page.find('article h2').text()).toBe('网球馆 · 网球场1')
     expect(texts(page, 'article dd')).toEqual(['2026-10-13 周二', '08:00–09:30', '张三'])
     expect(badge(page)).toBe('待使用')
-    expect(buttonLabels(page)).toEqual(['取消预约'])
+    expect(buttonLabels(page)).toEqual(['出示签到码', '取消预约'])
     expect(texts(page, '.notes li')).toEqual([
-      '签到：开始前 15 分钟至开始后 15 分钟可签到；结束后 30 分钟内可签退',
+      '签到：开始前 15 分钟至开始后 15 分钟内，向工作人员出示签到码签到；结束后 30 分钟内可签退',
       '取消：开始前至少 120 分钟可取消',
     ])
   })
 
-  it('进入签到窗口：只有“签到”，没有“取消预约”（B1）', async () => {
+  it('进入签到窗口：只有“出示签到码”，没有“取消预约”（B1）', async () => {
     const { page } = await openPage({ at: at('07:50') })
 
     expect(badge(page)).toBe('可签到')
-    expect(buttonLabels(page)).toEqual(['签到'])
+    expect(buttonLabels(page)).toEqual(['出示签到码'])
   })
 
-  it('点“签到”后用返回的预约替换卡片：变为使用中，只剩“签退”', async () => {
+  it('点“出示签到码”打开签到码浮层，不签到；管理员扫码后关闭浮层，卡片按服务端状态变为使用中，只剩“签退”', async () => {
     const { page, ctx } = await openPage({ at: at('07:50') })
-    await buttonByText(page, '签到').trigger('click')
+    await buttonByText(page, '出示签到码').trigger('click')
+    await flushPromises()
+    await vi.dynamicImportSettled()
     await flushPromises()
 
-    expect((await ctx.h.api.getReservation(1)).checkInAt).not.toBeNull()
+    expect(page.find('[data-checkin-sheet] [role="dialog"]').exists()).toBe(true)
+    expect((await ctx.h.api.getReservation(1)).checkInAt).toBeNull()
+    await checkInByScan(ctx.h.api, await ctx.h.clientFor('sysadmin'), 1)
+    await page.get('[data-checkin-sheet] button[aria-label="关闭"]').trigger('click')
+    await flushPromises()
+
     expect(badge(page)).toBe('使用中')
     expect(buttonLabels(page)).toEqual(['签退'])
   })
 
   it('点“签退”后：预约结束前签退，卡片变为已签退，不再有按钮', async () => {
-    const { page, ctx } = await openPage({ at: at('07:50') })
-    await buttonByText(page, '签到').trigger('click')
-    await flushPromises()
+    const { page, ctx } = await openPage({
+      at: at('07:50'),
+      prepare: async ({ h }) => { await checkInByScan(h.api, await h.clientFor('sysadmin'), 1) },
+    })
     // 钟固定在 08:05：预约 08:00–09:30 尚未结束，所以签退后展示状态是 CHECKED_OUT（已签退），不会是 COMPLETED。
     ctx.h.clock.set(at('08:05'))
     await buttonByText(page, '签退').trigger('click')
@@ -171,7 +181,7 @@ describe('取消确认层：打开、关闭、提交（B2）', () => {
 
     expect(page.find('[role="dialog"]').exists()).toBe(false)
     expect(page.find('article [role="alert"]').text()).toBe('服务器开小差了，请稍后再试')
-    expect(buttonLabels(page)).toEqual(['取消预约'])
+    expect(buttonLabels(page)).toEqual(['出示签到码', '取消预约'])
   })
 })
 
@@ -191,19 +201,61 @@ describe('操作进行中：所有卡片的按钮都不可用', () => {
     const { page, ctx, pending } = await pendingCancel()
     expect(page.findAll('article')).toHaveLength(2)
 
-    await page.findAll('article')[0]?.find('button').trigger('click')
+    await page.findAll('article')[0]?.findAll('button').find((button) => button.text() === '取消预约')?.trigger('click')
     await buttonByText(page, '确认取消').trigger('click')
     await flushPromises()
 
     const cards = page.findAll('article')
-    expect(cards.map((card) => card.find('button').text())).toEqual(['处理中…', '取消预约'])
-    expect(cards.map((card) => card.find('button').attributes('disabled') !== undefined)).toEqual([true, true])
+    expect(cards.map((card) => card.findAll('button').map((button) => button.text()))).toEqual([['处理中…', '处理中…'], ['出示签到码', '取消预约']])
+    expect(cards.flatMap((card) => card.findAll('button')).every((button) => button.attributes('disabled') !== undefined)).toBe(true)
 
     pending.resolve(await ctx.h.api.cancelReservation(1, {}))
     await flushPromises()
 
     expect(page.findAll('article').map((card) => card.find('.badge').text())).toEqual(['已取消', '待使用'])
-    expect(page.findAll('article').flatMap((card) => card.findAll('button'))).toHaveLength(1)
+    expect(page.findAll('article').flatMap((card) => card.findAll('button'))).toHaveLength(2)
     expect(page.find('article:nth-of-type(2) button').attributes('disabled')).toBeUndefined()
+  })
+})
+
+// 审计 N4：关闭签到码浮层并刷新后，焦点落在该预约卡片上（原“出示签到码”按钮已被扫码换成“签退”时给“签退”），不落到 body。
+describe('关闭签到码浮层后的焦点', () => {
+  async function openAttached() {
+    const ctx = await loginAs('zhangsan', '/reservation')
+    await ctx.travelTo(at('07:50'))
+    useApiClient(ctx.h.api)
+    const page = mount(ReservationView, { global: { plugins: [ctx.h.auth._p, ctx.h.router] }, attachTo: document.body })
+    await flushPromises()
+    const opener = buttonByText(page, '出示签到码')
+    ;(opener.element as HTMLButtonElement).focus()
+    await opener.trigger('click')
+    await flushPromises()
+    await vi.dynamicImportSettled()
+    await flushPromises()
+    return { ctx, page, opener }
+  }
+
+  async function closeSheet(page: VueWrapper): Promise<void> {
+    await page.get('[data-checkin-sheet] button[aria-label="关闭"]').trigger('click')
+    await flushPromises()
+  }
+
+  it('已被扫码：原按钮不在了，焦点落到该卡片的“签退”按钮', async () => {
+    const { ctx, page } = await openAttached()
+    await checkInByScan(ctx.h.api, await ctx.h.clientFor('sysadmin'), 1)
+    await closeSheet(page)
+
+    expect(buttonLabels(page)).toEqual(['签退'])
+    expect(document.activeElement).not.toBe(document.body)
+    expect(document.activeElement).toBe(buttonByText(page, '签退').element)
+    page.unmount()
+  })
+
+  it('未被扫码：焦点回到原来的“出示签到码”按钮', async () => {
+    const { page, opener } = await openAttached()
+    await closeSheet(page)
+
+    expect(document.activeElement).toBe(opener.element)
+    page.unmount()
   })
 })

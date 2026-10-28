@@ -18,10 +18,11 @@ export function displayStatusLabel(status: DisplayStatus): string {
   return DISPLAY_STATUS_LABELS[status]
 }
 
-export type ReservationAction = 'CHECK_IN' | 'CHECK_OUT' | 'CANCEL'
+// SHOW_CODE（v1.1，P2-1c）：打开签到码浮层；用户不能再自行签到，签到由管理员扫码完成。
+export type ReservationAction = 'SHOW_CODE' | 'CHECK_OUT' | 'CANCEL'
 
 export const ACTION_LABELS: Record<ReservationAction, string> = {
-  CHECK_IN: '签到',
+  SHOW_CODE: '出示签到码',
   CHECK_OUT: '签退',
   CANCEL: '取消预约',
 }
@@ -29,13 +30,14 @@ export const ACTION_LABELS: Record<ReservationAction, string> = {
 type ActionInput = Pick<Reservation, 'displayStatus' | 'checkInAt' | 'checkOutAt'>
 
 // FE-3-rulings 第 2 节表格。CHECKIN_OPEN 不显示“取消”（B1）：签到窗口必然晚于取消期限。
+// P2-1c：未签到、未结束的 CONFIRMED（UPCOMING、CHECKIN_OPEN，含签到窗口开始前）显示“出示签到码”。
 // COMPLETED 且已签到未签退：03 第 4.3 节允许在宽限内签退，超出宽限由后端返回 INVALID_STATE。
 export function actionsFor(reservation: ActionInput): ReservationAction[] {
   switch (reservation.displayStatus) {
     case 'UPCOMING':
-      return ['CANCEL']
+      return ['SHOW_CODE', 'CANCEL']
     case 'CHECKIN_OPEN':
-      return ['CHECK_IN']
+      return ['SHOW_CODE']
     case 'IN_USE':
       return ['CHECK_OUT']
     case 'COMPLETED':
@@ -51,7 +53,7 @@ export function cancelNote(rules: BookingRules): string {
 }
 
 export function checkInNote(rules: BookingRules): string {
-  return `开始前 ${rules.checkInOpenBeforeMinutes} 分钟至开始后 ${rules.checkInCloseAfterMinutes} 分钟可签到；`
+  return `开始前 ${rules.checkInOpenBeforeMinutes} 分钟至开始后 ${rules.checkInCloseAfterMinutes} 分钟内，向工作人员出示签到码签到；`
     + `结束后 ${rules.checkOutGraceMinutes} 分钟内可签退`
 }
 

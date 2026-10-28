@@ -108,6 +108,9 @@ export interface Resource {
   sortOrder: number; operationalStatus: ResourceStatus
 }
 
+// v1.1：某个预约的签到码（用户签到标识 + 预约 id），固定不变，对客户端不透明，≤ 100 字符
+export interface CheckInCode { code: string }
+
 export interface Reservation {
   id: number
   venueId: number; venueName: string

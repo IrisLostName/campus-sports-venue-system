@@ -7,6 +7,7 @@ import type { ApiClient } from '../../../src/api/client'
 import { createAppRouter } from '../../../src/router/factory'
 import type { RouteViews } from '../../../src/router/routes'
 import AnnouncementsView from '../../../src/views/venue-admin/AnnouncementsView.vue'
+import CheckInScanView from '../../../src/views/venue-admin/CheckInScanView.vue'
 import LogsView from '../../../src/views/venue-admin/LogsView.vue'
 import OccupancyView from '../../../src/views/venue-admin/OccupancyView.vue'
 import OverviewView from '../../../src/views/venue-admin/OverviewView.vue'
@@ -27,6 +28,7 @@ export const ADMIN_VIEWS: RouteViews = {
   venueAdminAnnouncements: AnnouncementsView,
   venueAdminRepairs: RepairsView,
   venueAdminLogs: LogsView,
+  checkInScan: CheckInScanView,
 }
 
 const Root = defineComponent({ render: () => render(RouterView) })

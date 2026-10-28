@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest'
 
 import type { ReassignResourceRequest } from '../../../src/api/requests'
-import { createHarness, expectApiError, travel, TODAY, TOMORROW, type Harness } from '../support/harness'
+import { checkInByScan, createHarness, expectApiError, type Harness, TODAY, TOMORROW, travel } from '../support/harness'
 
 const MOVE: ReassignResourceRequest = { resourceId: 3, serviceDate: TOMORROW, startTime: '11:00', reason: '场地保养' }
 
@@ -156,7 +156,7 @@ describe('改派的统一阶段顺序（认证 → 格式 → 原因 → 角色 
   it('已签到 → ALREADY_CHECKED_IN（先于目标检查）', async () => {
     const h = await asAdmin()
     await travel(h, `${TOMORROW}T07:50:00`, 'zhangsan')
-    await h.api.checkIn(1)
+    await checkInByScan(h.api, await h.clientFor('sysadmin'), 1)
     await h.loginAs('admin_tennis')
     await expectApiError(h.api.adminReassignResource(1, { ...MOVE, resourceId: 999 }), 'ALREADY_CHECKED_IN')
   })
@@ -211,7 +211,7 @@ describe('人员改派', () => {
   it('已签到 → ALREADY_CHECKED_IN', async () => {
     const h = await asAdmin()
     await travel(h, `${TOMORROW}T07:50:00`, 'zhangsan')
-    await h.api.checkIn(1)
+    await checkInByScan(h.api, await h.clientFor('sysadmin'), 1)
     await h.loginAs('admin_tennis')
     await expectApiError(h.api.adminReassignUser(1, { userId: 3, reason: 'x' }), 'ALREADY_CHECKED_IN')
   })

@@ -1,7 +1,8 @@
-// 用户端预约：创建、我的预约、详情、取消、签到、签退（docs/12 第 5.3 节；docs/10 第 1、3、4 节）。
+// 用户端预约：创建、我的预约、详情、取消、签到码（v1.1）、签退（docs/12 第 5.3 节；docs/10 第 1、3、4 节）。
 import type { ApiClient } from '../client'
-import type { Page, Reservation } from '../types'
+import type { CheckInCode, Page, Reservation } from '../types'
 import type { CancelReservationRequest, CreateReservationRequest, MyReservationsQuery } from '../requests'
+import { formatCheckInCode } from './checkInCodes'
 import { RESERVATION_SCOPES } from './enums'
 import { fail } from './fail'
 import { authenticate, requireRole, requireScope } from './guards'
@@ -9,12 +10,11 @@ import { getOrFail } from './lookup'
 import { pageOf } from './paging'
 import { checkCreatable, insertReservation } from './reservationRules'
 import {
-  checkInWindow, checkOutDeadlineSeconds, endSeconds, nowSeconds, startSeconds, toReservation, venueIdOfReservation,
+  checkOutDeadlineSeconds, endSeconds, nowSeconds, startSeconds, toReservation, venueIdOfReservation,
 } from './reservationView'
 import { run } from './run'
 import type { MockContext, ReservationRecord, UserRecord } from './state'
 import { blankToNull, collect, dateProblem, intProblem, oneOfProblem, optional, optionalText, pagingChecks, timeProblem } from './validate'
-import { secondsOf } from './timeMath'
 
 function createReservation(ctx: MockContext, request: CreateReservationRequest): Reservation {
   const user = authenticate(ctx)
@@ -100,23 +100,19 @@ function cancelReservation(ctx: MockContext, id: number, request: CancelReservat
   return toReservation(ctx, record)
 }
 
-// 10 第 4 节：本人 → CONFIRMED → 当前时间 ∈ [start − 15, start + 15]（闭区间）→ 尚无签到记录。
-function checkIn(ctx: MockContext, id: number): Reservation {
+// v1.1 签发签到码（docs/12 第 5.3 节，与后端 CheckInCodeService 同序）：认证 → 角色 USER → NOT_FOUND → NOT_OWNER →
+// 有效状态 CONFIRMED（否则 INVALID_STATE；已结束的预约有效状态为 NO_SHOW / COMPLETED）→ 尚未签到（否则 ALREADY_CHECKED_IN）。
+// 不检查签到窗口：窗口开始前即可出示，是否在窗口内由扫码时裁决。
+function getCheckInCode(ctx: MockContext, id: number): CheckInCode {
   const user = authenticate(ctx)
   const record = ownReservation(ctx, user, id)
   if (record.status !== 'CONFIRMED') {
     fail('INVALID_STATE', { status: record.status })
   }
-  const window = checkInWindow(ctx, record)
-  const now = nowSeconds(ctx)
-  if (now < secondsOf(window.opensAt) || now > secondsOf(window.closesAt)) {
-    fail('CHECKIN_WINDOW_CLOSED', window)
-  }
   if (record.checkInAt !== null) {
     fail('ALREADY_CHECKED_IN')
   }
-  record.checkInAt = ctx.clock.now()
-  return toReservation(ctx, record)
+  return { code: formatCheckInCode(user.checkInUuid, record.id) }
 }
 
 // 10 第 4 节：本人 → CONFIRMED 或 COMPLETED → 已签到 → 未签退 → 当前时间 < end + checkOutGraceMinutes。
@@ -140,7 +136,7 @@ function checkOut(ctx: MockContext, id: number): Reservation {
 }
 
 export type ReservationApi = Pick<ApiClient,
-  'createReservation' | 'listMyReservations' | 'getReservation' | 'cancelReservation' | 'checkIn' | 'checkOut'>
+  'createReservation' | 'listMyReservations' | 'getReservation' | 'cancelReservation' | 'getCheckInCode' | 'checkOut'>
 
 export function reservationApi(ctx: MockContext): ReservationApi {
   return {
@@ -148,7 +144,7 @@ export function reservationApi(ctx: MockContext): ReservationApi {
     listMyReservations: (query = {}) => run(ctx, () => listMyReservations(ctx, query)),
     getReservation: (id) => run(ctx, () => getReservation(ctx, id)),
     cancelReservation: (id, request = {}) => run(ctx, () => cancelReservation(ctx, id, request)),
-    checkIn: (id) => run(ctx, () => checkIn(ctx, id)),
+    getCheckInCode: (id) => run(ctx, () => getCheckInCode(ctx, id)),
     checkOut: (id) => run(ctx, () => checkOut(ctx, id)),
   }
 }

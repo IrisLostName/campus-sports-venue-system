@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { buildDisplayBoardView, formatRate, NO_RATE_TEXT, stateLabel } from '../../src/utils/displayModel'
-import { createHarness, setTime, TODAY, TOMORROW, type Harness } from '../api/support/harness'
+import { checkInByScan, createHarness, type Harness, setTime, TODAY, TOMORROW } from '../api/support/harness'
 import { makeSummary } from './support'
 
 async function publicSummary(h: Harness) {
@@ -20,7 +20,7 @@ async function allFiveStates(): Promise<Harness> {
   await h.api.adminUpdateVenue(2, { operationalStatus: 'CLOSED' })
   setTime(h, TOMORROW, '08:00')
   await h.loginAs('zhangsan')
-  await h.api.checkIn(1)
+  await checkInByScan(h.api, await h.clientFor('sysadmin'), 1)
   return h
 }
 
