@@ -1,6 +1,6 @@
 // FE-3 “预约”页（挂载整页，数据来自 mock 与注入时钟）：按钮表在页面上的实际结果、操作进行中全部按钮禁用、取消确认层的打开/关闭/提交。
 // P2-1c：“签到”改为“出示签到码”（打开签到码浮层）；已签到的前置状态由管理员扫码（checkInByScan）完成。
-import { flushPromises, type VueWrapper } from '@vue/test-utils'
+import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 
 import type { ApiClient } from '../../src/api/client'
@@ -215,5 +215,47 @@ describe('操作进行中：所有卡片的按钮都不可用', () => {
     expect(page.findAll('article').map((card) => card.find('.badge').text())).toEqual(['已取消', '待使用'])
     expect(page.findAll('article').flatMap((card) => card.findAll('button'))).toHaveLength(2)
     expect(page.find('article:nth-of-type(2) button').attributes('disabled')).toBeUndefined()
+  })
+})
+
+// 审计 N4：关闭签到码浮层并刷新后，焦点落在该预约卡片上（原“出示签到码”按钮已被扫码换成“签退”时给“签退”），不落到 body。
+describe('关闭签到码浮层后的焦点', () => {
+  async function openAttached() {
+    const ctx = await loginAs('zhangsan', '/reservation')
+    await ctx.travelTo(at('07:50'))
+    useApiClient(ctx.h.api)
+    const page = mount(ReservationView, { global: { plugins: [ctx.h.auth._p, ctx.h.router] }, attachTo: document.body })
+    await flushPromises()
+    const opener = buttonByText(page, '出示签到码')
+    ;(opener.element as HTMLButtonElement).focus()
+    await opener.trigger('click')
+    await flushPromises()
+    await vi.dynamicImportSettled()
+    await flushPromises()
+    return { ctx, page, opener }
+  }
+
+  async function closeSheet(page: VueWrapper): Promise<void> {
+    await page.get('[data-checkin-sheet] button[aria-label="关闭"]').trigger('click')
+    await flushPromises()
+  }
+
+  it('已被扫码：原按钮不在了，焦点落到该卡片的“签退”按钮', async () => {
+    const { ctx, page } = await openAttached()
+    await checkInByScan(ctx.h.api, await ctx.h.clientFor('sysadmin'), 1)
+    await closeSheet(page)
+
+    expect(buttonLabels(page)).toEqual(['签退'])
+    expect(document.activeElement).not.toBe(document.body)
+    expect(document.activeElement).toBe(buttonByText(page, '签退').element)
+    page.unmount()
+  })
+
+  it('未被扫码：焦点回到原来的“出示签到码”按钮', async () => {
+    const { page, opener } = await openAttached()
+    await closeSheet(page)
+
+    expect(document.activeElement).toBe(opener.element)
+    page.unmount()
   })
 })

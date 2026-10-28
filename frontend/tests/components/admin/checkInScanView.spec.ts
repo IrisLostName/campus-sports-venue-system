@@ -226,3 +226,24 @@ describe('结果文案与最近记录', () => {
     expect(rows[1]?.text()).toContain('签到码无效')
   })
 })
+
+describe('提交进行中再回车（审计 N1）', () => {
+  it('上一次签到未返回时回车：不清空、不提交，提示稍候；返回后再回车照常提交', async () => {
+    const field = mount(ScanCodeInput, { props: { busy: true }, attachTo: document.body })
+    const input = field.get('input')
+    await input.setValue('abc.1')
+    await input.trigger('keydown', { key: 'Enter' })
+
+    expect(field.emitted('submit')).toBeUndefined()
+    expect((input.element as HTMLInputElement).value).toBe('abc.1')
+    expect(field.get('[role="status"]').text()).toBe('上一次签到正在处理，请稍候')
+    expect(document.activeElement).toBe(input.element)
+
+    await field.setProps({ busy: false })
+    await input.trigger('keydown', { key: 'Enter' })
+    expect(field.emitted('submit')).toEqual([['abc.1']])
+    expect((input.element as HTMLInputElement).value).toBe('')
+    expect(field.find('[role="status"]').exists()).toBe(false)
+    field.unmount()
+  })
+})

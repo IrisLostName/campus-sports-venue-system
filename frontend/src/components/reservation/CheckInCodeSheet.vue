@@ -1,9 +1,8 @@
 <script setup lang="ts">
 // 签到码浮层（P2-1c 裁决第 2 节，观感参照 prototypes/checkin-demo）：从底部弹起；每个可出示的预约一张卡片，
 // 左右滑动（滚动吸附）切换并有指示点；按钮、遮罩、Esc 都可关闭（Esc 只由最上层浮层响应，composables/escapeClose）。
-// 由“预约”页按需异步加载（二维码库因此只在这个分包之后加载）。
-// 焦点：打开时聚焦“关闭”，Tab 在浮层内循环；关闭后回到打开它的按钮（composables/checkInCarousel）。
-// 非当前卡片加 inert（不可聚焦、读屏不读）。
+// 由“预约”页按需异步加载（二维码库因此只在这个分包之后加载）。“关闭”与指示点的触控区都是 44×44。
+// 焦点：打开时聚焦“关闭”，Tab 在浮层内循环，非当前卡片加 inert；关闭后的焦点见 composables/checkInCarousel。
 // 减少动效：不做弹出动画、指示点过渡，切换卡片不平滑滚动。
 // 不复用 UiSheet：它带固定的标题与内边距，且由 UI-2b 基线锁定；这里只用同一套令牌。
 import { useId } from 'vue'
@@ -24,15 +23,15 @@ const props = defineProps<{
 const emit = defineEmits<{ close: []; retry: [id: number] }>()
 
 const titleId = useId()
-const { bindPanel, bindClose, bindCarousel, index, scrollToIndex, onScroll, onCarouselKey, onPanelKey } = useCheckInCarousel({
+const { bindPanel, bindClose, bindCarousel, index, scrollToIndex, onScroll, onCarouselKey, onPanelKey, settleFocus } = useCheckInCarousel({
   open: () => props.open, count: () => props.tickets.length, startIndex: () => props.startIndex,
 })
 
-function close(): void {
-  emit('close')
-}
+const close = (): void => emit('close')
 
 useEscapeClose(() => props.open, close)
+
+defineExpose({ settleFocus })
 </script>
 
 <template>
@@ -69,7 +68,10 @@ useEscapeClose(() => props.open, close)
             aria-label="关闭"
             @click="close"
           >
-            <span aria-hidden="true">×</span>
+            <span
+              class="close-icon"
+              aria-hidden="true"
+            >×</span>
           </button>
         </header>
 
@@ -172,16 +174,27 @@ useEscapeClose(() => props.open, close)
 
 .close {
   display: grid;
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
+  margin: -6px;
+  padding: 0;
   place-items: center;
   border: 0;
   border-radius: 50%;
-  background: var(--color-separator);
+  background: transparent;
   color: var(--color-text);
+  cursor: pointer;
+}
+
+.close-icon {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-separator);
   font-size: 20px;
   line-height: 1;
-  cursor: pointer;
 }
 
 .close:focus-visible,
@@ -230,27 +243,37 @@ useEscapeClose(() => props.open, close)
   display: flex;
   flex: none;
   justify-content: center;
-  gap: var(--space-1);
-  padding: var(--space-2) 0 var(--space-3);
+  padding: 0 0 var(--space-1);
 }
 
+/* 触控区 44×44（docs/17 第 4 节，审计 F1）；看得见的“关闭”圆形仍为 32px，圆点由 ::before 画（7×7，当前项 18×7）。 */
 .dot {
-  width: 7px;
-  height: 7px;
+  display: grid;
+  width: 44px;
+  height: 44px;
   padding: 0;
+  place-items: center;
   border: 0;
   border-radius: var(--radius-capsule);
-  background: var(--color-text-tertiary);
+  background: transparent;
   cursor: pointer;
 }
 
-.dot.on {
+.dot::before {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-capsule);
+  background: var(--color-text-tertiary);
+  content: "";
+}
+
+.dot.on::before {
   width: 18px;
   background: var(--color-accent);
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .dot {
+  .dot::before {
     transition: width var(--motion-normal) var(--ease-standard), background var(--motion-normal) var(--ease-standard);
   }
 

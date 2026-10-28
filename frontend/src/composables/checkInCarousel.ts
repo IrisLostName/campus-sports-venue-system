@@ -1,6 +1,8 @@
 // 签到码浮层的轮播、焦点与键盘（P2-1c，供 components/reservation/CheckInCodeSheet 使用）：
 // - 当前是第几张：按滚动位置取最近的一张（每帧至多算一次）；←/→ 与指示点切换，减少动效时不平滑滚动；
 // - 打开时定位到所点的那张并聚焦“关闭”，Tab 在浮层内循环；关闭后焦点回到打开它的按钮。
+// - 关闭后列表按后端状态刷新，打开它的按钮可能已不在（已被扫码，换成“签退”）：settleFocus 把焦点交给
+//   该预约卡片的第一个可用按钮，没有则交给卡片标题；卡片也不在了则交给页面标题，不落到 body（审计 N4）。
 import { nextTick, onBeforeUnmount, ref, watch } from 'vue'
 
 import { slideIndex } from '../utils/checkInDisplay'
@@ -34,12 +36,36 @@ function trapTab(root: HTMLElement, event: KeyboardEvent): void {
   }
 }
 
+// 焦点仍在页面中的某个元素上（例如原按钮还在）时不动；否则交给卡片的第一个可用按钮、卡片标题或页面标题。
+function focusTarget(card: HTMLElement | null): HTMLElement | null {
+  if (card?.isConnected === true) {
+    return card.querySelector<HTMLElement>('button:not([disabled])') ?? card.querySelector<HTMLElement>('h2')
+  }
+  return document.querySelector<HTMLElement>('h1')
+}
+
+function settleFocusOn(card: HTMLElement | null): void {
+  const active = document.activeElement
+  if (active instanceof HTMLElement && active !== document.body && active.isConnected) {
+    return
+  }
+  const target = focusTarget(card)
+  if (target === null) {
+    return
+  }
+  if (!target.matches('button')) {
+    target.setAttribute('tabindex', '-1')
+  }
+  target.focus({ preventScroll: true })
+}
+
 export function useCheckInCarousel(source: CarouselSource) {
   const panel = ref<HTMLElement | null>(null)
   const closeButton = ref<HTMLButtonElement | null>(null)
   const carousel = ref<HTMLElement | null>(null)
   const index = ref(0)
   let opener: HTMLElement | null = null
+  let openerCard: HTMLElement | null = null
   let frame = 0
 
   function scrollToIndex(target: number, smooth: boolean): void {
@@ -86,6 +112,7 @@ export function useCheckInCarousel(source: CarouselSource) {
   watch(source.open, async (open) => {
     if (open) {
       opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
+      openerCard = opener?.closest<HTMLElement>('article') ?? null
       index.value = source.startIndex()
       await nextTick()
       scrollToIndex(source.startIndex(), false)
@@ -96,6 +123,9 @@ export function useCheckInCarousel(source: CarouselSource) {
     }
   }, { immediate: true })
 
+  // 列表刷新之后由页面调用。
+  const settleFocus = () => settleFocusOn(openerCard)
+
   onBeforeUnmount(() => cancelAnimationFrame(frame))
 
   // 模板里用函数 ref 绑定元素（:ref="bindPanel" 等）。
@@ -103,5 +133,5 @@ export function useCheckInCarousel(source: CarouselSource) {
   const bindClose = (element: unknown) => { closeButton.value = element instanceof HTMLButtonElement ? element : null }
   const bindCarousel = (element: unknown) => { carousel.value = element instanceof HTMLElement ? element : null }
 
-  return { bindPanel, bindClose, bindCarousel, index, scrollToIndex, onScroll, onCarouselKey, onPanelKey }
+  return { bindPanel, bindClose, bindCarousel, index, scrollToIndex, onScroll, onCarouselKey, onPanelKey, settleFocus }
 }
