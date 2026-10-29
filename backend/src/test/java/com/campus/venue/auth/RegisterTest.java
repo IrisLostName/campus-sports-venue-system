@@ -31,6 +31,7 @@ class RegisterTest extends AbstractApiTest {
         body.put("username", "new_user");
         body.put("password", "Passw0rd!");
         body.put("displayName", "新用户");
+        body.put("phone", "13800000000");
         return body;
     }
 
@@ -61,7 +62,7 @@ class RegisterTest extends AbstractApiTest {
         assertThat(user.get("role").asText()).isEqualTo("USER");
         assertThat(user.get("userType").asText()).isEqualTo("STUDENT");
         assertThat(user.get("status").asText()).isEqualTo("ACTIVE");
-        assertThat(user.get("phone").isNull()).isTrue();
+        assertThat(user.get("phone").asText()).isEqualTo("13800000000");
         assertThat(user.get("venueIds").isNull()).isTrue();
         assertThat(tokenService.verify(body.get("token").asText())).isEqualTo(user.get("id").asLong());
     }
@@ -101,13 +102,16 @@ class RegisterTest extends AbstractApiTest {
         assertThat(row.get("phone")).isEqualTo("13800000000");
     }
 
+    /** v1.3：手机号必填，空白不再视为未填而是“必填”。 */
     @Test
-    void blankPhoneIsStoredAsNull() throws Exception {
+    void blankPhoneIsValidationError() throws Exception {
         Map<String, Object> body = validBody();
         body.put("phone", "                         ");
 
-        assertThat(register(body).getResponse().getStatus()).isEqualTo(201);
-        assertThat(row("new_user").get("phone")).isNull();
+        JsonNode error = assertError(register(body), ErrorCode.VALIDATION_ERROR);
+
+        assertThat(error.get("details").get("fields").get("phone").asText()).isEqualTo("必填");
+        assertThat(jdbc.queryForObject("select count(*) from app_user", Integer.class)).isZero();
     }
 
     @Test
@@ -179,13 +183,12 @@ class RegisterTest extends AbstractApiTest {
         assertThat(row("new_user").get("display_name")).isEqualTo("第一行\n第二行\t末尾");
     }
 
-    /** 边界值：用户名 3 与 32 位、口令 8 与 64 位、显示名 50 字、电话 20 位、72 字节口令都可注册。 */
+    /** 边界值：用户名 3 与 32 位、口令 8 与 64 位、显示名 50 字、72 字节口令都可注册。 */
     @Test
     void boundaryValuesAreAccepted() throws Exception {
         Map<String, Object> shortest = validBody();
         shortest.put("username", "abc");
         shortest.put("password", "12345678");
-        shortest.put("phone", "1".repeat(20));
         assertThat(register(shortest).getResponse().getStatus()).isEqualTo(201);
 
         Map<String, Object> longest = validBody();

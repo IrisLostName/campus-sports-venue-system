@@ -42,7 +42,7 @@ class CheckInUuidMigrationTest extends AdminUserApiTestBase {
     void registeredAndCreatedUsersGetAUuid() throws Exception {
         MvcResult registered = mockMvc.perform(post("/api/v1/auth/register").contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(body("username", "new_user", "password", "Passw0rd!",
-                        "displayName", "新用户")))).andReturn();
+                        "displayName", "新用户", "phone", "13800000000")))).andReturn();
         assertThat(registered.getResponse().getStatus()).isEqualTo(201);
         MvcResult created = asSys(HttpMethod.POST, USERS, newAccount("created_user", "USER"));
         assertThat(created.getResponse().getStatus()).isEqualTo(201);

@@ -16,7 +16,8 @@ import org.springframework.test.web.servlet.MvcResult;
 
 /**
  * BE-6 P1：注册（/auth/register）与创建账号（POST /admin/users）的字段约束共用一处，同一非法值得到同一字段文案。
- * 用例与 RegisterTest 的非法值一致，另加 U+0000。
+ * 用例与 RegisterTest 的非法值一致，另加 U+0000。v1.3 起手机号必填（创建时 role=USER），
+ * 缺失、空白与格式错误在两处同样报“必填”或格式文案。
  */
 class AccountFieldParityTest extends AdminUserApiTestBase {
 
@@ -39,7 +40,11 @@ class AccountFieldParityTest extends AdminUserApiTestBase {
                 Arguments.of("userType", "ADMIN"),
                 Arguments.of("userType", "student"),
                 Arguments.of("phone", "1".repeat(21)),
-                Arguments.of("phone", "ab\u0000cd"));
+                Arguments.of("phone", "ab\u0000cd"),
+                Arguments.of("phone", null),
+                Arguments.of("phone", "   "),
+                Arguments.of("phone", "1380000000"),
+                Arguments.of("phone", "138 0000 0000"));
     }
 
     private MvcResult register(Map<String, Object> body) throws Exception {
@@ -50,7 +55,8 @@ class AccountFieldParityTest extends AdminUserApiTestBase {
     @ParameterizedTest(name = "{0} = {1}")
     @MethodSource("invalidFields")
     void registrationAndAdminCreationReportTheSameFieldMessage(String field, Object value) throws Exception {
-        Map<String, Object> account = body("username", "same_name", "password", "Passw0rd!", "displayName", "名");
+        Map<String, Object> account = body("username", "same_name", "password", "Passw0rd!", "displayName", "名",
+                "phone", "13800000000");
         account.put(field, value);
 
         JsonNode registered = assertError(register(account), ErrorCode.VALIDATION_ERROR);

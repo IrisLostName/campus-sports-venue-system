@@ -99,7 +99,7 @@ class AdminUserWriteApiTest extends AdminUserApiTestBase {
         assertThat(fields(format).get("displayName").asText()).isEqualTo("必填");
         assertThat(fields(format).get("role").asText()).isEqualTo("应为 USER/VENUE_ADMIN/SYS_ADMIN 之一");
         assertThat(fields(format).get("userType").asText()).isEqualTo("须为 STUDENT、TEACHER 或 OTHER");
-        assertThat(fields(format).get("phone").asText()).isEqualTo("不能超过 20 个字符");
+        assertThat(fields(format).get("phone").asText()).isEqualTo("须为 11 位手机号");
         assertThat(fields(format).get("venueIds").asText()).isEqualTo("应为已存在场馆 id 组成的数组");
         JsonNode missingRole = assertError(createAsSys(body("username", "x_y_z", "password", "Passw0rd!",
                 "displayName", "名")), ErrorCode.VALIDATION_ERROR);

@@ -53,7 +53,7 @@ class ContentAndUserPermissionMatrixTest extends ImpactApiTestBase {
     private static final Map<String, Object> REPAIR = Map.of("venueId", 1, "description", "坏了");
     private static final Map<String, Object> PROGRESS = Map.of("status", "IN_PROGRESS");
     private static final Map<String, Object> ACCOUNT = Map.of("username", "new_one", "password", "Passw0rd!",
-            "displayName", "名", "role", "USER");
+            "displayName", "名", "role", "USER", "phone", "13800000000");
     private static final Map<String, Object> DISABLE = Map.of("status", "DISABLED");
     private static final Map<String, Object> SCOPE = Map.of("venueIds", List.of());
 

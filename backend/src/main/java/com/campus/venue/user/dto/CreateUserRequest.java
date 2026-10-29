@@ -12,7 +12,9 @@ import java.util.List;
 /**
  * 创建账号请求（docs/12 第 5.9 节，BE-6 U2）：用户名、口令、姓名、userType、phone 的约束与注册共用（同一组合约束，文案一致）；
  * role 必填三值之一；venueIds 可选，元素须为正整数，仅当 role=VENUE_ADMIN 时写入授权。
+ * （v1.3）role=USER 时 phone 必填，见 PhoneRequiredForUser；其他角色可不填（空白视为未填，存 NULL）。
  */
+@PhoneRequiredForUser
 public record CreateUserRequest(
         @AccountUsername
         String username,
