@@ -15,13 +15,13 @@ const RESERVATION: Reservation = {
   id: 41, venueId: 1, venueName: '网球馆', resourceId: 2, resourceName: '网球场2', userId: 1, userDisplayName: '张三',
   serviceDate: '2026-10-13', startTime: '08:00', endTime: '09:30', status: 'CONFIRMED', displayStatus: 'UPCOMING',
   purpose: null, createdAt: '2026-10-12T07:00:00', cancelledAt: null, cancelReason: null, cancelledBy: null,
-  adminNote: null, checkInAt: null, checkOutAt: null,
+  adminNote: null, checkInAt: null, checkOutAt: null, companions: [],
 }
 
 describe('签到码卡片', () => {
   it('场馆 · 场地、预约人姓名与用户名、日期、预约时段、可使用时段（含签退截止）、签到时间窗口、签到截止', () => {
     expect(buildTicket(RESERVATION, RULES, { displayName: '张三', username: 'zhangsan' })).toEqual({
-      id: 41, venueId: 1, venueName: '网球馆', place: '网球馆 · 网球场2', bookerText: '预约人 张三（zhangsan）',
+      id: 41, venueId: 1, venueName: '网球馆', place: '网球馆 · 网球场2', bookerText: '预约人 张三（zhangsan）', companionsText: null,
       dateText: '2026-10-13 周二', slotText: '08:00–09:30', usableText: '08:00–09:30（10:00 前签退）',
       windowText: '07:45–08:15', deadlineText: '08:15', statusLabel: '待使用', displayStatus: 'UPCOMING',
     })

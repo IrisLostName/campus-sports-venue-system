@@ -20,7 +20,7 @@ describe('ACC-M2-05 详情卡片', () => {
     expect(reference.bookingRules).toEqual(rules)
     expect(board.cards.value).toEqual([{
       id: 1, place: '网球馆 · 网球场1', dateText: '2026-10-13 周二', timeText: '08:00–09:30',
-      userDisplayName: '张三', statusLabel: '待使用', displayStatus: 'UPCOMING',
+      userDisplayName: '张三', companionsText: null, statusLabel: '待使用', displayStatus: 'UPCOMING',
       purpose: null, adminNote: null,
       checkInNote: FIRST_NOTE, cancelNote: CANCEL_NOTE, actions: ['SHOW_CODE', 'CANCEL'],
     }])

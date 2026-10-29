@@ -61,6 +61,9 @@ defineEmits<{ submit: []; back: [] }>()
       placeholder="例如：朋友约练"
     />
 
+    <!-- P2-2c：同行好友（CompanionPicker），由页面放入。 -->
+    <slot />
+
     <UiBanner
       v-if="error !== null"
       class="error"

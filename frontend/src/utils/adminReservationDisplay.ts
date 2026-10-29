@@ -2,6 +2,7 @@
 // 按钮是否出现只依据 status / displayStatus / checkInAt，不做时间运算；其余以后端错误码为准（INVALID_STATE 等）。
 import type { Occupancy, AdminReservation } from '../api/typesSection5'
 import type { ReservationStatus } from '../api/types'
+import { companionNames } from './companionDisplay'
 import { displayStatusLabel, formatTimeRange } from './reservationDisplay'
 import { toneForDisplayStatus, type Tone } from './statusTone'
 
@@ -43,10 +44,17 @@ export interface AdminReservationRow {
   place: string
   userName: string
   userDetail: string
+  companionsText: string | null   // v1.2：同行：李四、王五；没有同行人时为 null
   statusLabel: string
   tone: Tone
   adminNote: string | null
   ops: ReservationOp[]
+}
+
+// v1.2：“同行：李四、王五”；没有同行人时为 null。
+function companionLine(reservation: Pick<AdminReservation, 'companions'>): string | null {
+  const names = companionNames(reservation.companions)
+  return names === null ? null : `同行：${names}`
 }
 
 // withVenue（FE-6 G7，全部场馆）：场地列前加场馆名。
@@ -59,6 +67,7 @@ export function buildReservationRow(reservation: AdminReservation, withVenue = f
     place: withVenue ? `${reservation.venueName} · ${reservation.resourceName}` : reservation.resourceName,
     userName: reservation.userDisplayName,
     userDetail: reservation.userPhone === null ? reservation.userUsername : `${reservation.userUsername} · ${reservation.userPhone}`,
+    companionsText: companionLine(reservation),
     statusLabel: displayStatusLabel(reservation.displayStatus),
     tone: toneForDisplayStatus(reservation.displayStatus),
     adminNote: note === null || note.trim() === '' ? null : note,
@@ -71,9 +80,11 @@ export function reservationName(row: Pick<AdminReservationRow, 'userName' | 'dat
   return `${row.userName} ${row.dateText} ${row.timeText} ${row.place}`
 }
 
-// 对话框里描述“是哪一条预约”。
+// 对话框里描述“是哪一条预约”；有同行人时追加“同行：…”（P2-2c 裁决第 5 节第 2 条）。
 export function reservationSummary(reservation: AdminReservation): string {
-  return `${reservation.venueName} · ${reservation.resourceName} · ${reservation.serviceDate} ${formatTimeRange(reservation)} · ${reservation.userDisplayName}`
+  const base = `${reservation.venueName} · ${reservation.resourceName} · ${reservation.serviceDate} ${formatTimeRange(reservation)} · ${reservation.userDisplayName}`
+  const companions = companionLine(reservation)
+  return companions === null ? base : `${base} · ${companions}`
 }
 
 export interface ReassignResourceOption {

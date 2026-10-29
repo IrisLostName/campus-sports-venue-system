@@ -27,6 +27,12 @@ defineEmits<{ retry: [] }>()
       <p class="who">
         {{ ticket.bookerText }}
       </p>
+      <p
+        v-if="ticket.companionsText !== null"
+        class="who"
+      >
+        {{ ticket.companionsText }}
+      </p>
     </header>
 
     <div class="qr-area">

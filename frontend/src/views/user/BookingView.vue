@@ -5,6 +5,7 @@ import { computed, onMounted } from 'vue'
 
 import BookingLayer from '../../components/booking/BookingLayer.vue'
 import BookingResult from '../../components/booking/BookingResult.vue'
+import CompanionPicker from '../../components/booking/CompanionPicker.vue'
 import ConfirmPanel from '../../components/booking/ConfirmPanel.vue'
 import MonthCalendar from '../../components/booking/MonthCalendar.vue'
 import SlotsLayer from '../../components/booking/SlotsLayer.vue'
@@ -21,8 +22,9 @@ import { formatServiceDate } from '../../utils/reservationDisplay'
 const board = useBookingBoard()
 const {
   step, venues, venuesPhase, venuesError, rulesError, venue, dates, date, slotsPhase, slotsError, groups, pinned,
-  announcementItems, announcementError, confirmation, purpose, submitting, submitError, result,
+  announcementItems, announcementError, confirmation, purpose, submitting, submitError, result, resultCompanions, companions,
 } = board
+const { list: companionList, query: companionQuery, looking: companionLooking, notice: companionNotice } = companions
 
 const browsing = computed(() => step.value === 'venues' || step.value === 'dates' || step.value === 'slots')
 const LAYER_DEPTH = { venues: 0, dates: 1, slots: 2 } as const
@@ -164,11 +166,22 @@ onMounted(() => {
         :error="submitError"
         @submit="board.submit()"
         @back="board.backToSlots()"
-      />
+      >
+        <CompanionPicker
+          v-model:query="companionQuery"
+          :companions="companionList"
+          :looking="companionLooking"
+          :notice="companionNotice"
+          :disabled="submitting"
+          @lookup="companions.lookup()"
+          @remove="companions.remove($event)"
+        />
+      </ConfirmPanel>
 
       <BookingResult
         v-else-if="step === 'done' && result !== null"
         :result="result"
+        :companions="resultCompanions"
         @again="board.restart()"
       />
     </template>

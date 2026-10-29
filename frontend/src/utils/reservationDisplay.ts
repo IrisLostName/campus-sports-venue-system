@@ -1,6 +1,7 @@
 // 预约的展示口径（FE-3 规划裁决 P3、P4、P5 与按钮规则 B1）。
 // 前端不推导状态：按钮只依据后端给出的 displayStatus 与 checkInAt / checkOutAt，不做时间运算（docs/16 第 5 节第 3 项）。
 import type { Announcement, BookingRules, DisplayStatus, Reservation } from '../api/types'
+import { companionNames } from './companionDisplay'
 
 // P5：中文名取自 docs/03 第 4.4 节；ADMIN_CANCELLED 的“管理员已取消”由规划裁决给出。
 export const DISPLAY_STATUS_LABELS: Record<DisplayStatus, string> = {
@@ -94,6 +95,7 @@ export interface ReservationCard {
   dateText: string
   timeText: string
   userDisplayName: string
+  companionsText: string | null  // v1.2 同行人姓名（李四、王五）；没有同行人时为 null，不显示这一行
   statusLabel: string
   displayStatus: DisplayStatus
   purpose: string | null         // 非空时显示
@@ -115,6 +117,7 @@ export function buildCard(reservation: Reservation, rules: BookingRules | null):
     dateText: formatServiceDate(reservation.serviceDate),
     timeText: formatTimeRange(reservation),
     userDisplayName: reservation.userDisplayName,
+    companionsText: companionNames(reservation.companions),
     statusLabel: displayStatusLabel(reservation.displayStatus),
     displayStatus: reservation.displayStatus,
     purpose: nonEmpty(reservation.purpose),

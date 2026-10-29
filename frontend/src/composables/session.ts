@@ -18,9 +18,10 @@ export interface SessionDeps {
   router: Router
 }
 
+// fieldKeys：VALIDATION_ERROR 带 details.fields 时，只记下字段名（键属于契约，说明文字不显示；P2-2c 裁决第 5 节第 4 条）。
 export type ApiResult<T> =
   | { ok: true; value: T }
-  | { ok: false; code: string; message: string; sessionEnded: boolean }
+  | { ok: false; code: string; message: string; sessionEnded: boolean; fieldKeys?: string[] }
 
 // 把 callApi 绑定好 deps 的形式，供 store 与控制器接收（它们不直接持有 router）。凡需登录的调用都必须经它（FE-2 审计 N-1）。
 export type ApiCaller = <T>(request: () => Promise<T>) => Promise<ApiResult<T>>
@@ -40,12 +41,17 @@ export async function handleAuthFailure(error: unknown, deps: SessionDeps): Prom
   return true
 }
 
+function fieldKeysOf(error: unknown): { fieldKeys?: string[] } {
+  const fields: unknown = error instanceof ApiError && error.code === 'VALIDATION_ERROR' ? error.details?.fields : undefined
+  return typeof fields === 'object' && fields !== null ? { fieldKeys: Object.keys(fields) } : {}
+}
+
 export async function callApi<T>(request: () => Promise<T>, deps: SessionDeps): Promise<ApiResult<T>> {
   try {
     return { ok: true, value: await request() }
   } catch (error) {
     const sessionEnded = await handleAuthFailure(error, deps)
-    return { ok: false, ...describeError(error), sessionEnded }
+    return { ok: false, ...describeError(error), sessionEnded, ...fieldKeysOf(error) }
   }
 }
 

@@ -36,6 +36,10 @@ const COLUMNS = [
       <div class="user">
         <strong>{{ row.userName }}</strong>
         <span class="detail">{{ row.userDetail }}</span>
+        <span
+          v-if="row.companionsText !== null"
+          class="detail"
+        >{{ row.companionsText }}</span>
       </div>
     </template>
     <template #cell-status="{ row }">
