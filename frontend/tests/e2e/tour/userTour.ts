@@ -1,5 +1,5 @@
 // TEST-2 W1 用户端（393×852 iPhone 16 竖屏，浅色与深色）：登录、首页无/有预约、订场（含“暂未开放预约”）、确认与成功、
-// 预约页 UPCOMING 与取消层、历史 CANCELLED、带 admin_note 的改派、ADMIN_CANCELLED、报修、“我的”滚到底；另补 375×812 关键页。
+// 预约页 UPCOMING（含 UI-4 新建预约与持有上限）与取消层、历史 CANCELLED、带 admin_note 的改派、ADMIN_CANCELLED、报修、“我的”滚到底；另补 375×812 关键页。
 // 数据（重置后的库，“明天”为服务端日期 + 1）：种子 zhangsan 明天 网球场1 08:00、lisi 明天 网球场2 09:30；
 // wangwu 在界面上订明天 网球场3 11:00；zhaoliu 经 http 客户端订明天 网球场4 12:30（纯前置数据），由管理员在界面上改派。
 import { expect } from 'vitest'
@@ -11,6 +11,8 @@ import { openVenueCalendar, openVenueSlots, pickSlot, pickTomorrow } from '../wa
 import { capture, go, login, type Theme, type Tour } from './tourSession'
 
 const BOTH: Theme[] = ['light', 'dark']
+// UI-4：首页标题是“{时段问候}，{显示姓名}”（时段随运行时刻变化，只断言姓名部分）与这一行欢迎语。
+const WELCOME = '欢迎使用校园场馆预约与服务管理系统'
 
 export async function userLoginAndEmpty(tour: Tour): Promise<void> {
   const { page } = tour
@@ -20,7 +22,7 @@ export async function userLoginAndEmpty(tour: Tour): Promise<void> {
   await capture(tour, '01-user-login', { surface: 'login', expect: ['校园场馆预约与服务管理系统', '用户名', '密码'], themes: BOTH })
   await login(tour, 'wangwu', IPHONE16)
   await capture(tour, '02-user-home-empty', {
-    surface: 'user', expect: ['首页', '你还没有预约', '去订场', '系统公告'], absent: ['查看预约详情'], themes: BOTH,
+    surface: 'user', expect: ['，王五', WELCOME, '你还没有预约', '去订场', '系统公告'], absent: ['查看预约详情'], themes: BOTH,
   })
 }
 
@@ -50,11 +52,12 @@ export async function userReservationAndCancel(tour: Tour): Promise<void> {
   const { page } = tour
   await login(tour, 'zhangsan', IPHONE16)
   await capture(tour, '07-user-home-summary', {
-    surface: 'user', expect: ['首页', '查看预约详情', '网球馆 · 网球场1', '08:00–09:30', '张三', '待使用', '系统公告'], themes: BOTH,
+    surface: 'user', expect: ['，张三', WELCOME, '查看预约详情', '去订场', '网球馆 · 网球场1', '08:00–09:30', '张三', '待使用', '系统公告'], themes: BOTH,
   })
   await page.clickText('查看预约详情')
   await capture(tour, '08-user-reservation-upcoming', {
-    surface: 'user', expect: ['预约', '待使用', '取消预约', '开始前至少 120 分钟可取消'], absent: ['已过可取消时间'], themes: BOTH,
+    surface: 'user', expect: ['预约', '＋ 新建预约', '当前 1 个预约，最多可同时持有 3 个', '待使用', '取消预约', '开始前至少 120 分钟可取消'],
+    absent: ['已过可取消时间', '已达同时持有上限'], themes: BOTH,
   })
   await page.clickText('取消预约', { selector: 'button' })
   await page.fill('取消原因（可选）', '临时有事（演示）')

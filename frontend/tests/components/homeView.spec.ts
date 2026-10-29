@@ -1,6 +1,10 @@
 // FE-3 首页（FE-3-rulings P2；ACC-M2-02、ACC-M2-03）：摘要先于公告、“还有 N 个预约”链接、空状态入口。
+// UI-4：标题是按时段的问候语 + 欢迎语；摘要卡片上“查看预约详情”旁有“去订场”。
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+
 import { flushPromises, type VueWrapper } from '@vue/test-utils'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { ApiClient } from '../../src/api/client'
 import { ApiError } from '../../src/api/errors'
@@ -13,6 +17,16 @@ vi.mock('../../src/api/index', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../src/api/index')>()
   const { swappedApi } = await import('./apiSwap')
   return { ...actual, api: swappedApi() }
+})
+
+// 浏览器时钟固定在上海 09:00（只假 Date，页面的异步流程照常）。
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(new Date('2026-10-12T01:00:00Z'))
+})
+
+afterEach(() => {
+  vi.useRealTimers()
 })
 
 async function openHome(username: string, options: { extra?: number; wrap?: (api: ApiClient) => ApiClient } = {}): Promise<VueWrapper> {
@@ -35,7 +49,8 @@ describe('ACC-M2-02 有预约', () => {
   it('摘要显示日期、时间、地点、预约人与状态，且排在系统公告之前', async () => {
     const page = await openHome('zhangsan')
 
-    expect(page.find('h1').text()).toBe('首页')
+    expect(page.find('h1').text()).toBe('上午好，张三')
+    expect(page.find('.welcome').text()).toBe('欢迎使用校园场馆预约与服务管理系统')
     expect(sectionLabels(page)).toEqual(['最近的预约', '系统公告'])
     const summary = page.find('section[aria-label="最近的预约"]')
     expect(summary.find('.when').text()).toContain('2026-10-13 周二')
@@ -81,9 +96,48 @@ describe('ACC-M2-02 有预约', () => {
   })
 })
 
+describe('UI-4 摘要卡片上的“去订场”', () => {
+  it('“查看预约详情”（/reservation）旁边是主按钮“去订场”（/booking），两者在同一行容器里', async () => {
+    const page = await openHome('zhangsan')
+    const actions = page.find('section[aria-label="最近的预约"] .actions')
+
+    expect(texts(page, 'section[aria-label="最近的预约"] .actions a')).toEqual(['查看预约详情', '去订场'])
+    expect(actions.find('a.book').attributes('href')).toBe('/booking')
+    expect(actions.find('a.book').classes()).toContain('ui-button--primary')
+    expect(actions.find('a.detail').classes()).toContain('ui-button--secondary')
+  })
+
+  it('间距不小于 12px、窄屏可换行（样式源码：gap 为 --space-3 = 12px，flex-wrap: wrap）', () => {
+    const source = readFileSync(resolve('src/components/home/SummaryCard.vue'), 'utf8')
+    const rule = /\.actions \{([^}]*)\}/.exec(source)?.[1] ?? ''
+    const tokens = readFileSync(resolve('src/styles/tokens.css'), 'utf8')
+
+    expect(rule).toContain('gap: var(--space-3);')
+    expect(rule).toContain('flex-wrap: wrap;')
+    expect(tokens).toContain('--space-3: 12px;')
+  })
+})
+
+describe('UI-4 问候语随时段变化', () => {
+  it.each([
+    ['2026-10-12T04:30:00Z', '中午好，张三'],
+    ['2026-10-12T08:00:00Z', '下午好，张三'],
+    ['2026-10-12T12:00:00Z', '晚上好，张三'],
+  ])('%s → %s', async (instant, expected) => {
+    vi.setSystemTime(new Date(instant))
+    const page = await openHome('zhangsan')
+
+    expect(page.find('h1').text()).toBe(expected)
+  })
+})
+
 describe('ACC-M2-03 没有预约', () => {
   it('显示“你还没有预约”和指向 /booking 的“去订场”；公告区照常显示；没有摘要', async () => {
     const page = await openHome('wangwu')
+
+    expect(page.find('h1').text()).toBe('上午好，王五')
+    expect(page.find('.welcome').text()).toBe('欢迎使用校园场馆预约与服务管理系统')
+    expect(texts(page, 'a')).toEqual(['去订场'])
 
     expect(page.find('.empty p').text()).toBe('你还没有预约')
     expect(page.find('.empty a').text()).toBe('去订场')

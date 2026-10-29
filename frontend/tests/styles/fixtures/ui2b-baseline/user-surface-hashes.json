@@ -8,7 +8,6 @@
   "src/components/booking/VenueNotices.vue": "d0d1fc682c67959401f17edb03bbfb5fce2217900da85094b915a9800209d70f",
   "src/components/home/AnnouncementList.vue": "e47b912593b8748dec872dd39bac9c63964777812439ceeca895f3dfdfe4cd79",
   "src/components/home/EmptyReservation.vue": "708c9dadc8bfaa0d322c5abddedb7569692ae9f5af62156c82d72cd69b72061f",
-  "src/components/home/SummaryCard.vue": "87bad04bc93e5c44f83e18cd204aedb6526d2ae64209f6fbba3184892530a486",
   "src/components/me/ProfileCard.vue": "320d1bbeabc6fd4869308f177cf6e63373c7ac437567a0b3022f3d06766f6ebf",
   "src/components/me/RepairForm.vue": "c536faac7d2f7384858b00a8a01ee847221a0baaa496a655750d432ff6b3061f",
   "src/components/me/RepairList.vue": "e7a586e335802ebb0f35756c1fecc05b465d0066f1fe3b3cb6db37418f9133d4",
@@ -16,7 +15,6 @@
   "src/components/reservation/CancelDialog.vue": "654d87bdc2dfe18ca1762d580aa0ffad4b4a0640000aa8ddd800d64c7e0f866a",
   "src/components/reservation/ReservationCard.vue": "5d5a92d8893d2eeebd279bd4ea0f50dde9c0f90d7a0a3fd06a73c16f97497afa",
   "src/views/user/ClientShell.vue": "96f261f3ac786a44ada582c1c26f9f32201ba4362e2667f4974932974edff509",
-  "src/views/user/HomeView.vue": "16c1ebd2eb3cf569ad61bd46d7f9756742c4d27fd149d9b73afba16de3593683",
   "src/views/user/MeView.vue": "e0fab5c88a1a97d7f30a656811984a3a339cf5294ccea0fe9ed58a28dbad84a7",
   "src/views/LoginView.vue#style": "82ac3263a9f09b44ad90131b90185156be23b58a94ea1083622ec316101ac4ae"
 }
