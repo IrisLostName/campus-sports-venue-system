@@ -54,11 +54,17 @@ public class TokenService {
         return new IssuedToken(token, LocalDateTime.ofInstant(expiresAt, clock.getZone()));
     }
 
+    /** 校验令牌并返回用户 id（规则同 verifyToken）。 */
+    public long verify(String token) {
+        return verifyToken(token).userId();
+    }
+
     /**
-     * 校验令牌并返回用户 id。先验签名：签名不符、无法解析、缺少 exp 或 sub 非数字 → AUTH_REQUIRED；
+     * 校验令牌并返回用户 id 与签发时刻。先验签名：签名不符、无法解析、缺少 exp 或 iat、sub 非数字 → AUTH_REQUIRED
+     * （iat 用于与 password_changed_at 比较，SEC-2b 裁决 Q2：没有 iat 的令牌一律 AUTH_REQUIRED）；
      * 签名有效但 now >= exp → TOKEN_EXPIRED。
      */
-    public long verify(String token) {
+    public VerifiedToken verifyToken(String token) {
         Jwt jwt;
         try {
             jwt = decoder.decode(token);
@@ -66,14 +72,15 @@ public class TokenService {
             throw new BusinessException(ErrorCode.AUTH_REQUIRED);
         }
         Instant expiresAt = jwt.getExpiresAt();
+        Instant issuedAt = jwt.getIssuedAt();
         Long userId = parseUserId(jwt.getSubject());
-        if (expiresAt == null || userId == null) {
+        if (expiresAt == null || issuedAt == null || userId == null) {
             throw new BusinessException(ErrorCode.AUTH_REQUIRED);
         }
         if (!clock.instant().isBefore(expiresAt)) {
             throw new BusinessException(ErrorCode.TOKEN_EXPIRED);
         }
-        return userId;
+        return new VerifiedToken(userId, issuedAt);
     }
 
     private static Long parseUserId(String subject) {

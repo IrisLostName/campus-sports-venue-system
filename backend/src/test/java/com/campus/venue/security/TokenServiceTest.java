@@ -150,4 +150,32 @@ class TokenServiceTest {
         assertFails(() -> service.verify(noExpiry), ErrorCode.AUTH_REQUIRED);
         assertFails(() -> service.verify(textSubject), ErrorCode.AUTH_REQUIRED);
     }
+
+    /** SEC-2b 裁决 Q2：签名有效、未过期、sub 为数字但没有 iat 的令牌一律 AUTH_REQUIRED。 */
+    @Test
+    void validSignatureWithoutIssuedAtIsAuthRequired() {
+        MutableClock clock = new MutableClock();
+        TokenService service = service(clock, 8);
+        // 载荷只有 sub、role、exp（没有 iat），用服务端密钥按 HS256 重新签名，使签名有效
+        String noIssuedAt = TokenForgery.resignedWith(TokenForgery.unsigned(7L, clock.instant().plusSeconds(3600)),
+                MacAlgorithm.HS256, SECRET);
+        assertThat(decoder().decode(noIssuedAt).getIssuedAt()).isNull();
+
+        assertFails(() -> service.verifyToken(noIssuedAt), ErrorCode.AUTH_REQUIRED);
+        assertFails(() -> service.verify(noIssuedAt), ErrorCode.AUTH_REQUIRED);
+    }
+
+    /** SEC-2b：verifyToken 返回用户 id 与截到整秒的签发时刻。 */
+    @Test
+    void verifyTokenReturnsTheUserAndTheWholeSecondIssuedAt() {
+        MutableClock clock = new MutableClock();
+        clock.advance(Duration.ofMillis(789));
+        TokenService service = service(clock, 8);
+        String token = service.issue(7L, Role.USER).token();
+
+        VerifiedToken verified = service.verifyToken(token);
+
+        assertThat(verified.userId()).isEqualTo(7L);
+        assertThat(verified.issuedAt()).isEqualTo(MutableClock.START.atZone(MutableClock.ZONE).toInstant());
+    }
 }

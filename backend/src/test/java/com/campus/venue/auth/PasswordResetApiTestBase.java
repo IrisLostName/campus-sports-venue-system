@@ -12,7 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MvcResult;
 
 /** SEC-2b 自助找回密码测试的公共工具：造账号（指定姓名与手机号）、发请求、读尝试记录。 */
-abstract class PasswordResetApiTestBase extends AbstractApiTest {
+public abstract class PasswordResetApiTestBase extends AbstractApiTest {
 
     protected static final String RESET = "/api/v1/auth/password-reset";
     protected static final String NAME = "张三";
