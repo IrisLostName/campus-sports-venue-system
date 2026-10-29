@@ -1,4 +1,4 @@
-// ApiClient：http 与 mock 两种实现共用的接口，逐条覆盖 docs/12 第 5 节的全部 44 个接口（v1.2）（ADR-0006）。
+// ApiClient：http 与 mock 两种实现共用的接口，逐条覆盖 docs/12 第 5 节的全部 45 个接口（v1.3）（ADR-0006）。
 // 页面只依赖 api/index.ts 导出的实例。
 import type {
   Announcement, BookingRules, CheckInCode, Companion, ImpactChangeResponse, OperationLog, Page, RepairReport, Reservation,
@@ -12,7 +12,7 @@ import type {
   AdminReservationsQuery, AdminUsersQuery, AnnouncementQuery, AvailabilityRulesResponse,
   CancelReservationRequest, CreateAnnouncementRequest, CreateRepairRequest,
   CreateReservationRequest, CreateUserRequest, CreateVenueRequest, LoginRequest, LogsQuery,
-  MyReservationsQuery, ReassignResourceRequest, ReassignUserRequest, RegisterRequest,
+  MyReservationsQuery, PasswordResetRequest, ReassignResourceRequest, ReassignUserRequest, RegisterRequest,
   ReplaceWeeklyRulesRequest, SetResourceCountRequest, SetVenueScopeRequest, StatsOverviewQuery,
   UpdateRepairRequest, UpdateResourceRequest, UpdateUserRequest, UpdateVenueRequest,
 } from './requests'
@@ -25,6 +25,7 @@ export interface ApiClientOptions {
 export interface ApiClient {
   // 5.1 认证与配置
   register(request: RegisterRequest): Promise<LoginResponse>
+  resetPassword(request: PasswordResetRequest): Promise<void>   // v1.3 自助找回密码，成功 204
   login(request: LoginRequest): Promise<LoginResponse>
   getMe(): Promise<UserProfile>
   getBookingRules(): Promise<BookingRules>
@@ -90,7 +91,7 @@ export interface ApiClient {
 
 // 供“两种实现方法集合一致”的测试使用：与接口逐一对应的方法名清单。
 export const API_CLIENT_METHODS = [
-  'register', 'login', 'getMe', 'getBookingRules',
+  'register', 'resetPassword', 'login', 'getMe', 'getBookingRules',
   'listVenues', 'getVenueSlots', 'listAnnouncements',
   'createReservation', 'lookupUser', 'listMyReservations', 'getReservation', 'cancelReservation', 'getCheckInCode', 'checkOut',
   'createRepair', 'listMyRepairs', 'adminListRepairs', 'adminUpdateRepair',

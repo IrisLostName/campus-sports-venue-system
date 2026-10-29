@@ -8,6 +8,7 @@ type View = RouteComponent | (() => Promise<RouteComponent>)
 
 export interface RouteViews {
   login: View
+  passwordReset: View         // SEC-2c 自助找回密码（v1.3）
   clientShell: View
   home: View
   reservation: View
@@ -37,6 +38,8 @@ const NEVER_RENDERED: RouteComponent = { render: () => null }
 export function buildRoutes(views: RouteViews): RouteRecordRaw[] {
   return [
     { path: PATHS.login, name: 'login', component: views.login, meta: { access: 'guest', title: '登录' } },
+    // SEC-2c：与登录页同为 guest，已登录者访问时回到本角色入口。
+    { path: PATHS.passwordReset, name: 'password-reset', component: views.passwordReset, meta: { access: 'guest', title: '找回密码' } },
     {
       path: PATHS.home,
       component: views.clientShell,

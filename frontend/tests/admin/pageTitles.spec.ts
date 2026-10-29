@@ -17,6 +17,7 @@ const suffix = (page: string) => `${page} - 校园场馆预约与服务管理系
 
 const TABLE: ReadonlyArray<readonly [path: string, page: string]> = [
   ['/login', '登录'],
+  ['/password-reset', '找回密码'],
   ['/', '首页'], ['/reservation', '预约'], ['/booking', '订场'], ['/me', '我的'],
   ['/venue-admin', '概览'], ['/venue-admin/reservations', '预约管理'], ['/venue-admin/check-in', '扫码签到'],
   ['/venue-admin/resources', '场地与开放规则'],

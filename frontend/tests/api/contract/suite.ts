@@ -7,10 +7,12 @@ import { describe, expect, it } from 'vitest'
 import { DEMO_PASSWORD } from '../../../src/api/mock/seed'
 import { companionContract } from './companionSuite'
 import { expectCode, loginAs, serverDates, type ContractTarget } from './contractSupport'
+import { passwordResetContract } from './passwordResetSuite'
 
 export { serverDates, type ContractTarget }
 
 let registrations = 0
+const CONTRACT_PHONE = '13800000099'
 
 function authContract(label: string, makeTarget: () => ContractTarget): void {
   describe(`${label}：认证与配置`, () => {
@@ -36,10 +38,10 @@ function authContract(label: string, makeTarget: () => ContractTarget): void {
       const target = makeTarget()
       registrations += 1
       const username = `contract_${registrations}`
-      const session = await target.api.register({ username, password: 'Passw0rd!', displayName: '契约用户' })
+      const session = await target.api.register({ username, password: 'Passw0rd!', displayName: '契约用户', phone: CONTRACT_PHONE })
       expect(session.user).toMatchObject({ username, role: 'USER' })
-      await expectCode(target.api.register({ username, password: 'Passw0rd!', displayName: '契约用户' }), 'USERNAME_TAKEN')
-      const error = await expectCode(target.api.register({ username: 'a', password: 'Passw0rd!', displayName: 'x' }), 'VALIDATION_ERROR')
+      await expectCode(target.api.register({ username, password: 'Passw0rd!', displayName: '契约用户', phone: CONTRACT_PHONE }), 'USERNAME_TAKEN')
+      const error = await expectCode(target.api.register({ username: 'a', password: 'Passw0rd!', displayName: 'x', phone: CONTRACT_PHONE }), 'VALIDATION_ERROR')
       expect(error.details).toHaveProperty('fields')
     })
 
@@ -266,4 +268,5 @@ export function contractSuite(label: string, makeTarget: () => ContractTarget): 
   permissionContract(label, makeTarget)
   adminContract(label, makeTarget)
   companionContract(label, makeTarget)
+  passwordResetContract(label, makeTarget)
 }

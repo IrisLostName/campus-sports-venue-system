@@ -61,7 +61,7 @@ describe('登录', () => {
 })
 
 describe('注册', () => {
-  const NEWCOMER = { username: 'newcomer', password: 'Passw0rd!', displayName: '新同学' }
+  const NEWCOMER = { username: 'newcomer', password: 'Passw0rd!', displayName: '新同学', phone: '13800000000' }
 
   it('成功：以 USER 身份登录，状态与登录一致', async () => {
     const h = createAuthHarness()

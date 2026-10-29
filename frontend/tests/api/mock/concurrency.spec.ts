@@ -22,7 +22,7 @@ async function competingClients(h: Harness, count: number) {
   const tokens: string[] = []
   for (let index = 0; index < count; index += 1) {
     const username = `racer${index}`
-    const session = await h.api.register({ username, password: DEMO_PASSWORD, displayName: `选手${index}` })
+    const session = await h.api.register({ username, password: DEMO_PASSWORD, displayName: `选手${index}`, phone: `1390000${String(index).padStart(4, '0')}` })
     tokens.push(session.token)
   }
   return tokens.map((token) => createMockClient({ state: h.context.state, clock: h.clock, getToken: () => token }))

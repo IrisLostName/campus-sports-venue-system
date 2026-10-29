@@ -6,6 +6,7 @@ import { adminCheckInApi } from './adminCheckInService'
 import { adminReservationApi } from './adminReservationService'
 import { authApi } from './authService'
 import { MOCK_BOOKING_RULES } from './bookingRules'
+import { passwordResetApi } from './passwordResetService'
 import { systemClock, type Clock } from './clock'
 import { contentApi } from './contentService'
 import { logApi } from './logService'
@@ -39,6 +40,7 @@ export function createMockHandle(options: MockClientOptions): MockHandle {
   }
   const api: ApiClient = {
     ...authApi(context),
+    ...passwordResetApi(context),
     ...venueApi(context),
     ...reservationApi(context),
     ...adminReservationApi(context),

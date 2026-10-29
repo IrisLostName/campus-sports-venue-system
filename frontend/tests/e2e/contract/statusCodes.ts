@@ -14,8 +14,9 @@ function successStatuses(calls: StatusRecord[], method: string, path: string): n
 
 export function statusCodeContract(suiteCalls: StatusRecord[]): void {
   describe('http：创建类 201、归档与删除类 204（K2）', () => {
-    it('套件中成功的注册一次、创建预约两次（P2-2c 起含同行人名单用例），均为 201', () => {
-      expect(successStatuses(suiteCalls, 'POST', '/auth/register')).toEqual([201])
+    it('套件中成功的注册两次（SEC-2c 起含找回密码用例）、创建预约两次（P2-2c 起含同行人名单用例），均为 201；成功的找回密码一次，为 204', () => {
+      expect(successStatuses(suiteCalls, 'POST', '/auth/register')).toEqual([201, 201])
+      expect(successStatuses(suiteCalls, 'POST', '/auth/password-reset')).toEqual([204])
       expect(successStatuses(suiteCalls, 'POST', '/reservations')).toEqual([201, 201])
     })
 
@@ -26,7 +27,7 @@ export function statusCodeContract(suiteCalls: StatusRecord[]): void {
       await target.api.createRepair({ venueId: 1, description: 'BE-8 状态码核对：网球场1 球网松了' })
       await target.loginAs('sysadmin')
       await target.api.adminCreateVenue({ name: 'BE-8 状态码核对场馆', venueType: 'OTHER' })
-      await target.api.adminCreateUser({ username: 'be8_status', password: 'Passw0rd!', displayName: '状态码核对', role: 'USER' })
+      await target.api.adminCreateUser({ username: 'be8_status', password: 'Passw0rd!', displayName: '状态码核对', role: 'USER', phone: '13800000098' })
       const notice = await target.api.adminCreateAnnouncement({ scope: 'SYSTEM', title: 'BE-8 状态码核对公告', content: '核对后即归档' })
       await target.api.adminArchiveAnnouncement(notice.id)
       expect(successStatuses(calls, 'POST', '/repairs')).toEqual([201])

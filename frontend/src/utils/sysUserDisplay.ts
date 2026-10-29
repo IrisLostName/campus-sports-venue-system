@@ -2,7 +2,7 @@
 // 用户名 3–32 位字母数字下划线、密码 8–64 位，与注册一致（沿用 authValidation）；裁决始终在服务端。
 import type { CreateUserRequest } from '../api/requests'
 import type { AccountStatus, Role, UserProfile, UserType } from '../api/types'
-import { validateRegisterFields } from './authValidation'
+import { isMobile, PHONE_FORMAT_TEXT, validateRegisterFields } from './authValidation'
 import { USER_TYPE_LABELS } from './meDisplay'
 
 export { USER_TYPE_LABELS }
@@ -77,8 +77,19 @@ export function emptyUserForm(role: Role = 'USER'): UserFormFields {
   return { username: '', password: '', displayName: '', role, userType: 'STUDENT', phone: '', venueIds: [] }
 }
 
+// v1.3：普通用户必须填 11 位手机号；其他角色可不填，填了同样校验格式（docs/12 第 5.9 节）。
 export function userFormProblem(fields: UserFormFields): string | null {
-  return validateRegisterFields({ username: fields.username, password: fields.password, displayName: fields.displayName })
+  const problem = validateRegisterFields({ username: fields.username, password: fields.password, displayName: fields.displayName })
+  if (problem !== null) {
+    return problem
+  }
+  const phoneRequired = fields.role === 'USER'
+  return (phoneRequired || fields.phone.trim() !== '') && !isMobile(fields.phone) ? PHONE_FORMAT_TEXT : null
+}
+
+// 手机号的标签随角色变化：普通用户必填，其他角色可选。
+export function phoneLabelOf(role: Role): string {
+  return role === 'USER' ? '手机号' : '手机号（可选）'
 }
 
 // userType 只在角色为 USER 时发送，venueIds 只在 VENUE_ADMIN 时发送（docs/12 第 5.9 节）；电话为空则不发送。

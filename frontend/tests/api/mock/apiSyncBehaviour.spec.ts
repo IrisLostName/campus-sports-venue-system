@@ -74,7 +74,7 @@ describe('S-047 新建类日志的 before 与其他动作同形', () => {
   it('ANNOUNCEMENT_PUBLISH 与 USER_CREATE 的 before 为 {object: null, affectedReservationIds: []}', async () => {
     const h = await as('sysadmin')
     await h.api.adminCreateAnnouncement({ scope: 'SYSTEM', title: '通知', content: '内容' })
-    await h.api.adminCreateUser({ username: 'teacher01', password: 'Passw0rd!', displayName: '体育老师', role: 'USER' })
+    await h.api.adminCreateUser({ username: 'teacher01', password: 'Passw0rd!', displayName: '体育老师', role: 'USER', phone: '13900000001' })
     expect((await h.api.adminListLogs({ action: 'ANNOUNCEMENT_PUBLISH' })).items[0]?.before).toEqual(EMPTY_BEFORE)
     expect((await h.api.adminListLogs({ action: 'USER_CREATE' })).items[0]?.before).toEqual(EMPTY_BEFORE)
   })

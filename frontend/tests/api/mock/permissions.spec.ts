@@ -26,7 +26,7 @@ const ADMIN_CALLS: ReadonlyArray<readonly [string, Call]> = [
 const SYSADMIN_ONLY_CALLS: ReadonlyArray<readonly [string, Call]> = [
   ['adminCreateVenue', (a) => a.adminCreateVenue({ name: 'x', venueType: 'OTHER' })],
   ['adminListUsers', (a) => a.adminListUsers()],
-  ['adminCreateUser', (a) => a.adminCreateUser({ username: 'abc', password: '12345678', displayName: 'x', role: 'USER' })],
+  ['adminCreateUser', (a) => a.adminCreateUser({ username: 'abc', password: '12345678', displayName: 'x', role: 'USER', phone: '13900000001' })],
   ['adminUpdateUser', (a) => a.adminUpdateUser(1, { displayName: 'x' })],
   ['adminSetVenueScope', (a) => a.adminSetVenueScope(5, { venueIds: [1] })],
 ]

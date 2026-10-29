@@ -6,7 +6,7 @@ import { DEMO_PASSWORD } from '../../../src/api/mock/seed'
 import type { RegisterRequest } from '../../../src/api/requests'
 import { createFakeClock, createHarness, expectApiError, NOW, TODAY } from '../support/harness'
 
-const NEWCOMER = { username: 'newcomer', password: 'Passw0rd!', displayName: '新同学' }
+const NEWCOMER = { username: 'newcomer', password: 'Passw0rd!', displayName: '新同学', phone: '13800000000' }
 
 describe('注册', () => {
   it('成功：角色强制为 USER，默认 STUDENT / ACTIVE，返回可用的 Token', async () => {

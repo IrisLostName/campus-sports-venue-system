@@ -5,6 +5,8 @@ import UiGlassCard from '../components/ui/UiGlassCard.vue'
 import UiSegmented from '../components/ui/UiSegmented.vue'
 import UiTextField from '../components/ui/UiTextField.vue'
 import { useLoginForm } from '../composables/loginForm'
+import { PATHS } from '../router/paths'
+import { MOBILE_LENGTH } from '../utils/fieldLimits'
 
 const form = useLoginForm()
 
@@ -47,6 +49,14 @@ function onModeChange(value: string | null): void {
       >
         {{ form.auth.notice }}
       </UiBanner>
+      <UiBanner
+        v-if="form.auth.success"
+        class="notice"
+        tone="success"
+        role="status"
+      >
+        {{ form.auth.success }}
+      </UiBanner>
 
       <UiTextField
         v-model="form.username.value"
@@ -61,6 +71,15 @@ function onModeChange(value: string | null): void {
         type="password"
         :autocomplete="form.isRegister.value ? 'new-password' : 'current-password'"
       />
+      <!-- SEC-2c：只在登录模式显示找回密码入口；样式块保持不变（userSurfaceUnchanged），靠右用行内样式。 -->
+      <UiButton
+        v-if="!form.isRegister.value"
+        style="align-self: flex-end"
+        variant="plain"
+        :to="PATHS.passwordReset"
+      >
+        忘记密码？
+      </UiButton>
 
       <template v-if="form.isRegister.value">
         <UiTextField
@@ -68,6 +87,16 @@ function onModeChange(value: string | null): void {
           label="姓名"
           type="text"
           autocomplete="name"
+        />
+        <!-- v1.3：手机号必填；“身份”放在表单最下方（SEC-2c 裁决已定事项第 4 条）。 -->
+        <UiTextField
+          v-model="form.phone.value"
+          label="手机号"
+          type="tel"
+          inputmode="numeric"
+          autocomplete="tel"
+          hint="11 位手机号，可用于找回密码"
+          :maxlength="MOBILE_LENGTH"
         />
         <UiTextField
           v-model="form.userType.value"
@@ -87,12 +116,6 @@ function onModeChange(value: string | null): void {
             其他
           </option>
         </UiTextField>
-        <UiTextField
-          v-model="form.phone.value"
-          label="手机号（选填）"
-          type="tel"
-          autocomplete="tel"
-        />
       </template>
 
       <UiBanner

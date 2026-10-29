@@ -7,7 +7,7 @@ import type { RegisterRequest } from '../api/requests'
 import type { UserType } from '../api/types'
 import { resolvePostLoginTarget } from '../router/access'
 import { useAuthStore, type AuthResult } from '../stores/auth'
-import { validateLoginFields, validateRegisterFields } from '../utils/authValidation'
+import { isMobile, PHONE_FORMAT_TEXT, validateLoginFields, validateRegisterFields } from '../utils/authValidation'
 
 export type FormMode = 'login' | 'register'
 
@@ -19,11 +19,12 @@ export interface LoginFormAuth {
 export interface LoginFormDeps {
   auth: LoginFormAuth
   router: Router
+  initialUsername?: string   // SEC-2c：找回密码成功后预填的用户名
 }
 
 export function createLoginForm(deps: LoginFormDeps) {
   const mode = ref<FormMode>('login')
-  const username = ref('')
+  const username = ref(deps.initialUsername ?? '')
   const password = ref('')
   const displayName = ref('')
   const userType = ref<UserType | ''>('')
@@ -38,23 +39,22 @@ export function createLoginForm(deps: LoginFormDeps) {
   }
 
   function buildRegisterRequest(): RegisterRequest {
+    // v1.3：手机号必填，发送前去掉首尾空白（SEC-2c 答复第 6 条）。
     const request: RegisterRequest = {
-      username: username.value, password: password.value, displayName: displayName.value.trim(),
+      username: username.value, password: password.value, displayName: displayName.value.trim(), phone: phone.value.trim(),
     }
     if (userType.value !== '') {
       request.userType = userType.value
-    }
-    if (phone.value.trim() !== '') {
-      request.phone = phone.value.trim()
     }
     return request
   }
 
   function validate(): string | null {
     if (isRegister.value) {
-      return validateRegisterFields({
+      const problem = validateRegisterFields({
         username: username.value, password: password.value, displayName: displayName.value,
       })
+      return problem ?? (isMobile(phone.value) ? null : PHONE_FORMAT_TEXT)
     }
     return validateLoginFields(username.value, password.value)
   }
@@ -94,5 +94,5 @@ export function createLoginForm(deps: LoginFormDeps) {
 
 export function useLoginForm() {
   const auth = useAuthStore()
-  return { auth, ...createLoginForm({ auth, router: useRouter() }) }
+  return { auth, ...createLoginForm({ auth, router: useRouter(), initialUsername: auth.takePrefillUsername() }) }
 }

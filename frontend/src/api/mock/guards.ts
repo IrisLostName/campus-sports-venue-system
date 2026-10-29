@@ -4,7 +4,8 @@ import { fail } from './fail'
 import type { MockContext, UserRecord } from './state'
 import { secondsOf } from './timeMath'
 
-// 认证：无令牌或未知令牌 AUTH_REQUIRED；过期 TOKEN_EXPIRED；账号停用 ACCOUNT_DISABLED（立即生效）。
+// 认证：无令牌或未知令牌 AUTH_REQUIRED；过期 TOKEN_EXPIRED；签发早于该账号最近一次找回密码（按整秒，v1.3）同样 TOKEN_EXPIRED；
+// 账号停用 ACCOUNT_DISABLED（立即生效，判在 TOKEN_EXPIRED 之后）。
 export function authenticate(ctx: MockContext): UserRecord {
   const token = ctx.getToken()
   const record = token === null ? undefined : ctx.state.tokens[token]
@@ -17,6 +18,9 @@ export function authenticate(ctx: MockContext): UserRecord {
   const user = ctx.state.users.find((candidate) => candidate.id === record.userId)
   if (user === undefined) {
     return fail('AUTH_REQUIRED')
+  }
+  if (user.passwordChangedAt !== null && secondsOf(record.issuedAt) < secondsOf(user.passwordChangedAt)) {
+    return fail('TOKEN_EXPIRED')
   }
   if (user.status === 'DISABLED') {
     return fail('ACCOUNT_DISABLED')

@@ -7,11 +7,13 @@ import type {
 import type { Closure, WeeklyWindow } from './typesSection5'
 
 // ---------- 5.1 认证与配置 ----------
-// POST /auth/register
+// POST /auth/register（v1.3：phone 必填，11 位手机号）
 export interface RegisterRequest {
-  username: string; password: string; displayName: string
-  userType?: UserType; phone?: string
+  username: string; password: string; displayName: string; phone: string
+  userType?: UserType
 }
+// POST /auth/password-reset（v1.3）
+export interface PasswordResetRequest { username: string; displayName: string; phone: string; newPassword: string }
 // POST /auth/login
 export interface LoginRequest { username: string; password: string }
 
@@ -101,7 +103,7 @@ export interface CreateAnnouncementRequest {
 // ---------- 5.9 系统管理员：用户与授权 ----------
 // GET /admin/users?role=&keyword=&page=&pageSize=
 export interface AdminUsersQuery { role?: Role; keyword?: string; page?: number; pageSize?: number }
-// POST /admin/users
+// POST /admin/users（v1.3：role=USER 时 phone 必填）
 export interface CreateUserRequest {
   username: string; password: string; displayName: string; role: Role
   userType?: UserType; phone?: string; venueIds?: number[]

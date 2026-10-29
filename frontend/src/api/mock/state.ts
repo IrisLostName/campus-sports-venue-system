@@ -9,6 +9,7 @@ export interface UserRecord {
   id: number; username: string; password: string; displayName: string
   role: Role; userType: UserType; phone: string | null; status: AccountStatus
   checkInUuid: string   // v1.1：随机签到标识（docs/13 第 3.1 节 check_in_uuid），只用于签到码
+  passwordChangedAt: string | null   // v1.3：最近一次自助找回密码的时刻（整秒）；早于它签发的 Token 失效
 }
 
 export interface VenueRecord {
@@ -53,7 +54,10 @@ export interface RepairRecord {
   handledBy: number | null; createdAt: string; updatedAt: string
 }
 
-export interface TokenRecord { userId: number; expiresAt: string }
+export interface TokenRecord { userId: number; issuedAt: string; expiresAt: string }
+
+// v1.3：docs/13 第 3.9a 节 password_reset_attempt，按请求中的用户名字符串记录。
+export interface ResetAttemptRecord { username: string; attemptedAt: string; succeeded: boolean }
 
 export type SeqKey =
   | 'user' | 'venue' | 'resource' | 'weekly' | 'closure' | 'reservation'
@@ -70,6 +74,7 @@ export interface MockState {
   repairs: RepairRecord[]
   scopes: Record<number, number[]>        // 场馆管理员 id → 授权场馆 id
   tokens: Record<string, TokenRecord>
+  resetAttempts: ResetAttemptRecord[]
   logs: OperationLog[]
   seq: Record<SeqKey, number>
 }

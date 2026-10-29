@@ -45,7 +45,7 @@ const WEEKDAYS = [1, 2, 3, 4, 5, 6, 7]
 function seedUsers(): UserRecord[] {
   return USER_ROWS.map(([username, displayName, role, userType], index) => ({
     id: index + 1, username, password: DEMO_PASSWORD, displayName, role, userType, phone: null, status: 'ACTIVE',
-    checkInUuid: randomUuid(),
+    checkInUuid: randomUuid(), passwordChangedAt: null,
   }))
 }
 
@@ -124,6 +124,7 @@ export function createSeedState(clock: Clock): MockState {
     repairs: [],
     scopes: seedScopes(users),
     tokens: {},
+    resetAttempts: [],
     logs: [],
     seq: { user: 0, venue: 0, resource: 0, weekly: 0, closure: 0, reservation: 0, announcement: 0, repair: 0, log: 0, token: 0 },
   }

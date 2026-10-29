@@ -24,7 +24,7 @@ export function callsOf(spy: ReturnType<typeof spyOn>, method: string) {
 
 export async function fillAndCreate(board: Awaited<ReturnType<typeof openBoard>>['board'], fields: Record<string, unknown>) {
   board.openCreate()
-  board.patchCreate({ username: 'new_admin', password: SECRET, displayName: '新管理员', ...fields })
+  board.patchCreate({ username: 'new_admin', password: SECRET, displayName: '新管理员', phone: '13900000001', ...fields })
   await board.confirmCreate()
 }
 

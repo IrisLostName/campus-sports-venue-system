@@ -80,6 +80,7 @@ describe('X1 登录失效', () => {
     await fieldByLabel(dialog(), '用户名').setValue('abc')
     await fieldByLabel(dialog(), '密码').setValue('12345678')
     await fieldByLabel(dialog(), '显示名').setValue('甲')
+    await fieldByLabel(dialog(), '手机号').setValue('13900000001')
     await buttonIn(dialog(), '创建').trigger('click')
     await flushPromises()
 

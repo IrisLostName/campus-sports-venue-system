@@ -68,7 +68,7 @@ describe('登录/注册切换', () => {
     await wrapper.findAll('[role="tab"]')[1]?.trigger('click')
     expect(selectedTabs(wrapper)).toEqual(['false', 'true'])
     expect(wrapper.find('button[type="submit"]').text()).toBe('注册并登录')
-    expect(labelNames(wrapper)).toEqual(['用户名', '密码', '姓名', '身份（选填）', '手机号（选填）'])
+    expect(labelNames(wrapper)).toEqual(['用户名', '密码', '姓名', '手机号', '身份（选填）'])
     expect(field(wrapper, '身份').findAll('option').map((option) => option.text())).toEqual(['不填写', '学生', '教师', '其他'])
 
     await wrapper.findAll('[role="tab"]')[0]?.trigger('click')
@@ -161,7 +161,7 @@ describe('注册的前端校验提示', () => {
 
   it('用户名已被占用：提示来自服务端错误码文案', async () => {
     const wrapper = await openRegister(createAuthHarness())
-    await fill(wrapper, { 用户名: 'zhangsan', 密码: 'abcd1234', 姓名: '重名' })
+    await fill(wrapper, { 用户名: 'zhangsan', 密码: 'abcd1234', 姓名: '重名', 手机号: '13800000000' })
     await submit(wrapper)
 
     expect(errorText(wrapper)).toBe('用户名已被占用')
@@ -170,7 +170,7 @@ describe('注册的前端校验提示', () => {
   it('信息合法：注册并登录成功，进入用户端首页', async () => {
     const h = createAuthHarness()
     const wrapper = await openRegister(h)
-    await fill(wrapper, { 用户名: 'newuser', 密码: 'abcd1234', 姓名: '新用户' })
+    await fill(wrapper, { 用户名: 'newuser', 密码: 'abcd1234', 姓名: '新用户', 手机号: '13800000000' })
     await submit(wrapper)
 
     expect(errorText(wrapper)).toBeNull()

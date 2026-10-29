@@ -7,3 +7,4 @@ export const USERNAME_MAX_LENGTH = 32            // app_user.username
 export const PASSWORD_MAX_LENGTH = 64            // docs/12 第 5.1 节：密码 8–64 位
 export const DISPLAY_NAME_MAX_LENGTH = 50        // app_user.display_name
 export const PHONE_MAX_LENGTH = 20               // app_user.phone
+export const MOBILE_LENGTH = 11                  // v1.3：注册、创建普通用户、找回密码的手机号为 11 位（docs/12 第 5.1 节）
