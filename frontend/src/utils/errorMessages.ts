@@ -28,6 +28,8 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   NOT_CHECKED_IN: '尚未签到',
   ALREADY_CHECKED_OUT: '已签退',
   USER_NOT_ELIGIBLE: '目标用户不可被分配预约',
+  RESET_INFO_MISMATCH: '信息不匹配',
+  PASSWORD_RESET_LOCKED: '找回密码尝试次数过多，请稍后再试',
   REASON_REQUIRED: '请填写原因',
   IMPACT_CONFIRMATION_REQUIRED: '该操作会影响已有预约，请先选择保留或取消',
   // 规划裁决 A10：docs/12 此行为保留码说明，文案依据 docs/03 第 6 节。
