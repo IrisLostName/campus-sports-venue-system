@@ -22,7 +22,7 @@ class AdminReservationListApiTest extends AdminReservationApiTestBase {
     private static final List<String> RESERVATION_KEYS = List.of("id", "venueId", "venueName", "resourceId",
             "resourceName", "userId", "userDisplayName", "serviceDate", "startTime", "endTime", "status",
             "displayStatus", "purpose", "createdAt", "cancelledAt", "cancelReason", "cancelledBy", "adminNote",
-            "checkInAt", "checkOutAt");
+            "checkInAt", "checkOutAt", "companions");
 
     private long tennisBooking;
     private long badmintonBooking;

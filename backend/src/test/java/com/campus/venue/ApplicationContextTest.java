@@ -66,7 +66,7 @@ class ApplicationContextTest {
     }
 
     @Test
-    void hibernateValidatesTheSchemaAndManagesAllTenTables() {
+    void hibernateValidatesTheSchemaAndManagesAllTables() {
         assertThat(entityManagerFactory.getProperties()).containsEntry("hibernate.hbm2ddl.auto", "validate");
 
         Set<String> entities = entityManagerFactory.getMetamodel().getEntities().stream()
@@ -74,7 +74,7 @@ class ApplicationContextTest {
 
         assertThat(entities).containsExactlyInAnyOrder("AppUser", "Venue", "Resource", "AvailabilityRule",
                 "Reservation", "UsageRecord", "Announcement", "RepairReport", "AdminVenueScope",
-                "AdminOperationLog");
+                "AdminOperationLog", "ReservationCompanion");
     }
 
     @Test

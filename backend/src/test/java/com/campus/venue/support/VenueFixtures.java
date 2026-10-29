@@ -59,6 +59,12 @@ public final class VenueFixtures {
                 startTime, startTime.plusMinutes(90), status);
     }
 
+    /** 同行人名单的一行（P2-2b）。 */
+    public void companion(long reservationId, long userId, int position) {
+        jdbc.update("insert into reservation_companion (reservation_id, user_id, position) values (?, ?, ?)",
+                reservationId, userId, position);
+    }
+
     public void usage(long reservationId, LocalDateTime checkIn, LocalDateTime checkOut) {
         jdbc.update("insert into usage_record (reservation_id, check_in_at, check_out_at) values (?, ?, ?)",
                 reservationId, Timestamp.valueOf(checkIn), checkOut == null ? null : Timestamp.valueOf(checkOut));

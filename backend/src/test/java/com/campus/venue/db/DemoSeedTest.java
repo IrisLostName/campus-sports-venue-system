@@ -53,7 +53,7 @@ class DemoSeedTest {
         flyway.migrate();
         assertThat(jdbc.queryForObject("select count(*) from venue", Integer.class)).isZero();
         assertThat(jdbc.queryForList("select version from flyway_schema_history order by installed_rank",
-                String.class)).containsExactly("1", "101");
+                String.class)).containsExactly("1", "101", "102");
     }
 
     private List<String> rows(String sql) {

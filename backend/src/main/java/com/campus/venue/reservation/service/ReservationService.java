@@ -16,6 +16,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * 创建预约（docs/10 第 1 节，BE-3 C2–C4）。认证、格式、角色在过滤器与控制器完成；这里按顺序执行第 2–9 步。
  * 先来先得的最终保证是部分唯一索引 uq_reservation_active_slot：并发插入撞索引时转换为 SLOT_TAKEN。
+ * 同行人名单（v1.2）：步骤 8a 在第 8 步之后检查；与预约在同一事务内、预约插入成功之后按提交顺序写入，任一步失败一并回滚。
  */
 @Service
 public class ReservationService {
@@ -33,19 +35,22 @@ public class ReservationService {
     private final ReservationRepository reservations;
     private final AppUserRepository users;
     private final ReservationCreationChecks checks;
+    private final ReservationCompanions companions;
     private final ReservationViewMapper mapper;
     private final Clock clock;
 
     public ReservationService(ReservationRepository reservations, AppUserRepository users,
-            ReservationCreationChecks checks, ReservationViewMapper mapper, Clock clock) {
+            ReservationCreationChecks checks, ReservationCompanions companions, ReservationViewMapper mapper,
+            Clock clock) {
         this.reservations = reservations;
         this.users = users;
         this.checks = checks;
+        this.companions = companions;
         this.mapper = mapper;
         this.clock = clock;
     }
 
-    /** 第 2–9 步；“现在”每个请求只取一次 Clock。 */
+    /** 第 2–9 步（含 8a）；“现在”每个请求只取一次 Clock。 */
     @Transactional
     public ReservationView create(AuthenticatedUser user, CreateReservationRequest request) {
         LocalDateTime now = LocalDateTime.now(clock);
@@ -60,7 +65,10 @@ public class ReservationService {
         users.lockById(user.id());
         checks.underLimit(user.id(), now);
         checks.slotFree(target.resource().getId(), date, start);
+        List<Long> companionIds = request.companionUserIds() == null ? List.of() : request.companionUserIds();
+        companions.requireEligible(companionIds);
         Reservation reservation = insert(user.id(), request, now);
+        companions.insert(reservation.getId(), companionIds);
         return mapper.toView(reservation, now);
     }
 
