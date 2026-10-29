@@ -3,7 +3,8 @@ package com.campus.venue.common.error;
 import org.springframework.http.HttpStatus;
 
 /**
- * 错误码枚举，与 docs/12 第 3 节表格逐行一致（30 个；CHECKIN_CODE_INVALID 为契约 v1.1 新增）。
+ * 错误码枚举，与 docs/12 第 3 节表格逐行一致（32 个；CHECKIN_CODE_INVALID 为契约 v1.1 新增，
+ * RESET_INFO_MISMATCH 与 PASSWORD_RESET_LOCKED 为契约 v1.3 新增）。
  * 默认文案取表格第三列原文；仅 RULE_INVALID 与 HAS_HISTORY 按 BE-0 裁决 R1 取简化文案。
  */
 public enum ErrorCode {
@@ -33,6 +34,8 @@ public enum ErrorCode {
     NOT_CHECKED_IN(HttpStatus.CONFLICT, "尚未签到"),
     ALREADY_CHECKED_OUT(HttpStatus.CONFLICT, "已签退"),
     USER_NOT_ELIGIBLE(HttpStatus.CONFLICT, "目标用户不可被分配预约"),
+    RESET_INFO_MISMATCH(HttpStatus.BAD_REQUEST, "信息不匹配"),
+    PASSWORD_RESET_LOCKED(HttpStatus.TOO_MANY_REQUESTS, "找回密码尝试次数过多，请稍后再试"),
     REASON_REQUIRED(HttpStatus.BAD_REQUEST, "请填写原因"),
     IMPACT_CONFIRMATION_REQUIRED(HttpStatus.CONFLICT, "该操作会影响已有预约，请先选择保留或取消"),
     HAS_HISTORY(HttpStatus.CONFLICT, "该场地有历史预约，只能停用不能删除"),
