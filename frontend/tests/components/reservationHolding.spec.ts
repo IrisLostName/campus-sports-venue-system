@@ -114,6 +114,33 @@ describe('UI-4 新建预约与同时持有上限', () => {
 
 })
 
+// 审计 F1：每页 20 条，未取得的页也计入 N（total − 已取得条数），不能只数已加载的条目。
+describe('UI-4 计数包含未加载的页', () => {
+  const pagedTotal = (api: ApiClient): ApiClient['listMyReservations'] => async (query) => ({
+    ...(await api.listMyReservations(query)), total: 25,
+  })
+
+  it('total 25、只加载 1 条，上限 30：“当前 25 个预约，最多可同时持有 30 个”', async () => {
+    const { page } = await openPage({
+      wrap: (api) => ({
+        ...api,
+        listMyReservations: pagedTotal(api),
+        getBookingRules: async () => ({ ...(await api.getBookingRules()), maxActiveReservationsPerUser: 30 }),
+      }),
+    })
+
+    expect(page.findAll('article')).toHaveLength(1)
+    expect(page.find('.limit').text()).toBe('当前 25 个预约，最多可同时持有 30 个')
+  })
+
+  it('total 25、只加载 1 条，上限 3：显示达上限文字', async () => {
+    const { page } = await openPage({ wrap: (api) => ({ ...api, listMyReservations: pagedTotal(api) }) })
+
+    expect(page.findAll('article')).toHaveLength(1)
+    expect(page.find('.limit').text()).toBe('已达同时持有上限（3 个），取消一个预约后才能新建')
+  })
+})
+
 describe('UI-4 不可用时不显示持有提示', () => {
   it('规则取不到：不显示这一行，按钮照常', async () => {
     const { page } = await openPage({
