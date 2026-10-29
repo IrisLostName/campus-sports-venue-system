@@ -9,7 +9,7 @@ export const COMPANION_QUERY_MAX_LENGTH = 32
 
 export const COMPANION_TEXTS = {
   label: '同行好友（可选）',
-  placeholder: '输入好友的用户名、学号或手机号',
+  placeholder: '用户名、学号或手机号',
   notFound: '未找到该用户',
   duplicate: '已添加过该好友',
   self: '不能添加自己',

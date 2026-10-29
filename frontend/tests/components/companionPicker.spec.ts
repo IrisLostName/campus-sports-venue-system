@@ -56,7 +56,7 @@ describe('输入与查找', () => {
     const { picker, lookups } = mountPicker()
     expect(picker.find('label').text()).toContain('同行好友（可选）')
     const input = picker.find('input')
-    expect(input.attributes('placeholder')).toBe('输入好友的用户名、学号或手机号')
+    expect(input.attributes('placeholder')).toBe('用户名、学号或手机号')
     expect(input.attributes('maxlength')).toBe('32')
     await input.trigger('keydown', { key: 'Enter' })
     await picker.find('button.add').trigger('click')
