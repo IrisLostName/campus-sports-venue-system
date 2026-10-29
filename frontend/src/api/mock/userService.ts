@@ -13,7 +13,8 @@ import { pageOf } from './paging'
 import { run } from './run'
 import { nextId, type MockContext, type UserRecord } from './state'
 import {
-  blankToNull, collect, isAbsent, keywordNeedle, keywordProblem, oneOfProblem, optional, optionalText, pagingChecks, textProblem,
+  blankToNull, collect, isAbsent, keywordNeedle, keywordProblem, oneOfProblem, optional, optionalPhoneProblem, pagingChecks,
+  phoneProblem, textProblem,
 } from './validate'
 
 const VENUE_IDS_PROBLEM = '应为已存在场馆 id 组成的数组'
@@ -47,7 +48,7 @@ function listUsers(ctx: MockContext, query: AdminUsersQuery): Page<UserProfile> 
   return pageOf(matches.map((candidate) => toProfile(ctx, candidate)), query.page, query.pageSize)
 }
 
-// 创建账号（可为任意角色）；venueIds 仅当 role=VENUE_ADMIN 时有效。
+// 创建账号（可为任意角色）；venueIds 仅当 role=VENUE_ADMIN 时有效；v1.3：role=USER 时 phone 必填。
 function createUser(ctx: MockContext, request: CreateUserRequest): UserProfile {
   const admin = authenticate(ctx)
   collect([
@@ -56,7 +57,7 @@ function createUser(ctx: MockContext, request: CreateUserRequest): UserProfile {
     ['displayName', textProblem(request.displayName, 50)],
     ['role', oneOfProblem(request.role, ROLES)],
     ['userType', optional(request.userType, (value) => oneOfProblem(value, USER_TYPES))],
-    ['phone', optionalText(request.phone, 20)],
+    ['phone', request.role === 'USER' ? phoneProblem(request.phone) : optionalPhoneProblem(request.phone)],
     ['venueIds', optional(request.venueIds, venueIdsProblem)],
   ])
   requireRole(admin, 'SYS_ADMIN')
@@ -67,7 +68,7 @@ function createUser(ctx: MockContext, request: CreateUserRequest): UserProfile {
   const user: UserRecord = {
     id: nextId(ctx.state, 'user'), username: request.username, password: request.password,
     displayName: request.displayName, role: request.role, userType: request.userType ?? 'STUDENT',
-    phone: blankToNull(request.phone), status: 'ACTIVE', checkInUuid: randomUuid(),
+    phone: blankToNull(request.phone), status: 'ACTIVE', checkInUuid: randomUuid(), passwordChangedAt: null,
   }
   ctx.state.users.push(user)
   ctx.state.scopes[user.id] = request.role === 'VENUE_ADMIN' ? [...(request.venueIds ?? [])] : []

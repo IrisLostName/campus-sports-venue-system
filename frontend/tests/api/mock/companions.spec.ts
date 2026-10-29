@@ -17,7 +17,8 @@ async function asUser(username = 'zhangsan'): Promise<Harness> {
 function addUser(h: Harness, fields: Partial<UserRecord> & Pick<UserRecord, 'username' | 'displayName'>): UserRecord {
   const id = Math.max(...h.context.state.users.map((user) => user.id)) + 1
   const record: UserRecord = {
-    id, password: 'unused', role: 'USER', userType: 'STUDENT', phone: null, status: 'ACTIVE', checkInUuid: `uuid-${id}`, ...fields,
+    id, password: 'unused', role: 'USER', userType: 'STUDENT', phone: null, status: 'ACTIVE', checkInUuid: `uuid-${id}`,
+    passwordChangedAt: null, ...fields,
   }
   h.context.state.users.push(record)
   return record

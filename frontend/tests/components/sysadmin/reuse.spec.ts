@@ -71,7 +71,7 @@ describe('G6 操作记录：不选场馆', () => {
   async function openLogs(path = '/sys-admin/logs') {
     return openSysApp(path, {
       prepare: async (h) => {
-        await h.api.adminCreateUser({ username: 'someone', password: 'Passw0rd!', displayName: '某人', role: 'USER' })
+        await h.api.adminCreateUser({ username: 'someone', password: 'Passw0rd!', displayName: '某人', role: 'USER', phone: '13900000001' })
         await h.api.adminCancelReservation(1, { reason: '临时调整' })
       },
     })

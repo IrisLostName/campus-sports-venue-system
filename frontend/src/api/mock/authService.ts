@@ -11,7 +11,7 @@ import { run } from './run'
 import { nextId, type MockContext, type UserRecord } from './state'
 import { addHours } from './timeMath'
 import { TOKEN_TTL_HOURS } from './bookingRules'
-import { blankToNull, collect, oneOfProblem, optional, optionalText, textProblem } from './validate'
+import { blankToNull, collect, oneOfProblem, optional, phoneProblem, textProblem } from './validate'
 
 const USERNAME_PATTERN = /^[A-Za-z0-9_]{3,32}$/
 const PASSWORD_MIN = 8
@@ -34,8 +34,9 @@ export function passwordProblem(value: unknown): string | null {
 
 export function issueSession(ctx: MockContext, user: UserRecord): LoginResponse {
   const token = `mock-token-${nextId(ctx.state, 'token')}`
-  const expiresAt = addHours(ctx.clock.now(), TOKEN_TTL_HOURS)
-  ctx.state.tokens[token] = { userId: user.id, expiresAt }
+  const issuedAt = ctx.clock.now()
+  const expiresAt = addHours(issuedAt, TOKEN_TTL_HOURS)
+  ctx.state.tokens[token] = { userId: user.id, issuedAt, expiresAt }
   return { token, expiresAt, user: toProfile(ctx, user) }
 }
 
@@ -45,7 +46,7 @@ function register(ctx: MockContext, request: RegisterRequest): LoginResponse {
     ['password', passwordProblem(request.password)],
     ['displayName', textProblem(request.displayName, 50)],
     ['userType', optional(request.userType, (value) => oneOfProblem(value, USER_TYPES))],
-    ['phone', optionalText(request.phone, 20)],
+    ['phone', phoneProblem(request.phone)],
   ])
   if (ctx.state.users.some((user) => user.username === request.username)) {
     fail('USERNAME_TAKEN')
@@ -53,7 +54,7 @@ function register(ctx: MockContext, request: RegisterRequest): LoginResponse {
   const user: UserRecord = {
     id: nextId(ctx.state, 'user'), username: request.username, password: request.password,
     displayName: request.displayName, role: 'USER', userType: request.userType ?? 'STUDENT',
-    phone: blankToNull(request.phone), status: 'ACTIVE', checkInUuid: randomUuid(),
+    phone: blankToNull(request.phone), status: 'ACTIVE', checkInUuid: randomUuid(), passwordChangedAt: null,
   }
   ctx.state.users.push(user)
   return issueSession(ctx, user)

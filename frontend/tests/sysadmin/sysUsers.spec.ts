@@ -144,7 +144,7 @@ describe('G3 新建账号', () => {
     await fillAndCreate(board, { role: 'USER', userType: 'TEACHER', venueIds: [1] })
 
     expect(callsOf(spy, 'adminCreateUser')).toEqual([[{
-      username: 'new_admin', password: SECRET, displayName: '新管理员', role: 'USER', userType: 'TEACHER',
+      username: 'new_admin', password: SECRET, displayName: '新管理员', role: 'USER', userType: 'TEACHER', phone: '13900000001',
     }]])
   })
 

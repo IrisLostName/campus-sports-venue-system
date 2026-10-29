@@ -226,6 +226,7 @@ describe('G3 新建、改名与停用', () => {
     await fieldByLabel(dialog(), '密码').setValue(SECRET)
     await fieldByLabel(dialog(), '显示名').setValue('甲老师')
     await fieldByLabel(dialog(), '用户类型').setValue('TEACHER')
+    await fieldByLabel(dialog(), '手机号').setValue('13900000001')
     await buttonIn(dialog(), '创建').trigger('click')
     await flushPromises()
 

@@ -3,7 +3,7 @@ import type { ApiClient } from '../client'
 import type { Transport } from './transport'
 
 export type UserApi = Pick<ApiClient,
-  | 'register' | 'login' | 'getMe' | 'getBookingRules'
+  | 'register' | 'resetPassword' | 'login' | 'getMe' | 'getBookingRules'
   | 'listVenues' | 'getVenueSlots' | 'listAnnouncements'
   | 'createReservation' | 'lookupUser' | 'listMyReservations' | 'getReservation'
   | 'cancelReservation' | 'getCheckInCode' | 'checkOut'
@@ -13,6 +13,7 @@ export function userApi(t: Transport): UserApi {
   return {
     // 5.1
     register: (body) => t.request({ method: 'POST', path: '/auth/register', body, auth: false }),
+    resetPassword: (body) => t.request({ method: 'POST', path: '/auth/password-reset', body, auth: false }),
     login: (body) => t.request({ method: 'POST', path: '/auth/login', body, auth: false }),
     getMe: () => t.request({ method: 'GET', path: '/auth/me' }),
     getBookingRules: () => t.request({ method: 'GET', path: '/config/booking-rules', auth: false }),

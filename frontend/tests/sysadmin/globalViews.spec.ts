@@ -71,7 +71,7 @@ describe('G7 预约管理：全部场馆', () => {
 describe('G6 操作记录：不选场馆', () => {
   it('不带 venueId 查询，包含 venueId 为 null 的记录；场馆列显示场馆名，null 显示“全局”', async () => {
     const ctx = await loginAdmin('sysadmin')
-    await ctx.api.adminCreateUser({ username: 'someone', password: 'Passw0rd!', displayName: '某人', role: 'USER' })
+    await ctx.api.adminCreateUser({ username: 'someone', password: 'Passw0rd!', displayName: '某人', role: 'USER', phone: '13900000001' })
     await ctx.api.adminCancelReservation(1, { reason: '临时调整' })
     const venues = await ctx.api.adminListVenues()
     const spy = spyOn(ctx.api)
@@ -84,7 +84,7 @@ describe('G6 操作记录：不选场馆', () => {
 
   it('指定场馆时带 venueId，行里没有场馆列文字，venueId 为 null 的记录不出现', async () => {
     const ctx = await loginAdmin('sysadmin')
-    await ctx.api.adminCreateUser({ username: 'someone', password: 'Passw0rd!', displayName: '某人', role: 'USER' })
+    await ctx.api.adminCreateUser({ username: 'someone', password: 'Passw0rd!', displayName: '某人', role: 'USER', phone: '13900000001' })
     await ctx.api.adminCancelReservation(1, { reason: '临时调整' })
     const spy = spyOn(ctx.api)
     const logs = createAdminLogs({ api: spy.client, call: ctx.call }, 1)
@@ -97,7 +97,7 @@ describe('G6 操作记录：不选场馆', () => {
 
   it('按动作筛选仍然有效；没有场馆名映射时显示“场馆 #id”', async () => {
     const ctx = await loginAdmin('sysadmin')
-    await ctx.api.adminCreateUser({ username: 'someone', password: 'Passw0rd!', displayName: '某人', role: 'USER' })
+    await ctx.api.adminCreateUser({ username: 'someone', password: 'Passw0rd!', displayName: '某人', role: 'USER', phone: '13900000001' })
     await ctx.api.adminCancelReservation(1, { reason: '临时调整' })
     const spy = spyOn(ctx.api)
     const logs = createAdminLogs({ api: spy.client, call: ctx.call })

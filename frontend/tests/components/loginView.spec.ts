@@ -161,7 +161,7 @@ describe('注册的前端校验提示', () => {
 
   it('用户名已被占用：提示来自服务端错误码文案', async () => {
     const wrapper = await openRegister(createAuthHarness())
-    await fill(wrapper, { 用户名: 'zhangsan', 密码: 'abcd1234', 姓名: '重名' })
+    await fill(wrapper, { 用户名: 'zhangsan', 密码: 'abcd1234', 姓名: '重名', 手机号: '13800000000' })
     await submit(wrapper)
 
     expect(errorText(wrapper)).toBe('用户名已被占用')
@@ -170,7 +170,7 @@ describe('注册的前端校验提示', () => {
   it('信息合法：注册并登录成功，进入用户端首页', async () => {
     const h = createAuthHarness()
     const wrapper = await openRegister(h)
-    await fill(wrapper, { 用户名: 'newuser', 密码: 'abcd1234', 姓名: '新用户' })
+    await fill(wrapper, { 用户名: 'newuser', 密码: 'abcd1234', 姓名: '新用户', 手机号: '13800000000' })
     await submit(wrapper)
 
     expect(errorText(wrapper)).toBeNull()

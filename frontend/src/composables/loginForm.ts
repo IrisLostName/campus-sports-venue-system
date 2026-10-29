@@ -38,14 +38,12 @@ export function createLoginForm(deps: LoginFormDeps) {
   }
 
   function buildRegisterRequest(): RegisterRequest {
+    // v1.3：手机号必填，发送前去掉首尾空白（SEC-2c 答复第 6 条）。
     const request: RegisterRequest = {
-      username: username.value, password: password.value, displayName: displayName.value.trim(),
+      username: username.value, password: password.value, displayName: displayName.value.trim(), phone: phone.value.trim(),
     }
     if (userType.value !== '') {
       request.userType = userType.value
-    }
-    if (phone.value.trim() !== '') {
-      request.phone = phone.value.trim()
     }
     return request
   }

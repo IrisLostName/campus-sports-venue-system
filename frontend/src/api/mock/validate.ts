@@ -109,6 +109,25 @@ export function filledTextProblem(value: unknown, maxLength: number): string | n
   return value.length > maxLength ? `长度不能超过 ${maxLength}` : null
 }
 
+// v1.3：11 位中国大陆手机号（docs/12 第 5.1 节），不去空格、不接受分隔符；缺省、null、空白报“必填”。
+const MOBILE_PATTERN = /^1\d{10}$/
+
+function phoneAbsent(value: unknown): boolean {
+  return isAbsent(value) || (typeof value === 'string' && isAsciiBlank(value))
+}
+
+export function phoneProblem(value: unknown): string | null {
+  if (phoneAbsent(value)) {
+    return '不能为空'
+  }
+  return typeof value === 'string' && MOBILE_PATTERN.test(value) ? null : '应为 11 位手机号'
+}
+
+// 可不填的手机号（创建管理员账号）：未填视为没有，填了同样校验格式。
+export function optionalPhoneProblem(value: unknown): string | null {
+  return phoneAbsent(value) ? null : phoneProblem(value)
+}
+
 export function oneOfProblem(value: unknown, allowed: readonly string[]): string | null {
   return typeof value === 'string' && allowed.includes(value) ? null : `应为 ${allowed.join('/')} 之一`
 }

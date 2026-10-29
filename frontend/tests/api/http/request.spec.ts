@@ -21,7 +21,8 @@ interface Row {
 const WEEKLY = { windows: [{ weekday: 1, openTime: '08:00', closeTime: '20:00' }], dryRun: true }
 
 const ROWS: Row[] = [
-  { label: 'register', call: (a) => a.register({ username: 'u', password: 'p', displayName: 'd' }), method: 'POST', url: `${V1}/auth/register`, body: { username: 'u', password: 'p', displayName: 'd' }, publicRoute: true },
+  { label: 'register', call: (a) => a.register({ username: 'u', password: 'p', displayName: 'd', phone: '13800000000' }), method: 'POST', url: `${V1}/auth/register`, body: { username: 'u', password: 'p', displayName: 'd', phone: '13800000000' }, publicRoute: true },
+  { label: 'resetPassword', call: (a) => a.resetPassword({ username: 'u', displayName: 'd', phone: '13800000000', newPassword: 'n' }), method: 'POST', url: `${V1}/auth/password-reset`, body: { username: 'u', displayName: 'd', phone: '13800000000', newPassword: 'n' }, publicRoute: true },
   { label: 'login', call: (a) => a.login({ username: 'u', password: 'p' }), method: 'POST', url: `${V1}/auth/login`, body: { username: 'u', password: 'p' }, publicRoute: true },
   { label: 'getMe', call: (a) => a.getMe(), method: 'GET', url: `${V1}/auth/me` },
   { label: 'getBookingRules', call: (a) => a.getBookingRules(), method: 'GET', url: `${V1}/config/booking-rules`, publicRoute: true },
@@ -76,7 +77,7 @@ function clientWith(token: string | null) {
 describe('http.ts 覆盖 docs/12 第 5 节全部接口', () => {
   it('表格行数与 ApiClient 方法数一致，且方法名一一对应', () => {
     expect(ROWS.map((row) => row.label).sort()).toEqual([...API_CLIENT_METHODS].sort())
-    expect(ROWS).toHaveLength(44)
+    expect(ROWS).toHaveLength(45)
   })
 
   // v1.2：companionUserIds 按调用方给出的顺序原样放进请求体；查找的 q 经 URL 编码。

@@ -148,9 +148,11 @@ describe('签到标识', () => {
 
   it('注册与系统管理员新建的用户自动获得签到标识；标识不出现在任何用户资料里', async () => {
     const h = createHarness()
-    const registered = await h.api.register({ username: 'newbie', password: '12345678', displayName: '新人' })
+    const registered = await h.api.register({ username: 'newbie', password: '12345678', displayName: '新人', phone: '13900000001' })
     await h.loginAs('sysadmin')
-    const created = await h.api.adminCreateUser({ username: 'teacher1', password: '12345678', displayName: '老师', role: 'USER' })
+    const created = await h.api.adminCreateUser({
+      username: 'teacher1', password: '12345678', displayName: '老师', role: 'USER', phone: '13900000002',
+    })
     const records = h.context.state.users.filter((user) => user.username === 'newbie' || user.username === 'teacher1')
     expect(records.map((user) => user.checkInUuid).every((uuid) => /^[0-9a-f-]{36}$/.test(uuid))).toBe(true)
     expect(JSON.stringify([registered, created, await h.api.adminListUsers()])).not.toMatch(/checkInUuid|[0-9a-f]{8}-[0-9a-f]{4}-4/)

@@ -117,6 +117,7 @@ async function openRegister(h: AuthHarness) {
   form.username.value = 'newcomer'
   form.password.value = 'Passw0rd!'
   form.displayName.value = '新同学'
+  form.phone.value = '13800000000'
   return form
 }
 
@@ -139,6 +140,7 @@ describe('注册：成功与服务端错误', () => {
     form.username.value = 'newcomer'
     form.password.value = 'Passw0rd!'
     form.displayName.value = '新同学'
+    form.phone.value = '13800000000'
     await form.submit()
 
     expect(path(h)).toBe('/booking')
@@ -209,13 +211,14 @@ describe('注册：与服务端的交互', () => {
     form.username.value = 'newcomer'
     form.password.value = 'Passw0rd!'
     form.displayName.value = '新同学'
+    form.phone.value = '13800000000'
     await form.submit()
 
     expect(calls).toHaveLength(1)
     expect(form.error.value).toBe('请求参数不合法')
   })
 
-  it('请求只带有填写过的可选字段；姓名与手机号去掉首尾空格', async () => {
+  it('手机号总是发送，userType 只在填写后发送；姓名与手机号去掉首尾空格', async () => {
     const calls: RegisterRequest[] = []
     const recording: LoginFormAuth = {
       login: () => Promise.reject(new Error('不应调用')),
@@ -230,12 +233,12 @@ describe('注册：与服务端的交互', () => {
     form.username.value = 'newcomer'
     form.password.value = 'Passw0rd!'
     form.displayName.value = ' 新同学 '
-    await form.submit()
-    form.userType.value = 'TEACHER'
     form.phone.value = ' 13800000000 '
     await form.submit()
+    form.userType.value = 'TEACHER'
+    await form.submit()
 
-    expect(calls[0]).toEqual({ username: 'newcomer', password: 'Passw0rd!', displayName: '新同学' })
+    expect(calls[0]).toEqual({ username: 'newcomer', password: 'Passw0rd!', displayName: '新同学', phone: '13800000000' })
     expect(calls[1]).toEqual({
       username: 'newcomer', password: 'Passw0rd!', displayName: '新同学', userType: 'TEACHER', phone: '13800000000',
     })

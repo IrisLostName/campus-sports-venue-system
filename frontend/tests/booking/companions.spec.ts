@@ -12,7 +12,7 @@ import { enterTennis, FREE_SLOT, openBooking, TODAY, TOMORROW, type BookingConte
 // 种子之外再注册几个普通用户（公开接口），凑够 6 位同行人。
 async function registerFriends(ctx: BookingContext, names: readonly string[]): Promise<void> {
   for (const [index, displayName] of names.entries()) {
-    await ctx.h.api.register({ username: `friend${index + 1}`, password: 'Passw0rd!', displayName })
+    await ctx.h.api.register({ username: `friend${index + 1}`, password: 'Passw0rd!', displayName, phone: `1390000000${index + 1}` })
   }
 }
 

@@ -8,7 +8,7 @@ import type {
 } from '../../../src/api/requests'
 import { createHarness, expectApiError, TOMORROW, type Harness } from '../support/harness'
 
-const NEWCOMER = { username: 'newcomer', password: 'Passw0rd!', displayName: '新同学' }
+const NEWCOMER = { username: 'newcomer', password: 'Passw0rd!', displayName: '新同学', phone: '13800000000' }
 const FULL_WIDTH_SPACE = '　'
 const NBSP = ' '
 
@@ -19,10 +19,13 @@ async function as(username: string): Promise<Harness> {
 }
 
 describe('S-040 请求中的 null 与缺省等价', () => {
-  it('注册：phone、userType 为 null 视为未填', async () => {
+  // v1.3：注册的 phone 改为必填，null 与缺省一样报 fields.phone；userType 为 null 仍视为未填。
+  it('注册：phone 为 null 与缺省等价（必填，VALIDATION_ERROR）；userType 为 null 视为未填', async () => {
     const h = createHarness()
-    const session = await h.api.register({ ...NEWCOMER, phone: null, userType: null } as unknown as RegisterRequest)
-    expect(session.user).toMatchObject({ phone: null, userType: 'STUDENT' })
+    await expectApiError(h.api.register({ ...NEWCOMER, phone: null } as unknown as RegisterRequest), 'VALIDATION_ERROR',
+      { fields: { phone: '不能为空' } })
+    const session = await h.api.register({ ...NEWCOMER, userType: null } as unknown as RegisterRequest)
+    expect(session.user).toMatchObject({ phone: '13800000000', userType: 'STUDENT' })
   })
 
   it('场馆管理员提交值为 null 的 SA 专属字段不算提交，不得 FORBIDDEN', async () => {
@@ -59,9 +62,13 @@ describe('S-040 请求中的 null 与缺省等价', () => {
 })
 
 describe('S-041 新建与查询类的空白可选文本视为未填', () => {
-  it('注册：空白 phone 存 null', async () => {
-    const session = await createHarness().api.register({ ...NEWCOMER, phone: '   ' })
-    expect(session.user.phone).toBeNull()
+  // v1.3：注册的 phone 必填，空白按未填报“必填”；创建管理员账号时空白 phone 仍视为未填、存 null。
+  it('注册：空白 phone 为 VALIDATION_ERROR；创建管理员账号：空白 phone 存 null', async () => {
+    const h = createHarness()
+    await expectApiError(h.api.register({ ...NEWCOMER, phone: '   ' }), 'VALIDATION_ERROR', { fields: { phone: '不能为空' } })
+    await h.loginAs('sysadmin')
+    const admin = await h.api.adminCreateUser({ ...NEWCOMER, role: 'VENUE_ADMIN', phone: '   ' })
+    expect(admin.phone).toBeNull()
   })
 
   it('新建场馆：空白 location、description 存 null', async () => {
@@ -128,8 +135,8 @@ describe('S-050 空白的判定与后端一致', () => {
     expect(cancelled).toMatchObject({ status: 'ADMIN_CANCELLED', adminNote: NBSP })
   })
 
-  it('可选文本同 Java isBlank()：全角空格的 phone 视为未填，存 null', async () => {
-    const session = await createHarness().api.register({ ...NEWCOMER, phone: FULL_WIDTH_SPACE })
-    expect(session.user.phone).toBeNull()
+  // v1.3：注册的 phone 必填且须为 11 位手机号，全角空格不是合法输入。
+  it('注册：全角空格的 phone 为 VALIDATION_ERROR（fields.phone）', async () => {
+    await expectApiError(createHarness().api.register({ ...NEWCOMER, phone: FULL_WIDTH_SPACE }), 'VALIDATION_ERROR')
   })
 })

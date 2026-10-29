@@ -11,7 +11,9 @@ async function asSysAdmin(): Promise<Harness> {
   return h
 }
 
-const NEW_USER: CreateUserRequest = { username: 'teacher01', password: 'Passw0rd!', displayName: '体育老师', role: 'USER' }
+const NEW_USER: CreateUserRequest = {
+  username: 'teacher01', password: 'Passw0rd!', displayName: '体育老师', role: 'USER', phone: '13900000001',
+}
 
 describe('用户列表', () => {
   it('按角色与关键字过滤；只有场馆管理员带 venueIds', async () => {
