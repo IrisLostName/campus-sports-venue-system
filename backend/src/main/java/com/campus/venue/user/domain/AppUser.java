@@ -49,6 +49,10 @@ public class AppUser {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    /** 最近一次自助找回密码的时刻（截到整秒，v1.3）；为空表示从未重置。早于它签发的 Token 失效。 */
+    @Column(name = "password_changed_at")
+    private LocalDateTime passwordChangedAt;
+
     public Long getId() {
         return id;
     }
@@ -123,5 +127,13 @@ public class AppUser {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public LocalDateTime getPasswordChangedAt() {
+        return passwordChangedAt;
+    }
+
+    public void setPasswordChangedAt(LocalDateTime passwordChangedAt) {
+        this.passwordChangedAt = passwordChangedAt;
     }
 }
