@@ -68,7 +68,7 @@ describe('登录/注册切换', () => {
     await wrapper.findAll('[role="tab"]')[1]?.trigger('click')
     expect(selectedTabs(wrapper)).toEqual(['false', 'true'])
     expect(wrapper.find('button[type="submit"]').text()).toBe('注册并登录')
-    expect(labelNames(wrapper)).toEqual(['用户名', '密码', '姓名', '身份（选填）', '手机号（选填）'])
+    expect(labelNames(wrapper)).toEqual(['用户名', '密码', '姓名', '手机号', '身份（选填）'])
     expect(field(wrapper, '身份').findAll('option').map((option) => option.text())).toEqual(['不填写', '学生', '教师', '其他'])
 
     await wrapper.findAll('[role="tab"]')[0]?.trigger('click')

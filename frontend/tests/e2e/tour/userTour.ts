@@ -20,9 +20,28 @@ export async function userLoginAndEmpty(tour: Tour): Promise<void> {
   await page.clearLocalStorage(E2E.appUrl)
   await go(tour, '/login')
   await capture(tour, '01-user-login', { surface: 'login', expect: ['校园场馆预约与服务管理系统', '用户名', '密码'], themes: BOTH })
+  await userResetAndRegister(tour)
   await login(tour, 'wangwu', IPHONE16)
   await capture(tour, '02-user-home-empty', {
     surface: 'user', expect: ['，王五', WELCOME, '你还没有预约', '去订场', '系统公告'], absent: ['查看预约详情'], themes: BOTH,
+  })
+}
+
+// SEC-2c（答复第 7 条）：从登录页进入找回密码页（空白状态），再看注册页（手机号必填、“身份”在最下方）。只看不提交。
+async function userResetAndRegister(tour: Tour): Promise<void> {
+  const { page } = tour
+  await page.clickText('忘记密码？')
+  await page.waitFor('location.pathname === "/password-reset"', '进入找回密码页')
+  await capture(tour, '01b-user-password-reset', {
+    surface: 'login', heading: '找回密码',
+    expect: ['用户名（学号）', '姓名', '手机号', '新密码', '再输入一次', '24 小时内最多可尝试 7 次。', '如果注册时没有填写手机号，请联系系统管理员。', '重置密码'],
+    themes: BOTH,
+  })
+  await page.clickText('返回登录')
+  await page.waitFor('location.pathname === "/login"', '回到登录页')
+  await page.clickText('注册', { selector: '[role="tab"]' })
+  await capture(tour, '01c-user-register', {
+    surface: 'login', expect: ['姓名', '手机号', '11 位手机号，可用于找回密码', '身份（选填）', '注册并登录'], absent: ['手机号（选填）'], themes: BOTH,
   })
 }
 

@@ -7,7 +7,7 @@ import type { RegisterRequest } from '../api/requests'
 import type { UserType } from '../api/types'
 import { resolvePostLoginTarget } from '../router/access'
 import { useAuthStore, type AuthResult } from '../stores/auth'
-import { validateLoginFields, validateRegisterFields } from '../utils/authValidation'
+import { isMobile, PHONE_FORMAT_TEXT, validateLoginFields, validateRegisterFields } from '../utils/authValidation'
 
 export type FormMode = 'login' | 'register'
 
@@ -51,9 +51,10 @@ export function createLoginForm(deps: LoginFormDeps) {
 
   function validate(): string | null {
     if (isRegister.value) {
-      return validateRegisterFields({
+      const problem = validateRegisterFields({
         username: username.value, password: password.value, displayName: displayName.value,
       })
+      return problem ?? (isMobile(phone.value) ? null : PHONE_FORMAT_TEXT)
     }
     return validateLoginFields(username.value, password.value)
   }

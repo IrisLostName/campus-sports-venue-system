@@ -6,6 +6,7 @@ import UiSegmented from '../components/ui/UiSegmented.vue'
 import UiTextField from '../components/ui/UiTextField.vue'
 import { useLoginForm } from '../composables/loginForm'
 import { PATHS } from '../router/paths'
+import { MOBILE_LENGTH } from '../utils/fieldLimits'
 
 const form = useLoginForm()
 
@@ -87,6 +88,16 @@ function onModeChange(value: string | null): void {
           type="text"
           autocomplete="name"
         />
+        <!-- v1.3：手机号必填；“身份”放在表单最下方（SEC-2c 裁决已定事项第 4 条）。 -->
+        <UiTextField
+          v-model="form.phone.value"
+          label="手机号"
+          type="tel"
+          inputmode="numeric"
+          autocomplete="tel"
+          hint="11 位手机号，可用于找回密码"
+          :maxlength="MOBILE_LENGTH"
+        />
         <UiTextField
           v-model="form.userType.value"
           label="身份（选填）"
@@ -105,12 +116,6 @@ function onModeChange(value: string | null): void {
             其他
           </option>
         </UiTextField>
-        <UiTextField
-          v-model="form.phone.value"
-          label="手机号（选填）"
-          type="tel"
-          autocomplete="tel"
-        />
       </template>
 
       <UiBanner

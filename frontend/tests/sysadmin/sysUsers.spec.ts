@@ -13,7 +13,7 @@ import { callsOf, fillAndCreate, openBoard, SECRET, SYSADMIN_ID } from './usersH
 describe('G2 / G3 展示口径', () => {
   it('角色中文名；账号规则与注册一致', () => {
     expect(ROLE_LABELS).toEqual({ USER: '普通用户', VENUE_ADMIN: '场馆管理员', SYS_ADMIN: '系统管理员' })
-    const form = { ...emptyUserForm(), username: 'abc', password: '12345678', displayName: '甲' }
+    const form = { ...emptyUserForm(), username: 'abc', password: '12345678', displayName: '甲', phone: '13800000000' }
 
     expect(userFormProblem(form)).toBeNull()
     expect(userFormProblem({ ...form, username: 'ab' })).toBe('用户名需为 3–32 位字母、数字或下划线')

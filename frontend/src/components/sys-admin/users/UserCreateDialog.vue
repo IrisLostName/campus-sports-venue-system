@@ -3,12 +3,13 @@
 // 密码框 type="password"、autocomplete="new-password"，页面不显示、不回显密码。
 // 规则说明用 UiTextField 的 hint 显示在输入框下方（docs/17 第 2 节：第三级文字不得用于需要阅读的文字，所以不用占位符），并与输入框关联。
 // 角色为场馆管理员时才出现“授权场馆”，为普通用户时才出现“用户类型”。
+// v1.3：普通用户的手机号必填，标签随角色切换（SEC-2c）；格式要求在提交时提示，不另加说明文字。
 import type { CreateUserState } from '../../../composables/sysUsers'
 import type { Role, VenueSummary } from '../../../api/types'
 import {
-  DISPLAY_NAME_MAX_LENGTH, PASSWORD_MAX_LENGTH, PHONE_MAX_LENGTH, USERNAME_MAX_LENGTH,
+  DISPLAY_NAME_MAX_LENGTH, MOBILE_LENGTH, PASSWORD_MAX_LENGTH, USERNAME_MAX_LENGTH,
 } from '../../../utils/fieldLimits'
-import { ROLE_OPTIONS, USER_TYPE_OPTIONS } from '../../../utils/sysUserDisplay'
+import { phoneLabelOf, ROLE_OPTIONS, USER_TYPE_OPTIONS } from '../../../utils/sysUserDisplay'
 import AdminActionDialog from '../../admin/AdminActionDialog.vue'
 import UiTextField from '../../ui/UiTextField.vue'
 import VenueCheckList from './VenueCheckList.vue'
@@ -83,8 +84,10 @@ defineEmits<{ patch: [change: Partial<CreateUserState>]; confirm: []; dismiss: [
     </UiTextField>
     <UiTextField
       :model-value="state?.phone ?? ''"
-      label="手机号（可选）"
-      :maxlength="PHONE_MAX_LENGTH"
+      :label="phoneLabelOf(state?.role ?? 'USER')"
+      type="tel"
+      inputmode="numeric"
+      :maxlength="MOBILE_LENGTH"
       @update:model-value="$emit('patch', { phone: $event })"
     />
     <VenueCheckList
