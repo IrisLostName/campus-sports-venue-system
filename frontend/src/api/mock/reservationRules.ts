@@ -1,4 +1,4 @@
-// 创建预约的服务端检查顺序（docs/10 第 1 节，九步；任一步失败即返回，后续不执行）。
+// 创建预约的服务端检查顺序（docs/10 第 1 节，九步与 v1.2 的步骤 8a；任一步失败即返回，后续不执行）。
 // 第 1 步（认证、格式、角色）在 reservationService.createReservation 中完成；本文件是第 2–9 步，一步一个函数。
 import type { CreateReservationRequest } from '../requests'
 import { fail } from './fail'
@@ -67,15 +67,27 @@ export function stepSlotFree(ctx: MockContext, resourceId: number, serviceDate: 
   }
 }
 
+// 步骤 8a（v1.2）：每位同行人都是存在、ACTIVE、角色为 USER 的用户 → 否则 VALIDATION_ERROR（fields.companionUserIds）。
+// 格式（至多 6 个、正整数、不重复、不含本人）已在格式阶段校验。
+export function stepCompanionsEligible(ctx: MockContext, companionUserIds: readonly number[]): void {
+  const eligible = companionUserIds.every((id) => ctx.state.users.some(
+    (candidate) => candidate.id === id && candidate.status === 'ACTIVE' && candidate.role === 'USER',
+  ))
+  if (!eligible) {
+    fail('VALIDATION_ERROR', { fields: { companionUserIds: '同行人必须是已启用的普通用户' } })
+  }
+}
+
 export interface ReservationDraft {
   userId: number
   resourceId: number
   serviceDate: string
   startTime: string
   purpose: string | null
+  companionUserIds?: number[]   // v1.2：缺省为空名单
 }
 
-// 第 9 步：插入，status = CONFIRMED，end_time 由服务端算出。
+// 第 9 步：插入，status = CONFIRMED，end_time 由服务端算出；同一步写入同行人名单（按提交顺序）。
 // 插入层再检查一次唯一性，模拟 uq_reservation_active_slot 部分唯一索引（docs/13 第 3.5 节）：
 // 即使绕过第 8 步，冲突也必须是 SLOT_TAKEN，不会产生第二条有效预约。
 export function insertReservation(ctx: MockContext, draft: ReservationDraft): ReservationRecord {
@@ -88,13 +100,13 @@ export function insertReservation(ctx: MockContext, draft: ReservationDraft): Re
     serviceDate: draft.serviceDate, startTime: draft.startTime, endTime: endTimeOf(draft.startTime),
     status: 'CONFIRMED', purpose: draft.purpose, createdAt: ctx.clock.now(),
     cancelledAt: null, cancelledBy: null, cancelReason: null, adminNote: null,
-    checkInAt: null, checkOutAt: null,
+    checkInAt: null, checkOutAt: null, companionUserIds: [...(draft.companionUserIds ?? [])],
   }
   ctx.state.reservations.push(record)
   return record
 }
 
-// 第 2–8 步依次执行。
+// 第 2–8 步与步骤 8a 依次执行。
 export function checkCreatable(ctx: MockContext, user: UserRecord, request: CreateReservationRequest): void {
   const target = stepBookableVenue(ctx, request.resourceId)
   stepResourceOpen(target.resource)
@@ -103,4 +115,5 @@ export function checkCreatable(ctx: MockContext, user: UserRecord, request: Crea
   stepNotPast(ctx, request.serviceDate, request.startTime)
   stepUnderLimit(ctx, user)
   stepSlotFree(ctx, request.resourceId, request.serviceDate, request.startTime)
+  stepCompanionsEligible(ctx, request.companionUserIds ?? [])
 }

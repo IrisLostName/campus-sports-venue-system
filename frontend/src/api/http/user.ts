@@ -5,7 +5,7 @@ import type { Transport } from './transport'
 export type UserApi = Pick<ApiClient,
   | 'register' | 'login' | 'getMe' | 'getBookingRules'
   | 'listVenues' | 'getVenueSlots' | 'listAnnouncements'
-  | 'createReservation' | 'listMyReservations' | 'getReservation'
+  | 'createReservation' | 'lookupUser' | 'listMyReservations' | 'getReservation'
   | 'cancelReservation' | 'getCheckInCode' | 'checkOut'
   | 'createRepair' | 'listMyRepairs' | 'adminListRepairs' | 'adminUpdateRepair'>
 
@@ -23,6 +23,7 @@ export function userApi(t: Transport): UserApi {
     listAnnouncements: (query) => t.request({ method: 'GET', path: '/announcements', query }),
     // 5.3
     createReservation: (body) => t.request({ method: 'POST', path: '/reservations', body }),
+    lookupUser: (q) => t.request({ method: 'GET', path: '/users/lookup', query: { q } }),
     listMyReservations: (query) => t.request({ method: 'GET', path: '/reservations/me', query }),
     getReservation: (id) => t.request({ method: 'GET', path: `/reservations/${id}` }),
     cancelReservation: (id, body) =>

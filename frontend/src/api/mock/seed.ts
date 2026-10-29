@@ -98,7 +98,7 @@ function seedReservations(createdAt: string): ReservationRecord[] {
   return rows.map(([userId, resourceId, startTime], index) => ({
     id: index + 1, userId, resourceId, serviceDate: tomorrow, startTime, endTime: endTimeOf(startTime),
     status: 'CONFIRMED', purpose: null, createdAt, cancelledAt: null, cancelledBy: null,
-    cancelReason: null, adminNote: null, checkInAt: null, checkOutAt: null,
+    cancelReason: null, adminNote: null, checkInAt: null, checkOutAt: null, companionUserIds: [],
   }))
 }
 

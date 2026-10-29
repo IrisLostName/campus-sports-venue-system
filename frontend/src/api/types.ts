@@ -123,7 +123,11 @@ export interface Reservation {
   cancelledAt: string | null; cancelReason: string | null; cancelledBy: number | null
   adminNote: string | null
   checkInAt: string | null; checkOutAt: string | null
+  companions: Companion[]   // v1.2：同行人名单，按提交顺序；没有时为空数组
 }
+
+// v1.2：同行人（GET /users/lookup 的返回体，也是 Reservation.companions 的元素）。只有 id 与姓名，不含用户名、手机号。
+export interface Companion { userId: number; displayName: string }
 
 export interface ReservationBrief {
   id: number; resourceName: string; serviceDate: string

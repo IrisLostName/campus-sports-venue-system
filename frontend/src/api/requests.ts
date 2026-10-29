@@ -23,6 +23,7 @@ export interface AnnouncementQuery { scope: AnnouncementScope; venueId?: number 
 // POST /reservations
 export interface CreateReservationRequest {
   resourceId: number; serviceDate: string; startTime: string; purpose?: string
+  companionUserIds?: number[]   // v1.2：至多 6 位同行人的用户 id，按添加顺序；没有同行人时不发送
 }
 // GET /reservations/me?scope=&page=&pageSize=
 export type ReservationScope = 'CURRENT' | 'HISTORY' | 'ALL'

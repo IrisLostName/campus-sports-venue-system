@@ -1,7 +1,7 @@
-// ApiClient：http 与 mock 两种实现共用的接口，逐条覆盖 docs/12 第 5 节的全部 43 个接口（v1.1）（ADR-0006）。
+// ApiClient：http 与 mock 两种实现共用的接口，逐条覆盖 docs/12 第 5 节的全部 44 个接口（v1.2）（ADR-0006）。
 // 页面只依赖 api/index.ts 导出的实例。
 import type {
-  Announcement, BookingRules, CheckInCode, ImpactChangeResponse, OperationLog, Page, RepairReport, Reservation,
+  Announcement, BookingRules, CheckInCode, Companion, ImpactChangeResponse, OperationLog, Page, RepairReport, Reservation,
   Resource, VenueSlots, VenueSummary, UserProfile,
 } from './types'
 import type {
@@ -36,6 +36,7 @@ export interface ApiClient {
 
   // 5.3 用户端：预约
   createReservation(request: CreateReservationRequest): Promise<Reservation>
+  lookupUser(q: string): Promise<Companion>   // v1.2：按用户名或手机号精确查找同行人
   listMyReservations(query?: MyReservationsQuery): Promise<Page<Reservation>>
   getReservation(id: number): Promise<Reservation>
   cancelReservation(id: number, request?: CancelReservationRequest): Promise<Reservation>
@@ -91,7 +92,7 @@ export interface ApiClient {
 export const API_CLIENT_METHODS = [
   'register', 'login', 'getMe', 'getBookingRules',
   'listVenues', 'getVenueSlots', 'listAnnouncements',
-  'createReservation', 'listMyReservations', 'getReservation', 'cancelReservation', 'getCheckInCode', 'checkOut',
+  'createReservation', 'lookupUser', 'listMyReservations', 'getReservation', 'cancelReservation', 'getCheckInCode', 'checkOut',
   'createRepair', 'listMyRepairs', 'adminListRepairs', 'adminUpdateRepair',
   'adminListVenues', 'adminCreateVenue', 'adminUpdateVenue', 'adminListResources',
   'adminSetResourceCount', 'adminUpdateResource', 'adminGetOccupancy',
