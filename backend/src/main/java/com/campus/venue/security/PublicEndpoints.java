@@ -15,6 +15,7 @@ public final class PublicEndpoints {
     public static final RequestMatcher MATCHER = new OrRequestMatcher(
             match(HttpMethod.POST, ApiPaths.BASE + "/auth/register"),
             match(HttpMethod.POST, ApiPaths.BASE + "/auth/login"),
+            match(HttpMethod.POST, ApiPaths.BASE + "/auth/password-reset"),
             match(HttpMethod.GET, ApiPaths.BASE + "/config/booking-rules"),
             match(HttpMethod.GET, ApiPaths.BASE + "/display/summary"),
             match(HttpMethod.GET, "/actuator/health"));

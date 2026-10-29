@@ -9,7 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
- * M1（ACC-M3-01）：结构迁移（V1__init_schema.sql、P2-1b 的 V101__check_in_uuid.sql 与 P2-2b 的 V102__reservation_companion.sql）的表与列逐一对应 docs/13 第 3 节
+ * M1（ACC-M3-01）：结构迁移（V1__init_schema.sql、P2-1b 的 V101__check_in_uuid.sql 与 P2-2b 的 V102__reservation_companion.sql、
+ * SEC-2b 的 V103__password_reset.sql）的表与列逐一对应 docs/13 第 3 节
  * （类型、可空、默认值、标识列）。
  */
 @IntegrationTest
@@ -24,6 +25,7 @@ class MigrationSchemaTest {
             "app_user.user_type|character varying(20)|NO|'STUDENT'", "app_user.phone|character varying(20)|YES|",
             "app_user.status|character varying(20)|NO|'ACTIVE'", "app_user.created_at|" + TS + "|NO|now()",
             "app_user.updated_at|" + TS + "|NO|now()", "app_user.check_in_uuid|uuid|NO|gen_random_uuid()",
+            "app_user.password_changed_at|" + TS + "|YES|",
             "venue.id|bigint|NO|", "venue.name|character varying(50)|NO|",
             "venue.venue_type|character varying(20)|NO|", "venue.location|character varying(100)|YES|",
             "venue.description|character varying(500)|YES|",
@@ -73,7 +75,9 @@ class MigrationSchemaTest {
             "admin_operation_log.target_type|character varying(20)|NO|", "admin_operation_log.target_id|bigint|YES|",
             "admin_operation_log.reason|character varying(200)|YES|",
             "admin_operation_log.before_snapshot|jsonb|YES|", "admin_operation_log.after_snapshot|jsonb|YES|",
-            "admin_operation_log.created_at|" + TS + "|NO|now()");
+            "admin_operation_log.created_at|" + TS + "|NO|now()",
+            "password_reset_attempt.id|bigint|NO|", "password_reset_attempt.username|character varying(32)|NO|",
+            "password_reset_attempt.attempted_at|" + TS + "|NO|", "password_reset_attempt.succeeded|boolean|NO|");
 
     private static final String COLUMN_SPEC_SQL = """
             select c.relname || '.' || a.attname || '|' || format_type(a.atttypid, a.atttypmod) || '|'
@@ -107,7 +111,7 @@ class MigrationSchemaTest {
 
         assertThat(tables).containsExactlyInAnyOrder("app_user", "venue", "resource", "availability_rule",
                 "reservation", "usage_record", "reservation_companion", "announcement", "repair_report", "admin_venue_scope",
-                "admin_operation_log");
+                "admin_operation_log", "password_reset_attempt");
     }
 
     @Test
@@ -118,7 +122,7 @@ class MigrationSchemaTest {
                 where n.nspname = 'public' and a.attidentity = 'a' and not a.attisdropped
                 """, String.class);
 
-        assertThat(identityColumns).hasSize(10).allMatch(name -> name.endsWith(".id"));
+        assertThat(identityColumns).hasSize(11).allMatch(name -> name.endsWith(".id"));
     }
 
     @Test
@@ -126,6 +130,6 @@ class MigrationSchemaTest {
         List<String> versions = jdbc.queryForList(
                 "select version from flyway_schema_history where success order by installed_rank", String.class);
 
-        assertThat(versions).containsExactly("1", "101", "102");
+        assertThat(versions).containsExactly("1", "101", "102", "103");
     }
 }

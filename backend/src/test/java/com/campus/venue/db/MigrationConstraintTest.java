@@ -14,7 +14,7 @@ class MigrationConstraintTest {
 
     private static final String BUSINESS_TABLES = "('app_user','venue','resource','availability_rule',"
             + "'reservation','usage_record','reservation_companion','announcement','repair_report','admin_venue_scope',"
-            + "'admin_operation_log')";
+            + "'admin_operation_log','password_reset_attempt')";
 
     @Autowired
     private JdbcTemplate jdbc;
@@ -28,7 +28,8 @@ class MigrationConstraintTest {
     void primaryKeysAreNamedPerTable() {
         assertThat(constraintNames('p')).containsExactlyInAnyOrder("pk_app_user", "pk_venue", "pk_resource",
                 "pk_availability_rule", "pk_reservation", "pk_usage_record", "pk_announcement",
-                "pk_repair_report", "pk_admin_venue_scope", "pk_admin_operation_log", "pk_reservation_companion");
+                "pk_repair_report", "pk_admin_venue_scope", "pk_admin_operation_log", "pk_reservation_companion",
+                "pk_password_reset_attempt");
     }
 
     @Test
@@ -83,14 +84,15 @@ class MigrationConstraintTest {
         assertThat(indexes).containsExactlyInAnyOrder(
                 "pk_app_user", "pk_venue", "pk_resource", "pk_availability_rule", "pk_reservation",
                 "pk_usage_record", "pk_announcement", "pk_repair_report", "pk_admin_venue_scope",
-                "pk_admin_operation_log", "pk_reservation_companion",
+                "pk_admin_operation_log", "pk_reservation_companion", "pk_password_reset_attempt",
                 "uq_app_user_username", "uq_app_user_check_in_uuid", "uq_venue_name", "uq_resource_venue_name",
                 "uq_usage_record_reservation",
                 "uq_admin_venue_scope_admin_venue", "uq_reservation_active_slot", "uq_reservation_companion_position",
                 "idx_resource_venue_sort", "idx_availability_rule_venue_type_status",
                 "idx_reservation_user_date", "idx_reservation_resource_date", "idx_reservation_status_date",
                 "idx_announcement_scope_status_published", "idx_announcement_venue_status",
-                "idx_admin_operation_log_venue_created", "idx_admin_operation_log_admin_created");
+                "idx_admin_operation_log_venue_created", "idx_admin_operation_log_admin_created",
+                "idx_password_reset_attempt_username_attempted");
     }
 
     @Test

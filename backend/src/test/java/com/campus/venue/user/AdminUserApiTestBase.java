@@ -18,7 +18,8 @@ public abstract class AdminUserApiTestBase extends ImpactApiTestBase {
     protected static final String SCOPE = "/api/v1/admin/users/{id}/venue-scope";
 
     protected static Map<String, Object> newAccount(String username, String role) {
-        return body("username", username, "password", "Passw0rd!", "displayName", "新" + username, "role", role);
+        return body("username", username, "password", "Passw0rd!", "displayName", "新" + username, "role", role,
+                "phone", "13800000000");
     }
 
     protected MvcResult createAsSys(Map<String, Object> request) throws Exception {

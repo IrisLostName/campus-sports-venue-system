@@ -74,7 +74,7 @@ class SecurityBoundaryTest extends AbstractApiTest {
 
             MvcResult register = mockMvc.perform(post("/api/v1/auth/register").contentType(MediaType.APPLICATION_JSON)
                     .content("{\"username\":\"public_" + index++ + "\",\"password\":\"Passw0rd!\","
-                            + "\"displayName\":\"公开\"}")
+                            + "\"displayName\":\"公开\",\"phone\":\"13800000000\"}")
                     .header(HttpHeaders.AUTHORIZATION, authorization)).andReturn();
             assertThat(register.getResponse().getStatus()).as(authorization).isEqualTo(201);
         }

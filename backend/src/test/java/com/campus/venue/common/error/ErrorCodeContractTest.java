@@ -19,14 +19,14 @@ import org.junit.jupiter.api.Test;
 
 /**
  * 错误码契约测试：解析 docs/12 第 3 节表格，与 ErrorCode 枚举双向比对 code、HTTP 状态与默认文案。
- * 30 项默认文案全部与表格第三列逐字比对（BE-0 裁决 R1 的两项例外随 API-SYNC 台账 S-039 取消）。文件不存在时测试失败，不跳过。
+ * 32 项默认文案全部与表格第三列逐字比对（BE-0 裁决 R1 的两项例外随 API-SYNC 台账 S-039 取消）。文件不存在时测试失败，不跳过。
  */
 class ErrorCodeContractTest {
 
     private static final Path CONTRACT = Path.of("..", "docs", "12-api-contract.md");
     private static final Pattern ROW =
             Pattern.compile("^\\|\\s*`([A-Z][A-Z_]+)`\\s*\\|\\s*(\\d{3})\\s*\\|\\s*([^|]*?)\\s*\\|");
-    private static final int EXPECTED_CODE_COUNT = 30;
+    private static final int EXPECTED_CODE_COUNT = 32;
 
     /** 表格一行：HTTP 状态与第三列原文。 */
     private record Row(int status, String message) {

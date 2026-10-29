@@ -18,6 +18,14 @@ public interface AppUserRepository extends JpaRepository<AppUser, Long>, JpaSpec
 
     Optional<AppUser> findByUsername(String username);
 
+    /**
+     * 按用户名锁定用户行（PESSIMISTIC_WRITE，即 FOR NO KEY UPDATE；用户名区分大小写）：自助找回密码在核对与改口令之间
+     * 持有该锁，避免与系统管理员同时停用或改名时把旧值写回（SEC-2b）。不存在时为空，不加锁。
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select u from AppUser u where u.username = :username")
+    Optional<AppUser> lockByUsername(@Param("username") String username);
+
     boolean existsByUsername(String username);
 
     /** 查找同行人（GET /users/lookup，P2-2b）：按用户名精确匹配（区分大小写）合格的用户——指定角色与状态、不是 id 本人。 */

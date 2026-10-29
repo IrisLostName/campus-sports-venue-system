@@ -9,7 +9,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 public final class DatabaseCleaner {
 
     private static final String TRUNCATE_ALL = "TRUNCATE TABLE admin_operation_log, admin_venue_scope, "
-            + "repair_report, announcement, usage_record, reservation_companion, reservation, availability_rule, "
+            + "password_reset_attempt, repair_report, announcement, usage_record, reservation_companion, reservation, availability_rule, "
             + "resource, venue, app_user RESTART IDENTITY CASCADE";
 
     private DatabaseCleaner() {

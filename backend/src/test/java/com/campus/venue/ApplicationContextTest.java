@@ -74,7 +74,7 @@ class ApplicationContextTest {
 
         assertThat(entities).containsExactlyInAnyOrder("AppUser", "Venue", "Resource", "AvailabilityRule",
                 "Reservation", "UsageRecord", "Announcement", "RepairReport", "AdminVenueScope",
-                "AdminOperationLog", "ReservationCompanion");
+                "AdminOperationLog", "ReservationCompanion", "PasswordResetAttempt");
     }
 
     @Test
