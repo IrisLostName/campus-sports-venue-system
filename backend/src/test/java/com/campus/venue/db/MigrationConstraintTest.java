@@ -13,7 +13,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 class MigrationConstraintTest {
 
     private static final String BUSINESS_TABLES = "('app_user','venue','resource','availability_rule',"
-            + "'reservation','usage_record','announcement','repair_report','admin_venue_scope',"
+            + "'reservation','usage_record','reservation_companion','announcement','repair_report','admin_venue_scope',"
             + "'admin_operation_log')";
 
     @Autowired
@@ -28,14 +28,14 @@ class MigrationConstraintTest {
     void primaryKeysAreNamedPerTable() {
         assertThat(constraintNames('p')).containsExactlyInAnyOrder("pk_app_user", "pk_venue", "pk_resource",
                 "pk_availability_rule", "pk_reservation", "pk_usage_record", "pk_announcement",
-                "pk_repair_report", "pk_admin_venue_scope", "pk_admin_operation_log");
+                "pk_repair_report", "pk_admin_venue_scope", "pk_admin_operation_log", "pk_reservation_companion");
     }
 
     @Test
     void uniqueConstraintsMatchTheDesign() {
         assertThat(constraintNames('u')).containsExactlyInAnyOrder("uq_app_user_username",
                 "uq_app_user_check_in_uuid", "uq_venue_name", "uq_resource_venue_name", "uq_usage_record_reservation",
-                "uq_admin_venue_scope_admin_venue");
+                "uq_admin_venue_scope_admin_venue", "uq_reservation_companion_position");
     }
 
     @Test
@@ -47,6 +47,7 @@ class MigrationConstraintTest {
                 "ck_availability_rule_type", "ck_availability_rule_status",
                 "ck_availability_rule_weekly", "ck_availability_rule_closure",
                 "ck_reservation_status", "ck_reservation_time_order", "ck_usage_record_times",
+                "ck_reservation_companion_position",
                 "ck_announcement_scope", "ck_announcement_status", "ck_announcement_scope_venue",
                 "ck_repair_report_status", "ck_admin_venue_scope_status",
                 "ck_admin_operation_log_action", "ck_admin_operation_log_target_type");
@@ -59,12 +60,13 @@ class MigrationConstraintTest {
                 where contype = 'f' and conrelid::regclass::text in %s
                 """.formatted(BUSINESS_TABLES), String.class);
 
-        assertThat(rules).hasSize(19).allMatch(rule -> rule.endsWith(":aa"));
+        assertThat(rules).hasSize(21).allMatch(rule -> rule.endsWith(":aa"));
         assertThat(rules).extracting(rule -> rule.substring(0, rule.indexOf(':'))).containsExactlyInAnyOrder(
                 "fk_resource_venue",
                 "fk_availability_rule_venue", "fk_availability_rule_resource", "fk_availability_rule_created_by",
                 "fk_reservation_user", "fk_reservation_resource", "fk_reservation_cancelled_by",
                 "fk_usage_record_reservation",
+                "fk_reservation_companion_reservation", "fk_reservation_companion_user",
                 "fk_announcement_venue", "fk_announcement_published_by",
                 "fk_repair_report_venue", "fk_repair_report_resource", "fk_repair_report_reporter",
                 "fk_repair_report_handled_by",
@@ -81,10 +83,10 @@ class MigrationConstraintTest {
         assertThat(indexes).containsExactlyInAnyOrder(
                 "pk_app_user", "pk_venue", "pk_resource", "pk_availability_rule", "pk_reservation",
                 "pk_usage_record", "pk_announcement", "pk_repair_report", "pk_admin_venue_scope",
-                "pk_admin_operation_log",
+                "pk_admin_operation_log", "pk_reservation_companion",
                 "uq_app_user_username", "uq_app_user_check_in_uuid", "uq_venue_name", "uq_resource_venue_name",
                 "uq_usage_record_reservation",
-                "uq_admin_venue_scope_admin_venue", "uq_reservation_active_slot",
+                "uq_admin_venue_scope_admin_venue", "uq_reservation_active_slot", "uq_reservation_companion_position",
                 "idx_resource_venue_sort", "idx_availability_rule_venue_type_status",
                 "idx_reservation_user_date", "idx_reservation_resource_date", "idx_reservation_status_date",
                 "idx_announcement_scope_status_published", "idx_announcement_venue_status",

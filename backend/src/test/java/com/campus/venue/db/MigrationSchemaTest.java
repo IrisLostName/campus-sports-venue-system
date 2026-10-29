@@ -9,7 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
- * M1（ACC-M3-01）：结构迁移（V1__init_schema.sql 与 P2-1b 的 V101__check_in_uuid.sql）的表与列逐一对应 docs/13 第 3 节
+ * M1（ACC-M3-01）：结构迁移（V1__init_schema.sql、P2-1b 的 V101__check_in_uuid.sql 与 P2-2b 的 V102__reservation_companion.sql）的表与列逐一对应 docs/13 第 3 节
  * （类型、可空、默认值、标识列）。
  */
 @IntegrationTest
@@ -51,6 +51,8 @@ class MigrationSchemaTest {
             "reservation.admin_note|character varying(200)|YES|",
             "usage_record.id|bigint|NO|", "usage_record.reservation_id|bigint|NO|",
             "usage_record.check_in_at|" + TS + "|NO|", "usage_record.check_out_at|" + TS + "|YES|",
+            "reservation_companion.reservation_id|bigint|NO|", "reservation_companion.user_id|bigint|NO|",
+            "reservation_companion.position|smallint|NO|",
             "announcement.id|bigint|NO|", "announcement.scope|character varying(10)|NO|",
             "announcement.venue_id|bigint|YES|", "announcement.title|character varying(100)|NO|",
             "announcement.content|character varying(2000)|NO|",
@@ -96,7 +98,7 @@ class MigrationSchemaTest {
     }
 
     @Test
-    void exactlyTheTenBusinessTablesExist() {
+    void exactlyTheBusinessTablesExist() {
         List<String> tables = jdbc.queryForList("""
                 select table_name from information_schema.tables
                 where table_schema = 'public' and table_type = 'BASE TABLE'
@@ -104,7 +106,7 @@ class MigrationSchemaTest {
                 """, String.class);
 
         assertThat(tables).containsExactlyInAnyOrder("app_user", "venue", "resource", "availability_rule",
-                "reservation", "usage_record", "announcement", "repair_report", "admin_venue_scope",
+                "reservation", "usage_record", "reservation_companion", "announcement", "repair_report", "admin_venue_scope",
                 "admin_operation_log");
     }
 
@@ -124,6 +126,6 @@ class MigrationSchemaTest {
         List<String> versions = jdbc.queryForList(
                 "select version from flyway_schema_history where success order by installed_rank", String.class);
 
-        assertThat(versions).containsExactly("1", "101");
+        assertThat(versions).containsExactly("1", "101", "102");
     }
 }
