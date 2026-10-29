@@ -7,6 +7,7 @@ export const router = createAppRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   views: {
     login: () => import('../views/LoginView.vue'),
+    passwordReset: () => import('../views/PasswordResetView.vue'),
     clientShell: () => import('../views/user/ClientShell.vue'),
     home: () => import('../views/user/HomeView.vue'),
     reservation: () => import('../views/user/ReservationView.vue'),

@@ -5,6 +5,7 @@ import UiGlassCard from '../components/ui/UiGlassCard.vue'
 import UiSegmented from '../components/ui/UiSegmented.vue'
 import UiTextField from '../components/ui/UiTextField.vue'
 import { useLoginForm } from '../composables/loginForm'
+import { PATHS } from '../router/paths'
 
 const form = useLoginForm()
 
@@ -47,6 +48,14 @@ function onModeChange(value: string | null): void {
       >
         {{ form.auth.notice }}
       </UiBanner>
+      <UiBanner
+        v-if="form.auth.success"
+        class="notice"
+        tone="success"
+        role="status"
+      >
+        {{ form.auth.success }}
+      </UiBanner>
 
       <UiTextField
         v-model="form.username.value"
@@ -61,6 +70,15 @@ function onModeChange(value: string | null): void {
         type="password"
         :autocomplete="form.isRegister.value ? 'new-password' : 'current-password'"
       />
+      <!-- SEC-2c：只在登录模式显示找回密码入口；样式块保持不变（userSurfaceUnchanged），靠右用行内样式。 -->
+      <UiButton
+        v-if="!form.isRegister.value"
+        style="align-self: flex-end"
+        variant="plain"
+        :to="PATHS.passwordReset"
+      >
+        忘记密码？
+      </UiButton>
 
       <template v-if="form.isRegister.value">
         <UiTextField

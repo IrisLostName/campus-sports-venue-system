@@ -147,6 +147,9 @@ export function defineAuthStore(deps: AuthDeps) {
       user: ref<UserProfile | null>(null),
       notice: ref<string | null>(null),
     }
+    // SEC-2c：找回密码成功后登录页的一次性成功提示与预填的用户名（不预填密码）。
+    const success = ref<string | null>(null)
+    let prefillUsername: string | null = null
     const role = computed(() => refs.user.value?.role ?? null)
     const isAuthenticated = computed(() => refs.user.value !== null)
     let restoring: Promise<void> | null = null
@@ -162,6 +165,7 @@ export function defineAuthStore(deps: AuthDeps) {
 
     async function authenticate(request: () => Promise<LoginResponse>): Promise<AuthResult> {
       refs.notice.value = null
+      success.value = null
       try {
         const session = await request()
         adoptSession(deps, refs, session)
@@ -183,6 +187,21 @@ export function defineAuthStore(deps: AuthDeps) {
     function logout(): void {
       clearSession(deps, refs)
       refs.notice.value = null
+      success.value = null
+    }
+
+    // 找回密码成功：留下成功提示与用户名给登录页；此前的失效提示不再显示。
+    function passwordResetDone(username: string, message: string): void {
+      refs.notice.value = null
+      success.value = message
+      prefillUsername = username
+    }
+
+    // 登录页取走预填的用户名，只用一次。
+    function takePrefillUsername(): string {
+      const username = prefillUsername ?? ''
+      prefillUsername = null
+      return username
     }
 
     // 令牌失效（TOKEN_EXPIRED / AUTH_REQUIRED / ACCOUNT_DISABLED）：清除登录状态，并留下提示给登录页。
@@ -191,7 +210,9 @@ export function defineAuthStore(deps: AuthDeps) {
       refs.notice.value = messageFor(code)
     }
 
-    return { ...refs, role, isAuthenticated, restore, login, register, logout, invalidate }
+    return {
+      ...refs, success, role, isAuthenticated, restore, login, register, logout, invalidate, passwordResetDone, takePrefillUsername,
+    }
   })
 }
 

@@ -19,11 +19,12 @@ export interface LoginFormAuth {
 export interface LoginFormDeps {
   auth: LoginFormAuth
   router: Router
+  initialUsername?: string   // SEC-2c：找回密码成功后预填的用户名
 }
 
 export function createLoginForm(deps: LoginFormDeps) {
   const mode = ref<FormMode>('login')
-  const username = ref('')
+  const username = ref(deps.initialUsername ?? '')
   const password = ref('')
   const displayName = ref('')
   const userType = ref<UserType | ''>('')
@@ -92,5 +93,5 @@ export function createLoginForm(deps: LoginFormDeps) {
 
 export function useLoginForm() {
   const auth = useAuthStore()
-  return { auth, ...createLoginForm({ auth, router: useRouter() }) }
+  return { auth, ...createLoginForm({ auth, router: useRouter(), initialUsername: auth.takePrefillUsername() }) }
 }
