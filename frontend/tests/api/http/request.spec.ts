@@ -29,6 +29,7 @@ const ROWS: Row[] = [
   { label: 'getVenueSlots', call: (a) => a.getVenueSlots(1, '2026-10-12'), method: 'GET', url: `${V1}/venues/1/slots?date=2026-10-12` },
   { label: 'listAnnouncements', call: (a) => a.listAnnouncements({ scope: 'VENUE', venueId: 1 }), method: 'GET', url: `${V1}/announcements?scope=VENUE&venueId=1` },
   { label: 'createReservation', call: (a) => a.createReservation({ resourceId: 1, serviceDate: '2026-10-12', startTime: '08:00' }), method: 'POST', url: `${V1}/reservations`, body: { resourceId: 1, serviceDate: '2026-10-12', startTime: '08:00' } },
+  { label: 'lookupUser', call: (a) => a.lookupUser('lisi'), method: 'GET', url: `${V1}/users/lookup?q=lisi` },
   { label: 'listMyReservations', call: (a) => a.listMyReservations({ scope: 'CURRENT', page: 2 }), method: 'GET', url: `${V1}/reservations/me?scope=CURRENT&page=2` },
   { label: 'getReservation', call: (a) => a.getReservation(7), method: 'GET', url: `${V1}/reservations/7` },
   { label: 'cancelReservation', call: (a) => a.cancelReservation(7, { reason: 'r' }), method: 'POST', url: `${V1}/reservations/7/cancel`, body: { reason: 'r' } },
@@ -75,7 +76,22 @@ function clientWith(token: string | null) {
 describe('http.ts 覆盖 docs/12 第 5 节全部接口', () => {
   it('表格行数与 ApiClient 方法数一致，且方法名一一对应', () => {
     expect(ROWS.map((row) => row.label).sort()).toEqual([...API_CLIENT_METHODS].sort())
-    expect(ROWS).toHaveLength(43)
+    expect(ROWS).toHaveLength(44)
+  })
+
+  // v1.2：companionUserIds 按调用方给出的顺序原样放进请求体；查找的 q 经 URL 编码。
+  it('createReservation 带同行人：companionUserIds 按顺序写入请求体', async () => {
+    const { api, stub } = clientWith('tok')
+    await api.createReservation({ resourceId: 1, serviceDate: '2026-10-12', startTime: '08:00', companionUserIds: [4, 2, 3] })
+    expect(JSON.parse(stub.calls[0]?.body ?? '{}')).toEqual({
+      resourceId: 1, serviceDate: '2026-10-12', startTime: '08:00', companionUserIds: [4, 2, 3],
+    })
+  })
+
+  it('lookupUser：q 经 URL 编码（例如带加号的手机号）', async () => {
+    const { api, stub } = clientWith('tok')
+    await api.lookupUser('+86 138')
+    expect(stub.calls[0]?.url).toBe(`${V1}/users/lookup?q=%2B86+138`)
   })
 
   it.each(ROWS)('$label：方法、路径、查询与请求体', async (row) => {

@@ -14,9 +14,9 @@ function successStatuses(calls: StatusRecord[], method: string, path: string): n
 
 export function statusCodeContract(suiteCalls: StatusRecord[]): void {
   describe('http：创建类 201、归档与删除类 204（K2）', () => {
-    it('套件中成功的注册与创建预约各一次，均为 201', () => {
+    it('套件中成功的注册一次、创建预约两次（P2-2c 起含同行人名单用例），均为 201', () => {
       expect(successStatuses(suiteCalls, 'POST', '/auth/register')).toEqual([201])
-      expect(successStatuses(suiteCalls, 'POST', '/reservations')).toEqual([201])
+      expect(successStatuses(suiteCalls, 'POST', '/reservations')).toEqual([201, 201])
     })
 
     it('报修、新建场馆、新建账号、发布公告返回 201；归档公告返回 204', async () => {

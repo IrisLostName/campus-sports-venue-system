@@ -4,37 +4,13 @@
 // 所以对真实后端在任何一天都能运行。窗口边界、PAST 等与时刻细节有关的行为属于 mockBehavior 测试，见 tests/api/mock/。
 import { describe, expect, it } from 'vitest'
 
-import type { ApiClient } from '../../../src/api/client'
-import { ApiError } from '../../../src/api/errors'
 import { DEMO_PASSWORD } from '../../../src/api/mock/seed'
-import { addDays, dateOf } from '../../../src/api/mock/timeMath'
-import { ERROR_HTTP_STATUS, type ErrorCode } from '../../../src/api/types'
+import { companionContract } from './companionSuite'
+import { expectCode, loginAs, serverDates, type ContractTarget } from './contractSupport'
 
-export interface ContractTarget {
-  api: ApiClient
-  setToken(token: string | null): void     // 切换当前登录身份（http 实现由 auth store 提供 Token）
-}
+export { serverDates, type ContractTarget }
 
 let registrations = 0
-
-async function loginAs(target: ContractTarget, username: string): Promise<void> {
-  target.setToken(null)
-  target.setToken((await target.api.login({ username, password: DEMO_PASSWORD })).token)
-}
-
-// 被测实现眼中的“今天”与“明天”（BE-8 K1）。明天总在可预约范围 [今天, 今天 + advanceDays) 内，且不受当天时刻影响。
-export async function serverDates(target: ContractTarget): Promise<{ today: string; tomorrow: string }> {
-  const today = dateOf((await target.api.getDisplaySummary()).generatedAt)
-  return { today, tomorrow: addDays(today, 1) }
-}
-
-async function expectCode(pending: Promise<unknown>, code: ErrorCode): Promise<ApiError> {
-  const error = await pending.then(() => undefined, (cause: unknown) => cause)
-  expect(error, `期望 ${code}`).toBeInstanceOf(ApiError)
-  const apiError = error as ApiError
-  expect([apiError.code, apiError.status]).toEqual([code, ERROR_HTTP_STATUS[code]])
-  return apiError
-}
 
 function authContract(label: string, makeTarget: () => ContractTarget): void {
   describe(`${label}：认证与配置`, () => {
@@ -289,4 +265,5 @@ export function contractSuite(label: string, makeTarget: () => ContractTarget): 
   checkInContract(label, makeTarget)
   permissionContract(label, makeTarget)
   adminContract(label, makeTarget)
+  companionContract(label, makeTarget)
 }

@@ -6,7 +6,8 @@ import UiButton from '../ui/UiButton.vue'
 import UiGlassCard from '../ui/UiGlassCard.vue'
 import UiStatusPill from '../ui/UiStatusPill.vue'
 
-defineProps<{ result: ReservationSummary }>()
+// companions：v1.2 同行人姓名（李四、王五），取自新预约的 companions；没有同行人时为 null，不显示这一行。
+withDefaults(defineProps<{ result: ReservationSummary; companions?: string | null }>(), { companions: null })
 
 defineEmits<{ again: [] }>()
 </script>
@@ -33,6 +34,10 @@ defineEmits<{ again: [] }>()
       <div>
         <dt>时间</dt>
         <dd>{{ result.timeText }}</dd>
+      </div>
+      <div v-if="companions !== null">
+        <dt>同行</dt>
+        <dd>{{ companions }}</dd>
       </div>
       <div>
         <dt>状态</dt>

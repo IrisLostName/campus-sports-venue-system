@@ -1,6 +1,6 @@
-// 用户端预约：创建、我的预约、详情、取消、签到码（v1.1）、签退（docs/12 第 5.3 节；docs/10 第 1、3、4 节）。
+// 用户端预约：创建、查找同行人（v1.2）、我的预约、详情、取消、签到码（v1.1）、签退（docs/12 第 5.3 节；docs/10 第 1、3、4 节）。
 import type { ApiClient } from '../client'
-import type { CheckInCode, Page, Reservation } from '../types'
+import type { CheckInCode, Companion, Page, Reservation } from '../types'
 import type { CancelReservationRequest, CreateReservationRequest, MyReservationsQuery } from '../requests'
 import { formatCheckInCode } from './checkInCodes'
 import { RESERVATION_SCOPES } from './enums'
@@ -14,7 +14,23 @@ import {
 } from './reservationView'
 import { run } from './run'
 import type { MockContext, ReservationRecord, UserRecord } from './state'
-import { blankToNull, collect, dateProblem, intProblem, oneOfProblem, optional, optionalText, pagingChecks, timeProblem } from './validate'
+import {
+  blankToNull, collect, dateProblem, intProblem, isAbsent, oneOfProblem, optional, optionalText, pagingChecks, textProblem,
+  timeProblem,
+} from './validate'
+
+const MAX_COMPANIONS = 6
+
+// v1.2 格式阶段：缺省或 null 视为没有同行人；否则为至多 6 个互不相同的正整数，且不含本人（与后端 @CompanionUserIds 一致）。
+function companionIdsProblem(value: unknown, selfId: number): string | null {
+  if (isAbsent(value)) {
+    return null
+  }
+  const ok = Array.isArray(value) && value.length <= MAX_COMPANIONS
+    && value.every((id) => typeof id === 'number' && Number.isInteger(id) && id > 0)
+    && new Set(value).size === value.length && !value.includes(selfId)
+  return ok ? null : `至多 ${MAX_COMPANIONS} 个互不相同的正整数，且不能包含本人`
+}
 
 function createReservation(ctx: MockContext, request: CreateReservationRequest): Reservation {
   const user = authenticate(ctx)
@@ -23,14 +39,35 @@ function createReservation(ctx: MockContext, request: CreateReservationRequest):
     ['serviceDate', dateProblem(request.serviceDate)],
     ['startTime', timeProblem(request.startTime)],
     ['purpose', optionalText(request.purpose, 200)],
+    ['companionUserIds', companionIdsProblem(request.companionUserIds, user.id)],
   ])
   requireRole(user, 'USER')
   checkCreatable(ctx, user, request)
   const record = insertReservation(ctx, {
     userId: user.id, resourceId: request.resourceId, serviceDate: request.serviceDate,
     startTime: request.startTime, purpose: blankToNull(request.purpose),
+    companionUserIds: request.companionUserIds ?? [],
   })
   return toReservation(ctx, record)
+}
+
+// v1.2 查找同行人（docs/12 第 5.3 节 GET /users/lookup）：认证 → 格式（q 非空白、≤ 32）→ 角色 USER →
+// 精确匹配：先按用户名，没有合格的再按手机号；只算 ACTIVE、USER、非本人的用户；恰好一个才返回，否则 NOT_FOUND。
+// q 按原样比较，不去空白（P2-2b 裁决第 5 节第 3 条）；只返回 userId 与 displayName。
+function lookupUser(ctx: MockContext, q: string): Companion {
+  const user = authenticate(ctx)
+  collect([['q', isAbsent(q) ? '缺少必填参数' : textProblem(q, 32)]])
+  requireRole(user, 'USER')
+  const eligible = ctx.state.users.filter(
+    (candidate) => candidate.status === 'ACTIVE' && candidate.role === 'USER' && candidate.id !== user.id,
+  )
+  const byUsername = eligible.filter((candidate) => candidate.username === q)
+  const matches = byUsername.length > 0 ? byUsername : eligible.filter((candidate) => candidate.phone === q)
+  const [match, ...others] = matches
+  if (match === undefined || others.length > 0) {
+    return fail('NOT_FOUND')
+  }
+  return { userId: match.id, displayName: match.displayName }
 }
 
 function isCurrent(ctx: MockContext, record: ReservationRecord): boolean {
@@ -136,11 +173,13 @@ function checkOut(ctx: MockContext, id: number): Reservation {
 }
 
 export type ReservationApi = Pick<ApiClient,
-  'createReservation' | 'listMyReservations' | 'getReservation' | 'cancelReservation' | 'getCheckInCode' | 'checkOut'>
+  | 'createReservation' | 'lookupUser' | 'listMyReservations' | 'getReservation' | 'cancelReservation' | 'getCheckInCode'
+  | 'checkOut'>
 
 export function reservationApi(ctx: MockContext): ReservationApi {
   return {
     createReservation: (request) => run(ctx, () => createReservation(ctx, request)),
+    lookupUser: (q) => run(ctx, () => lookupUser(ctx, q)),
     listMyReservations: (query = {}) => run(ctx, () => listMyReservations(ctx, query)),
     getReservation: (id) => run(ctx, () => getReservation(ctx, id)),
     cancelReservation: (id, request = {}) => run(ctx, () => cancelReservation(ctx, id, request)),

@@ -11,12 +11,12 @@ import type { CheckInTicketView } from '../../src/utils/checkInDisplay'
 
 const TICKETS: CheckInTicketView[] = [
   {
-    id: 1, venueId: 1, venueName: '网球馆', place: '网球馆 · 网球场1', bookerText: '预约人 张三（zhangsan）',
+    id: 1, venueId: 1, venueName: '网球馆', place: '网球馆 · 网球场1', bookerText: '预约人 张三（zhangsan）', companionsText: null,
     dateText: '2026-10-13 周二', slotText: '08:00–09:30', usableText: '08:00–09:30（10:00 前签退）',
     windowText: '07:45–08:15', deadlineText: '08:15', statusLabel: '可签到', displayStatus: 'CHECKIN_OPEN',
   },
   {
-    id: 3, venueId: 1, venueName: '网球馆', place: '网球馆 · 网球场3', bookerText: '预约人 张三（zhangsan）',
+    id: 3, venueId: 1, venueName: '网球馆', place: '网球馆 · 网球场3', bookerText: '预约人 张三（zhangsan）', companionsText: null,
     dateText: '2026-10-13 周二', slotText: '14:00–15:30', usableText: '14:00–15:30（16:00 前签退）',
     windowText: '13:45–14:15', deadlineText: '14:15', statusLabel: '待使用', displayStatus: 'UPCOMING',
   },

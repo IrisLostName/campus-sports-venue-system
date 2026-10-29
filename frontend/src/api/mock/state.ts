@@ -38,6 +38,7 @@ export interface ReservationRecord {
   cancelledAt: string | null; cancelledBy: number | null; cancelReason: string | null
   adminNote: string | null
   checkInAt: string | null; checkOutAt: string | null
+  companionUserIds: number[]   // v1.2：同行人名单（docs/13 reservation_companion），按提交顺序
 }
 
 export interface AnnouncementRecord {

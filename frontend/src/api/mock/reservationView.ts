@@ -80,6 +80,10 @@ export function toReservation(ctx: MockContext, record: ReservationRecord): Rese
     purpose: record.purpose, createdAt: record.createdAt,
     cancelledAt: record.cancelledAt, cancelReason: record.cancelReason, cancelledBy: record.cancelledBy,
     adminNote: record.adminNote, checkInAt: record.checkInAt, checkOutAt: record.checkOutAt,
+    companions: record.companionUserIds.map((id) => {
+      const companion = getOrFail(state.users, id)
+      return { userId: companion.id, displayName: companion.displayName }
+    }),
   }
 }
 

@@ -3,6 +3,7 @@
 // 状态与按钮仍只来自后端的 displayStatus，这里不判断任何状态。
 import type { BookingRules, DisplayStatus, Reservation, ReservationStatus, UserProfile } from '../api/types'
 import type { AdminReservation } from '../api/typesSection5'
+import { companionNames } from './companionDisplay'
 import { messageFor } from './errorMessages'
 import { DISPLAY_STATUS_LABELS, formatServiceDate, formatTimeRange, formatTimestamp, placeOf } from './reservationDisplay'
 
@@ -28,6 +29,7 @@ export interface CheckInTicketView {
   venueName: string
   place: string                 // 场馆 · 场地
   bookerText: string            // 预约人 姓名（用户名）
+  companionsText: string | null // v1.2：同行：李四、王五；没有同行人时为 null
   dateText: string
   slotText: string              // 预约时段
   usableText: string | null     // 可使用时段（含签退截止）；规则未取得时为 null
@@ -54,6 +56,7 @@ export function buildTicket(reservation: Reservation, rules: BookingRules | null
     venueName: reservation.venueName,
     place: placeOf(reservation),
     bookerText: bookerText(reservation, booker),
+    companionsText: companionLine(reservation),
     dateText: formatServiceDate(reservation.serviceDate),
     slotText: slot,
     usableText: checkoutBy === null ? null : `${slot}（${checkoutBy} 前签退）`,
@@ -62,6 +65,12 @@ export function buildTicket(reservation: Reservation, rules: BookingRules | null
     statusLabel: DISPLAY_STATUS_LABELS[reservation.displayStatus],
     displayStatus: reservation.displayStatus,
   }
+}
+
+// v1.2：“同行：李四、王五”；没有同行人时为 null。签到码卡片表头与扫码结果共用。
+function companionLine(reservation: Pick<Reservation, 'companions'>): string | null {
+  const names = companionNames(reservation.companions)
+  return names === null ? null : `同行：${names}`
 }
 
 // 轮播当前是第几张：按滚动位置取最近的一张，限制在 [0, count − 1]。
@@ -86,9 +95,11 @@ export interface ScanOutcome {
   facts: ScanFact[]
 }
 
-// 成功：预约人（姓名与用户名）、场馆 · 场地、日期与时段、签到时刻。
+// 成功：预约人（姓名与用户名）、场馆 · 场地、日期与时段、签到时刻；有同行人时最后加“同行”（v1.2；
+// 放在最后，扫码记录的摘要仍取前三项）。
 export function scanSuccess(reservation: AdminReservation): ScanOutcome {
   const checkedAt = reservation.checkInAt === null ? '—' : formatTimestamp(reservation.checkInAt).slice('YYYY-MM-DD '.length)
+  const companions = companionNames(reservation.companions)
   return {
     ok: true,
     title: '签到成功',
@@ -98,6 +109,7 @@ export function scanSuccess(reservation: AdminReservation): ScanOutcome {
       { label: '场地', value: placeOf(reservation) },
       { label: '时段', value: `${formatServiceDate(reservation.serviceDate)} ${formatTimeRange(reservation)}` },
       { label: '签到时间', value: checkedAt },
+      ...(companions === null ? [] : [{ label: '同行', value: companions }]),
     ],
   }
 }

@@ -58,6 +58,10 @@ function isLockedAction(action: ReservationAction): boolean {
         <dt>预约人</dt>
         <dd>{{ card.userDisplayName }}</dd>
       </div>
+      <div v-if="card.companionsText !== null">
+        <dt>同行</dt>
+        <dd>{{ card.companionsText }}</dd>
+      </div>
       <div v-if="card.purpose !== null">
         <dt>用途</dt>
         <dd>{{ card.purpose }}</dd>

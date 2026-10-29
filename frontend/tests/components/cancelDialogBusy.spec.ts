@@ -16,7 +16,7 @@ const RESERVATION: Reservation = {
   id: 7, venueId: 1, venueName: '网球馆', resourceId: 1, resourceName: '网球场1', userId: 3, userDisplayName: '张三',
   serviceDate: '2026-10-13', startTime: '08:00', endTime: '09:30', status: 'CONFIRMED', displayStatus: 'UPCOMING',
   purpose: null, createdAt: '2026-10-12T08:00:00', cancelledAt: null, cancelReason: null, cancelledBy: null,
-  adminNote: null, checkInAt: null, checkOutAt: null,
+  adminNote: null, checkInAt: null, checkOutAt: null, companions: [],
 }
 
 const mounted: VueWrapper[] = []

@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { ApiClient } from '../../src/api/client'
 import { ApiError } from '../../src/api/errors'
+import type { Companion } from '../../src/api/types'
 import { createAdminCheckIn, HISTORY_LIMIT } from '../../src/composables/adminCheckIn'
 import type { ApiCaller } from '../../src/composables/session'
 import { describeError } from '../../src/utils/errorText'
@@ -16,7 +17,7 @@ const ADMIN_RESERVATION = {
   id: 1, venueId: 1, venueName: '网球馆', resourceId: 1, resourceName: '网球场1', userId: 1, userDisplayName: '张三',
   serviceDate: '2026-10-13', startTime: '08:00', endTime: '09:30', status: 'CONFIRMED', displayStatus: 'IN_USE',
   purpose: null, createdAt: '2026-10-12T07:00:00', cancelledAt: null, cancelReason: null, cancelledBy: null, adminNote: null,
-  checkInAt: '2026-10-13T07:50:12', checkOutAt: null, userUsername: 'zhangsan', userPhone: null,
+  checkInAt: '2026-10-13T07:50:12', checkOutAt: null, companions: [] as Companion[], userUsername: 'zhangsan', userPhone: null,
 } as const
 
 // 与 callApi 相同的形状；登录失效类错误记为 sessionEnded。

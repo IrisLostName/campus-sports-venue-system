@@ -172,6 +172,8 @@ function reassignUser(ctx: MockContext, id: number, request: ReassignUserRequest
   const before = toReservation(ctx, record)
   record.userId = target.id
   record.adminNote = reason
+  // v1.2：新的预约人若在同行人名单中，从名单中移除，其余同行人保持顺序。
+  record.companionUserIds = record.companionUserIds.filter((companionId) => companionId !== target.id)
   const after = toReservation(ctx, record)
   appendLog(ctx, user, {
     venueId: after.venueId, action: 'RESERVATION_REASSIGN_USER', targetId: record.id, reason,

@@ -41,7 +41,8 @@ export const ERROR_CODES = [
   'NOT_FOUND', 'USERNAME_TAKEN', 'VENUE_NOT_BOOKABLE', 'RESOURCE_UNAVAILABLE',
   'SLOT_NOT_AVAILABLE', 'SLOT_IN_PAST', 'BOOKING_LIMIT_REACHED', 'SLOT_TAKEN',
   'INVALID_STATE', 'CANCEL_DEADLINE_PASSED', 'ALREADY_CHECKED_IN', 'CHECKIN_WINDOW_CLOSED',
-  'CHECKIN_CODE_INVALID', 'NOT_CHECKED_IN', 'ALREADY_CHECKED_OUT', 'USER_NOT_ELIGIBLE', 'REASON_REQUIRED',
+  'CHECKIN_CODE_INVALID', 'NOT_CHECKED_IN', 'ALREADY_CHECKED_OUT', 'USER_NOT_ELIGIBLE',
+  'RESET_INFO_MISMATCH', 'PASSWORD_RESET_LOCKED', 'REASON_REQUIRED',
   'IMPACT_CONFIRMATION_REQUIRED', 'HAS_HISTORY', 'INTERNAL_ERROR',
 ] as const
 export type ErrorCode = (typeof ERROR_CODES)[number]
@@ -74,6 +75,8 @@ export const ERROR_HTTP_STATUS: Record<ErrorCode, number> = {
   NOT_CHECKED_IN: 409,
   ALREADY_CHECKED_OUT: 409,
   USER_NOT_ELIGIBLE: 409,
+  RESET_INFO_MISMATCH: 400,
+  PASSWORD_RESET_LOCKED: 429,
   REASON_REQUIRED: 400,
   IMPACT_CONFIRMATION_REQUIRED: 409,
   HAS_HISTORY: 409,
@@ -123,7 +126,11 @@ export interface Reservation {
   cancelledAt: string | null; cancelReason: string | null; cancelledBy: number | null
   adminNote: string | null
   checkInAt: string | null; checkOutAt: string | null
+  companions: Companion[]   // v1.2：同行人名单，按提交顺序；没有时为空数组
 }
+
+// v1.2：同行人（GET /users/lookup 的返回体，也是 Reservation.companions 的元素）。只有 id 与姓名，不含用户名、手机号。
+export interface Companion { userId: number; displayName: string }
 
 export interface ReservationBrief {
   id: number; resourceName: string; serviceDate: string
