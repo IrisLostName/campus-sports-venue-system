@@ -98,4 +98,13 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long>,
             + " and r.status = com.campus.venue.reservation.domain.ReservationStatus.CONFIRMED")
     int settleIfConfirmed(@Param("ids") Collection<Long> ids, @Param("target") ReservationStatus target,
             @Param("at") LocalDateTime at);
+
+    /**
+     * 人员改派（docs/12 第 5.7 节，v1.2）：把新的预约人从该预约的同行人名单中移除，不在名单中时什么也不做；
+     * 其余行的 position 不变，保留空档（P2-2b 裁决第 5 节第 4 条）。放在本仓库而非 ReservationCompanionRepository，
+     * 是为了不给 AdminReservationService 增加第 7 个构造参数（Checkstyle 上限 6）。
+     */
+    @Modifying(flushAutomatically = true)
+    @Query("delete from ReservationCompanion c where c.reservationId = :reservationId and c.userId = :userId")
+    int removeCompanion(@Param("reservationId") long reservationId, @Param("userId") long userId);
 }

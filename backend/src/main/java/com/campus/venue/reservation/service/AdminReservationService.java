@@ -98,6 +98,7 @@ public class AdminReservationService {
     /**
      * A4：前置检查（含 ALREADY_CHECKED_IN）→ 目标用户检查 → 原行更新 user_id、admin_note，状态仍为 CONFIRMED。
      * 不校验目标用户的持有上限；改派给原预约人本人也允许（与 mock 一致）。
+     * v1.2：新的预约人若在同行人名单中，同一事务内从名单移除（日志的 after 快照已反映），其余同行人顺序不变。
      */
     @Transactional
     public ReservationView reassignUser(AuthenticatedUser user, long id, ReassignUserRequest request) {
@@ -109,6 +110,7 @@ public class AdminReservationService {
         reservation.setAdminNote(request.reason());
         reservation.setUpdatedAt(timestamp(now));
         reservations.saveAndFlush(reservation);
+        reservations.removeCompanion(reservation.getId(), target.getId());
         return logged(user, reservation, before, LogAction.RESERVATION_REASSIGN_USER, request.reason(), now);
     }
 
