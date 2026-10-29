@@ -113,7 +113,7 @@ class ReservationCreateLimitTest extends ReservationApiTestBase {
         JsonNode body = json(result);
         long id = body.get("id").asLong();
         Map<String, Object> actual = objectMapper.convertValue(body, new TypeReference<>() { });
-        assertThat(actual).hasSize(20).containsAllEntriesOf(Map.ofEntries(
+        assertThat(actual).hasSize(21).containsAllEntriesOf(Map.ofEntries(
                 Map.entry("id", (int) id), Map.entry("venueId", (int) tennis), Map.entry("venueName", "网球馆"),
                 Map.entry("resourceId", (int) court1), Map.entry("resourceName", "网球场1"),
                 Map.entry("userId", (int) zhangsan), Map.entry("userDisplayName", "用户zhangsan"),
@@ -125,6 +125,8 @@ class ReservationCreateLimitTest extends ReservationApiTestBase {
                 "checkOutAt"}) {
             assertThat(body.get(nullable).isNull()).as(nullable).isTrue();
         }
+        assertThat(body.get("companions").isArray()).isTrue();
+        assertThat(body.get("companions")).isEmpty();
         Map<String, Object> row = jdbc.queryForMap("select user_id, end_time::text as end_time, status, purpose,"
                 + " created_at::text as created_at, updated_at::text as updated_at from reservation where id = ?", id);
         assertThat(row).containsEntry("user_id", zhangsan).containsEntry("end_time", "20:00:00")

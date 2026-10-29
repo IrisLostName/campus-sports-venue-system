@@ -1,9 +1,12 @@
 package com.campus.venue.reservation.service;
 
 import com.campus.venue.reservation.domain.Reservation;
+import com.campus.venue.reservation.domain.ReservationCompanion;
 import com.campus.venue.reservation.domain.UsageRecord;
 import com.campus.venue.reservation.dto.AdminReservationView;
+import com.campus.venue.reservation.dto.Companion;
 import com.campus.venue.reservation.dto.ReservationView;
+import com.campus.venue.reservation.repository.ReservationCompanionRepository;
 import com.campus.venue.reservation.repository.UsageRecordRepository;
 import com.campus.venue.user.domain.AppUser;
 import com.campus.venue.user.repository.AppUserRepository;
@@ -17,11 +20,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.springframework.stereotype.Component;
 
 /**
- * 预约 → Reservation DTO 的映射（BE-3 S3，BE-4、BE-5 复用）。场地、场馆、预约人、使用记录各一次批量查询，
- * 查询次数不随预约条数增加。status 为有效状态、displayStatus 为展示状态，二者都由 DisplayStatusCalculator 计算。
+ * 预约 → Reservation DTO 的映射（BE-3 S3，BE-4、BE-5 复用）。场地、场馆、使用记录、同行人名单（P2-2b）各一次批量查询，
+ * 预约人与同行人合并为一次用户批量查询，查询次数不随预约条数增加。status 为有效状态、displayStatus 为展示状态，二者都由 DisplayStatusCalculator 计算。
  * 字段与 mock 的 toReservation（frontend/src/api/mock/reservationView.ts）一致。事务由调用方提供。
  */
 @Component
@@ -31,20 +35,23 @@ public class ReservationViewMapper {
     private final VenueRepository venues;
     private final AppUserRepository users;
     private final UsageRecordRepository usageRecords;
+    private final ReservationCompanionRepository companions;
     private final DisplayStatusCalculator calculator;
 
     public ReservationViewMapper(ResourceRepository resources, VenueRepository venues, AppUserRepository users,
-            UsageRecordRepository usageRecords, DisplayStatusCalculator calculator) {
+            UsageRecordRepository usageRecords, ReservationCompanionRepository companions,
+            DisplayStatusCalculator calculator) {
         this.resources = resources;
         this.venues = venues;
         this.users = users;
         this.usageRecords = usageRecords;
+        this.companions = companions;
         this.calculator = calculator;
     }
 
     /** 一次映射所需的关联数据。 */
     private record Related(Map<Long, Resource> resources, Map<Long, Venue> venues, Map<Long, AppUser> users,
-            Map<Long, UsageRecord> usage) {
+            Map<Long, UsageRecord> usage, Map<Long, List<ReservationCompanion>> companions) {
     }
 
     public ReservationView toView(Reservation reservation, LocalDateTime now) {
@@ -80,9 +87,15 @@ public class ReservationViewMapper {
                 Resource::getId);
         Map<Long, Venue> venueMap = byId(venues.findAllById(resourceMap.values().stream()
                 .map(Resource::getVenueId).distinct().toList()), Venue::getId);
-        Map<Long, AppUser> userMap = byId(users.findAllById(distinct(list, Reservation::getUserId)), AppUser::getId);
-        Map<Long, UsageRecord> usage = usageRecords.mapByReservationId(distinct(list, Reservation::getId));
-        return new Related(resourceMap, venueMap, userMap, usage);
+        Collection<Long> ids = distinct(list, Reservation::getId);
+        Map<Long, List<ReservationCompanion>> companionMap = companions.mapByReservationId(ids);
+        // 预约人与同行人一次读取（P2-2b）
+        List<Long> userIds = Stream.concat(list.stream().map(Reservation::getUserId),
+                companionMap.values().stream().flatMap(List::stream).map(ReservationCompanion::getUserId))
+                .distinct().toList();
+        Map<Long, AppUser> userMap = byId(users.findAllById(userIds), AppUser::getId);
+        Map<Long, UsageRecord> usage = usageRecords.mapByReservationId(ids);
+        return new Related(resourceMap, venueMap, userMap, usage, companionMap);
     }
 
     private ReservationView view(Reservation reservation, Related related, LocalDateTime now) {
@@ -97,7 +110,15 @@ public class ReservationViewMapper {
                 reservation.getPurpose(), reservation.getCreatedAt(),
                 reservation.getCancelledAt(), reservation.getCancelReason(), reservation.getCancelledBy(),
                 reservation.getAdminNote(),
-                usage == null ? null : usage.getCheckInAt(), usage == null ? null : usage.getCheckOutAt());
+                usage == null ? null : usage.getCheckInAt(), usage == null ? null : usage.getCheckOutAt(),
+                companions(reservation, related));
+    }
+
+    /** 同行人名单按 position 排列；displayName 为当前显示名。 */
+    private static List<Companion> companions(Reservation reservation, Related related) {
+        return related.companions().getOrDefault(reservation.getId(), List.of()).stream()
+                .map(row -> new Companion(row.getUserId(), related.users().get(row.getUserId()).getDisplayName()))
+                .toList();
     }
 
     private static Collection<Long> distinct(List<Reservation> list, Function<Reservation, Long> key) {
