@@ -16,7 +16,7 @@ const CheckInCodeSheet = defineAsyncComponent(() => import('../../components/res
 
 const {
   phase, cards, isBusy, isEmpty, busyId, loadError, rulesError, pageFeedback, cancelTarget, cancelReason,
-  feedbackFor, trigger, confirmCancel, dismissCancel, load, cancelLockedIds, cancelLockedNote, sheet,
+  feedbackFor, trigger, confirmCancel, dismissCancel, load, cancelLockedIds, cancelLockedNote, sheet, holding,
 } = useReservationBoard()
 const { isOpen: sheetOpen, everOpened: sheetMounted, tickets, startIndex, entryOf } = sheet
 const sheetView = useTemplateRef<{ settleFocus(): void }>('sheetView')
@@ -34,9 +34,29 @@ onMounted(() => {
 
 <template>
   <section class="page">
-    <h1 class="page-title">
-      预约
-    </h1>
+    <header class="head">
+      <h1 class="page-title">
+        预约
+      </h1>
+      <!-- UI-4：无论是否已有预约都显示；达上限时仍可点，是否能订以后端裁决为准。 -->
+      <UiButton
+        class="new"
+        :to="PATHS.booking"
+      >
+        ＋ 新建预约
+      </UiButton>
+    </header>
+    <p
+      v-if="holding !== null"
+      class="hint limit"
+    >
+      <template v-if="holding.held >= holding.max">
+        已达同时持有上限（{{ holding.max }} 个），取消一个预约后才能新建
+      </template>
+      <template v-else>
+        当前 {{ holding.held }} 个预约，最多可同时持有 {{ holding.max }} 个
+      </template>
+    </p>
 
     <p
       v-if="phase === 'loading'"
@@ -121,3 +141,18 @@ onMounted(() => {
     />
   </section>
 </template>
+
+<style scoped>
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.limit {
+  padding-inline: var(--space-1);
+  text-align: right;
+}
+</style>

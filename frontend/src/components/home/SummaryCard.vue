@@ -39,13 +39,21 @@ defineProps<{ summary: ReservationSummary; moreCount: number }>()
         还有 {{ moreCount }} 个预约
       </RouterLink>
     </p>
-    <UiButton
-      class="detail"
-      variant="secondary"
-      :to="PATHS.reservation"
-    >
-      查看预约详情
-    </UiButton>
+    <div class="actions">
+      <UiButton
+        class="detail"
+        variant="secondary"
+        :to="PATHS.reservation"
+      >
+        查看预约详情
+      </UiButton>
+      <UiButton
+        class="book"
+        :to="PATHS.booking"
+      >
+        去订场
+      </UiButton>
+    </div>
   </UiGlassCard>
 </template>
 
@@ -93,7 +101,11 @@ defineProps<{ summary: ReservationSummary; moreCount: number }>()
   min-height: 44px;
 }
 
-.detail {
+/* UI-4：“查看预约详情”与“去订场”并排，间距 12px，窄屏时换行。 */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
   margin-top: var(--space-1);
 }
 </style>

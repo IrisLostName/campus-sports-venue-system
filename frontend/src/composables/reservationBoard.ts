@@ -4,7 +4,7 @@ import { computed, onBeforeUnmount, onMounted, ref, type Ref } from 'vue'
 
 import type { ApiClient } from '../api/client'
 import { api } from '../api/index'
-import type { BookingRules, UserProfile } from '../api/types'
+import type { BookingRules, DisplayStatus, Reservation, UserProfile } from '../api/types'
 import { useAuthStore } from '../stores/auth'
 import { useReferenceStore, type ReferenceStore } from '../stores/reference'
 import { cancelLockedNote, isCancelLocked } from '../utils/cancelDeadline'
@@ -27,6 +27,18 @@ export interface BoardDeps {
 
 const NOW_REFRESH_MS = 30 * 1000
 
+// 仍占用名额的展示状态：后端持有数（HeldReservations）= CONFIRMED 且未结束，已签到、结束前已签退的也算。
+const HOLDING_DISPLAY: ReadonlySet<DisplayStatus> = new Set(['UPCOMING', 'CHECKIN_OPEN', 'IN_USE', 'CHECKED_OUT'])
+
+function isHolding(item: Reservation): boolean {
+  return item.status === 'CONFIRMED' && HOLDING_DISPLAY.has(item.displayStatus)
+}
+
+export interface HoldingLimit {
+  held: number
+  max: number
+}
+
 // 列表数据：本人 CURRENT 预约（共用列表组合函数）与 BookingRules。
 function createBoardData(deps: BoardDeps) {
   const list = createReservationList(deps, 'CURRENT')
@@ -36,6 +48,16 @@ function createBoardData(deps: BoardDeps) {
   const cards = computed(() => list.items.value.map((item) => buildCard(item, rules.value)))
   // 没有 CURRENT 预约是空状态（订场入口在页面里）。
   const isEmpty = computed(() => list.phase.value === 'ready' && list.items.value.length === 0)
+
+  // UI-4 同时持有提示：CURRENT 与后端第 7 步共用“CONFIRMED 且未结束”的口径（后端 HeldReservations），所以未取得的页按 total 计；
+  // 本页取消、签退后卡片就地替换、暂不离开列表，已取得的条目按状态重新数。列表或规则不可用时不显示（null）。
+  const holding = computed<HoldingLimit | null>(() => {
+    if (list.phase.value !== 'ready' || rules.value === null) {
+      return null
+    }
+    const unloaded = Math.max(list.total.value - list.items.value.length, 0)
+    return { held: unloaded + list.items.value.filter(isHolding).length, max: rules.value.maxActiveReservationsPerUser }
+  })
 
   async function fetchRules(): Promise<void> {
     const result = await deps.reference.loadBookingRules(deps.call)
@@ -47,7 +69,7 @@ function createBoardData(deps: BoardDeps) {
   }
 
   return {
-    items: list.items, phase: list.phase, loadError: list.error, rulesError, rules, cards, isEmpty,
+    items: list.items, phase: list.phase, loadError: list.error, rulesError, rules, cards, isEmpty, holding,
     fetchList: list.refresh, load, replace: list.replace,
   }
 }
@@ -75,7 +97,7 @@ export function createReservationBoard(deps: BoardDeps) {
   })
   return {
     phase: data.phase, loadError: data.loadError, rulesError: data.rulesError, rules: data.rules,
-    cards: data.cards, isEmpty: data.isEmpty, load: data.load, now,
+    cards: data.cards, isEmpty: data.isEmpty, holding: data.holding, load: data.load, now,
     ...lock,
     ...actions,
     sheet,

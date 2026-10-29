@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 
 import AnnouncementList from '../../components/home/AnnouncementList.vue'
 import EmptyReservation from '../../components/home/EmptyReservation.vue'
@@ -7,6 +7,13 @@ import SummaryCard from '../../components/home/SummaryCard.vue'
 import UiBanner from '../../components/ui/UiBanner.vue'
 import UiButton from '../../components/ui/UiButton.vue'
 import { useHomeBoard } from '../../composables/homeBoard'
+import { useAuthStore } from '../../stores/auth'
+import { greetingLine, WELCOME_LINE } from '../../utils/greeting'
+import { nowShanghai } from '../../utils/shanghaiTime'
+
+// UI-4：标题换成按时段的问候语（进入页面时的钟点）；标签页标题仍是“首页”（路由 meta）。
+const auth = useAuthStore()
+const greeting = computed(() => greetingLine(nowShanghai(), auth.user?.displayName))
 
 const { phase, sections, announcementItems, announcementsLoaded, announcementError, load } = useHomeBoard()
 
@@ -17,9 +24,14 @@ onMounted(() => {
 
 <template>
   <section class="page">
-    <h1 class="page-title">
-      首页
-    </h1>
+    <header class="greeting">
+      <h1 class="page-title">
+        {{ greeting }}
+      </h1>
+      <p class="welcome">
+        {{ WELCOME_LINE }}
+      </p>
+    </header>
 
     <p
       v-if="phase === 'loading'"
@@ -61,3 +73,17 @@ onMounted(() => {
     </template>
   </section>
 </template>
+
+<style scoped>
+.greeting {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.welcome {
+  padding-inline: var(--space-1);
+  color: var(--color-text-secondary);
+  font: var(--font-callout);
+}
+</style>
