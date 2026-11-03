@@ -3,6 +3,7 @@ import { computed, onMounted } from 'vue'
 
 import AnnouncementList from '../../components/home/AnnouncementList.vue'
 import EmptyReservation from '../../components/home/EmptyReservation.vue'
+import HomeGallery from '../../components/home/HomeGallery.vue'
 import SummaryCard from '../../components/home/SummaryCard.vue'
 import UiBanner from '../../components/ui/UiBanner.vue'
 import UiButton from '../../components/ui/UiButton.vue'
@@ -64,12 +65,15 @@ onMounted(() => {
           重试
         </UiButton>
       </UiBanner>
-      <AnnouncementList
-        v-else-if="section.kind === 'announcements'"
-        :items="announcementItems"
-        :loaded="announcementsLoaded"
-        :error="announcementError"
-      />
+      <template v-else-if="section.kind === 'announcements'">
+        <!-- UI-6：图集在预约卡片（或空状态、错误提示）之后、系统公告之前 -->
+        <HomeGallery />
+        <AnnouncementList
+          :items="announcementItems"
+          :loaded="announcementsLoaded"
+          :error="announcementError"
+        />
+      </template>
     </template>
   </section>
 </template>

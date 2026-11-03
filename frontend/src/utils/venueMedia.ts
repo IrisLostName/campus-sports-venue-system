@@ -2,7 +2,7 @@
 //   frontend/public/media/venues/<venueId>/cover.jpg   封面
 //   frontend/public/media/venues/<venueId>/logo.png    标志
 //   frontend/public/media/venues/<venueId>/floorplan.jpg  静态平面图（P2-1c 签到码卡片）
-// 图片由负责人在部署前放入，随前端打包；仓库里不放图片。不从 CDN 加载，不改数据库与接口。
+// 图片随前端打包，并提交在仓库里（public/media/venues 与 public/media/gallery）。不从 CDN 加载，不改数据库与接口。
 // 缺图（404，或站点回退返回的不是图片）时由 VenueMedia 显示中性占位。
 
 export type VenueMediaKind = 'cover' | 'logo' | 'floorplan'
