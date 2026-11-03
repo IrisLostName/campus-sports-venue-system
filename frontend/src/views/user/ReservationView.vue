@@ -3,6 +3,7 @@
 // 关闭浮层后列表按后端状态刷新，再由浮层把焦点放到该预约卡片上（原按钮可能已换成“签退”，审计 N4）。
 import { defineAsyncComponent, nextTick, onMounted, useTemplateRef } from 'vue'
 
+import BookingRulesNotice from '../../components/reservation/BookingRulesNotice.vue'
 import CancelDialog from '../../components/reservation/CancelDialog.vue'
 import ReservationCardView from '../../components/reservation/ReservationCard.vue'
 import UiBanner from '../../components/ui/UiBanner.vue'
@@ -57,6 +58,7 @@ onMounted(() => {
         当前 {{ holding.held }} 个预约，最多可同时持有 {{ holding.max }} 个
       </template>
     </p>
+    <BookingRulesNotice />
 
     <p
       v-if="phase === 'loading'"
